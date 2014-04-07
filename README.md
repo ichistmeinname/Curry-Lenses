@@ -2,14 +2,17 @@
 
 ## Ideas for approaching this topic
 
-* definition of `put` and generating`get` [1]
+* combinator DSL
+  * modify monadic approach [2] to use nondeterminism
+* definition of `put` and generating `get` [1]
   * efficient implementation
   * check requirements for `put` (static analysis (approx.)) [4]
 * definition of `get` and generating `put` + choosing _best_
   `get` function [3]
-* combinator DSL
-  * modify monadic approach [2] to use nondeterminism
+
 * practical examples: WUI [5, 6]
+
+## Sources
 
 [1] http://research.nii.ac.jp/~hu/pub/grace12_08.pdf
 
