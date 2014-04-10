@@ -23,12 +23,14 @@ outPerson = isoLens out inn
   inn (n,c)        = Person n c
   out (Person n c) = (n,c)
 
-
 people  = [bastian, lennart, julia]
 bastian = Person "Bastian" "Gaarden"
 lennart = Person "Lennart" "Kronshagen"
 julia   = Person "Julia"   "Schreventeich"
 -- julia   = Person "Julia"   "Kiel"
+
+nameOrCity :: Lens Person String
+nameOrCity = name ? city
 
 name :: Lens Person Name
 name = inPerson <.> keepSnd
@@ -43,13 +45,6 @@ peopleNames :: City -> Lens [Person] [Name]
 peopleNames c = mapLens (inPerson <.> addSnd cityOf)
  where
   cityOf s _ = maybe c snd s
-
--- select :: (a -> k) -> (Maybe [a] -> [a]) -> (a -> Bool) -> Lens [a] [a]
--- select key entries p = { put := put_
---                        , get := get_
---                        }
---  where
---   put_ s v -> map entries s
 
 ------------------------------------------------------------
 ---------------------- Examples ----------------------------
