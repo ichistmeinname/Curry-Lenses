@@ -1,6 +1,6 @@
 module Monadic where
 
-import Maybe (isJust, fromJust)
+import Maybe (isJust, isNothing, fromJust)
 import SetFunctions
 import Unsafe (trace)
 
@@ -41,18 +41,32 @@ bind val f = f val
   getNew s             = getM l2 (get' l1 s)
 
 phi :: (v -> Bool) -> Lens v v
-phi p = { put := putNew 
+phi p = { put := putNew
         , get := \v' -> if p v' then Just v' else Nothing
         }
  where
   putNew s v | p v       = v
              | otherwise = error "phi: predicate is not fulfilled"
 
+phiSource :: (s -> Bool) -> Lens s v -> Lens s v
+phiSource p l = { put := put_
+                , get := get_
+                }
+ where
+  get_ s = case getM l s of
+                Just v  -> if p s then Just v else Nothing
+                Nothing -> Nothing
+  put_ s v = put' l s v `bind` \s' ->
+               if p s' then s' else error ("phiSource: predicate is not fulfilled; " ++ 
+                                             "source: " ++ show s ++ ", view: " ++ show v)
+                  
 idLens :: Lens v v
 idLens = { put := \_ v -> v
          , get := \v'  -> Just v'
          }  
 
+botLens :: Lens a a
+botLens = { put := \s v -> error "bottom", get := const Nothing }
 ------------------------------------------------------------
 ----------------------- Products ---------------------------
 ------------------------------------------------------------
@@ -109,9 +123,23 @@ outList = isoLens out inn
 mapLens :: Lens a b -> Lens [a] [b]
 mapLens f = (inList <.> (idLens <+> (f <*> mapLens f)) <.> outList)
 
+cons :: Lens [a] (a, [a])
+cons = inList <.> injR
+
+unhead :: Lens [a] a
+unhead = cons <.> keepSnd
+
+untail :: Lens [a] [a]
+untail = cons <.> keepFst
+
+unhead' :: Lens [a] a
+unhead' = cons <.> keepSndOr (\v -> [])
+
+untail' :: Lens [a] [a]
+untail' = cons <.> keepFstOr (\ (x:xs) -> x)
 
 ------------------------------------------------------------
------------------------ Sums -------------------------------
+--------------------------- Sums ---------------------------
 ------------------------------------------------------------
 
 (<*>) :: Lens s1 v1 -> Lens s2 v2 -> Lens (s1,s2) (v1,v2)
@@ -123,7 +151,6 @@ l1 <*> l2 = { put := put_
     let s1' = put' l1 (fmap fst s) v1'
         s2' = put' l2 (fmap snd s) v2'
     in (s1',s2')
-
 
 (<+>) :: Lens s1 v1 -> Lens s2 v2 -> Lens (Either s1 s2) (Either v1 v2)
 l1 <+> l2 = { put := put_
@@ -137,13 +164,80 @@ l1 <+> l2 = { put := put_
   r :: Maybe (Either s1 s2) -> Maybe s2
   r = maybe Nothing (either (const Nothing) Just)
 
--- injl :: Lens (Either v1 v2) v1
--- injl = { put := put_
---        , get := \v1 -> Left v1
---        }
---  where
---   put_ (Left  v) = 
---   put_ (Right v) = 
+inj :: (Maybe (Either v v) -> v -> Bool) -> Lens (Either v v) v
+inj p = enforceGetPut { put := put_
+                      , get := \s -> either Just Just s
+                      }
+ where
+  put_ s v = if p s v then Left v else Right v
+
+injOr :: (v -> Bool) -> Lens (Either v v) v
+injOr p = inj (\s v -> maybe (p v) isLeft s)
+ where
+  isLeft s = either (const True) (const False) s
+
+injL :: Lens (Either v1 v2) v1
+injL = { put := \_ v -> Left v
+       , get := get_
+       }
+ where
+  get_ (Left  v) = Just v
+  get_ (Right _) = Nothing
+
+injR :: Lens (Either v1 v2) v2
+injR = { put := \_ v -> Right v
+       , get := get_
+       }
+ where
+  get_ (Left  _) = Nothing
+  get_ (Right v) = Just v
+
+(\/) :: Lens s v1 -> Lens s v2 -> Lens s (Either v1 v2)
+l1 \/ l2 = { put := put_
+           , get := get_
+           }
+ where
+  put_ :: Maybe s -> Either v1 v2 -> s
+  put_ s (Left  v1) = disjoint l1 l2 (put' l1 s v1)
+  put_ s (Right v2) = disjoint l2 l1 (put' l2 s v2)
+  get_ :: s -> Maybe (Either v1 v2)
+  get_ s = let (v1,v2) = (getM l1 s, getM l2 s)
+                  in checkDisjoint v1 v2
+  checkDisjoint v1 v2 | isNothing v1 && isNothing v2 = Nothing
+                      | isJust    v1 && isJust    v2 = Nothing
+                      | isJust    v1 && isNothing v2 = liftMaybe Left v1
+                      | isNothing v1 && isJust    v2 = liftMaybe Right v2
+  liftMaybe f Nothing  = Nothing
+  liftMaybe f (Just v) = Just (f v)
+
+(\/.) :: Lens s v1 -> Lens s v2 -> Lens s (Either v1 v2)
+l1 \/. l2 = (phiSource (not . dom l2) l1) \/ l2
+
+(.\/) :: Lens s v1 -> Lens s v2 -> Lens s (Either v1 v2)
+l1 .\/ l2 = l1 \/ (phiSource (not . dom l1) l2)
+
+eitherS :: (s -> Bool) -> Lens s v1 -> Lens s v2 -> Lens s (Either v1 v2)
+eitherS p f g = (phiSource p f) \/ (phiSource (not . p) g)
+
+------------------------------------------------------------
+--------------------- Conditionals -------------------------
+------------------------------------------------------------
+
+ifVThenElse :: (v -> Bool) -> Lens s v -> Lens s v -> Lens s v
+ifVThenElse p l1 l2 = ((l1 <.> phi p) .\/ l2) <.> inj (\_ -> p)
+
+ifSThenElse :: (s -> Bool) -> Lens s v -> Lens s v -> Lens s v
+ifSThenElse p l1 l2 = { put := \s v -> put' (l s) s v
+                      , get := \s -> getM (l (Just s)) s
+                      }
+ where
+  l :: Maybe s -> Lens s v
+  l (Just s) = eitherS p l1 l2 <.> injOr (\_ -> p s)
+  l Nothing  = eitherS p l1 l2 <.> injOr (\_ -> True)
+
+
+ifThenElse :: (Maybe (Either v v) -> v -> Bool) -> Lens s v -> Lens s v -> Lens s v
+ifThenElse p l1 l2 = (l1 .\/ l2) <.> inj p
 
 ------------------------------------------------------------
 --------------------- Isomorphism --------------------------
@@ -169,3 +263,11 @@ enforceGetPut l = { put := put_
   put_ ms v
    | isJust ms && getM l (fromJust ms) == Just v = fromJust ms
    | otherwise                                   = put' l ms v
+
+disjoint :: Lens a b -> Lens a c -> a -> a
+disjoint l1 l2 s
+  | dom l1 s && not (dom l2 s) = s
+  | otherwise                  = error "disjoint failed"
+
+dom :: Lens a b -> a -> Bool
+dom l s = isJust (getM l s)
