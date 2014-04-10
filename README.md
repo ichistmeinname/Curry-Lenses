@@ -2,11 +2,23 @@
 
 ## Ideas for approaching this topic
 
-* combinator DSL
-  * modify monadic approach [2] to use nondeterminism
-* definition of `put` and generating `get` [1]
+* combinator DSL (3.-11.4.)
+  * modify monadic approach [2] to use nondeterminism (3.-8.4.)
+  * test examples from paper (9.4.)
+  * test examples with nondeterminism (9.4.)
+  * test examples from SPJ's presentation (10.4.)
+  * test examples for web programming with Spicey (11.4.)
+
+* definition of `put` and generating `get` [1] (14.4. - 23.4)
+  * naive implementation + basic combinators (14.4.)
+  * examples: is it natural to define well-behaved put-based lenses? (15.-17.4.)
+    * test examples from paper (15.4.)
+    * test examples from SPJ's presentation (16.4.)
+    * test examples for web programming with Spicey (17.4.)
+  
   * efficient implementation
   * check requirements for `put` (static analysis (approx.)) [4]
+
 * definition of `get` and generating `put` + choosing _best_
   `get` function [3]
 
