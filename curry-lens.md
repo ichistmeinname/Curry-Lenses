@@ -5,3 +5,10 @@
 * _PUTINJ_: `put s` is injective for any source `s`, i.e., $s' \in put
   s v \wedge s' \in put s v' \Rightarrow v = v'$
 * _PUTTWICE_: $s' \in put s v \Rightarrow s' = put s' v$
+
+
+### Spicey
+
+* labeling bug: if a corresponding label is missing, a
+  non-deterministism error occurs
+* high-potential library to include lenses for getter, setter and projection
