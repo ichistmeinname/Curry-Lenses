@@ -1,0 +1,99 @@
+.label {
+  display: block;
+  padding: 3px 8px;
+  color: black;
+  font-size: 10pt;
+}
+
+.label_for_type_string:before {
+  content: url(../images/text.png);
+}
+
+.label_for_type_int:before {
+  content: url(../images/number.png);
+}
+
+.label_for_type_calendarTime:before {
+  content: url(../images/time.png);
+}
+
+.label_for_type_relation:before {
+  content: url(../images/foreign.png);
+}
+
+.type_string {
+  font-size: 10pt;
+}
+
+.type_int {
+  font-size: 10pt;
+}
+
+.type_bool {
+  font-size: 10pt;
+}
+
+.type_calendartime {
+  font-size: 10pt;
+}
+
+
+input, select {
+  font-size: 10pt;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.editform tr {
+  text-align: left;
+  padding-left: 0px;
+}
+
+.pagemessage {
+  padding: 1px 35px 1px 14px;
+  margin-bottom: 0px;
+  text-align: left;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  border: 1px solid #fbeed5;
+  -webkit-border-radius: 4px;
+     -moz-border-radius: 4px;
+          border-radius: 4px;
+  color: #b94a48;
+  background-color: #f2dede;
+  border-color: #eed3d7;
+}
+
+.pagemessage-empty {
+  color: #cccccc;
+  background-color: #ffffff;
+  border-color: #ffffff;
+}
+
+/* Changes to default bootstrap style: */
+
+body {
+  padding-top: 60px;
+  padding-bottom: 40px;
+}
+
+.hero-unit {
+  padding: 5px 15px;
+  margin-bottom: 0px;
+}
+
+.hero-unit h1 {
+  margin-bottom: 10px;
+  font-size: 40px;
+}
+
+/* button with left-aligned text */
+.btn-left {
+  text-align: left;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.table {
+  width: auto;
+}
+

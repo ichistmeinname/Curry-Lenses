@@ -1,0 +1,30 @@
+{- ERD specification transformed from /Users/ichistmeinname/Downloads/spicey/blog.term -}
+
+ ERD "Blog"
+   [Entity "Tagging"
+           [Attribute "EntryTaggingKey" (KeyDom "Entry") PKey False,
+            Attribute "TagTaggingKey" (KeyDom "Tag") PKey False],
+    Entity "Entry"
+           [Attribute "Key" (IntDom Nothing) PKey False,
+            Attribute "Title" (StringDom Nothing) Unique False,
+            Attribute "Text" (StringDom Nothing) NoKey False,
+            Attribute "Author" (StringDom Nothing) NoKey False,
+            Attribute "Date" (DateDom Nothing) NoKey False],
+    Entity "Comment"
+           [Attribute "Key" (IntDom Nothing) PKey False,
+            Attribute "Text" (StringDom Nothing) NoKey False,
+            Attribute "Author" (StringDom Nothing) NoKey False,
+            Attribute "Date" (DateDom Nothing) NoKey False,
+            Attribute "EntryCommentingKey" (KeyDom "Entry") NoKey False],
+    Entity "Tag"
+           [Attribute "Key" (IntDom Nothing) PKey False,
+            Attribute "Name" (StringDom Nothing) Unique False]]
+   [Relationship ""
+                 [REnd "Entry" "" (Exactly 1),
+                  REnd "Tagging" "tagged" (Between 0 Infinite)],
+    Relationship ""
+                 [REnd "Tag" "" (Exactly 1),
+                  REnd "Tagging" "tags" (Between 0 Infinite)],
+    Relationship "Commenting"
+                 [REnd "Entry" "commentsOn" (Exactly 1),
+                  REnd "Comment" "isCommentedBy" (Between 0 Infinite)]]
