@@ -12,3 +12,8 @@
 * labeling bug: if a corresponding label is missing, a
   non-deterministism error occurs
 * high-potential library to include lenses for getter, setter and projection
+
+
+## Formlenses
+
+* `lmap :: Lens a b -> f b -> f a`

@@ -7,14 +7,20 @@
   * test examples from paper (9.4.)
   * test examples with nondeterminism (9.4.)
   * test examples from SPJ's presentation (10.4.)
+  * figure out how to use Spicey (11.4.)
   * test examples for web programming with Spicey (11.4.)
 
-* definition of `put` and generating `get` [1] (14.4. - 23.4)
-  * naive implementation + basic combinators (14.4.)
-  * examples: is it natural to define well-behaved put-based lenses? (15.-17.4.)
-    * test examples from paper (15.4.)
-    * test examples from SPJ's presentation (16.4.)
-    * test examples for web programming with Spicey (17.4.)
+* formlenses (14.4.-23.4.)
+  * read [6] (14.4.-16.4.)
+  * adapt formlens idea for WUI/Spicey framework (16.4.-17.4.)
+  
+
+* definition of `put` and generating `get` [1] (22.4. - 25.4)
+  * naive implementation + basic combinators (22.4.)
+  * examples: is it natural to define well-behaved put-based lenses? (23.-25.4.)
+    * test examples from paper (23.4.)
+    * test examples from SPJ's presentation (24.4.)
+    * test examples for web programming with Spicey (25.4.)
   
   * efficient implementation
   * check requirements for `put` (static analysis (approx.)) [4]
