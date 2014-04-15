@@ -97,6 +97,30 @@ keepSndOr f = addSnd (\s v' -> maybe (f v') snd s)
 keepSnd :: Lens (v,s1) v
 keepSnd = keepSndOr (\v -> failed)
 
+remFst :: (v -> v1) -> Lens v (v1,v)
+remFst f = { put := put_
+           , get := get_
+           }
+ where
+  get_ v                       = Just (f v,v)
+  put_ mVal (v1,v) | f v == v1 = v
+                   | otherwise = error "remFst: first and second value of pair are not equal"  
+
+remSnd :: (v -> v1) -> Lens v (v,v1)
+remSnd f = { put := put_
+           , get := get_
+           }
+ where
+  get_ v                       = Just (v, f v)
+  put_ mVal (v,v1) | f v == v1 = v
+                   | otherwise = error "remSnd: first and second value of paire are not equal"
+
+remFstOne :: Lens v ((),v)
+remFstOne = remFst (const ())
+
+remSndOne :: Lens v (v,())
+remSndOne = remSnd (const ())
+
 copy :: Lens (v,v) v
 copy = phi (uncurry (==)) <.> addSnd (\_ v -> v)
 
