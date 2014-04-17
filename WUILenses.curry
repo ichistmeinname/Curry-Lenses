@@ -289,8 +289,8 @@ wStringAttrs attrs _ =
                                 (filterStringInput (env (state2cgiRef s))))
  where
   stringWidget render v =
-    let ref free in
-    (render [foldr (flip addAttr) (textfield ref v) attrs], cgiRef2state ref)
+    let ref free
+    in (render [foldr (flip addAttr) (textfield ref v) attrs], cgiRef2state ref)
 
 --- A widget for editing string values that are required to be non-empty.
 wRequiredString :: WuiLensSpec String
@@ -911,7 +911,7 @@ wuiWithErrorForm :: WuiLensSpec a -> a -> (a -> IO HtmlForm)
                     -> (HtmlExp -> WuiHandler -> IO HtmlForm)
                     -> (HtmlExp,WuiHandler)
 wuiWithErrorForm wspec val store errorform =
-        showAndReadWUI wspec store errorform (generateWUI wspec val)
+        showAndReadWUI val wspec store errorform (generateWUI wspec val)
 
 generateWUI :: WuiLensSpec a -> a -> (HtmlExp, CgiEnv -> (Maybe a,HtmlState))
 generateWUI wuiSpecA val = hst2result (showhtml wparams val)
@@ -919,26 +919,25 @@ generateWUI wuiSpecA val = hst2result (showhtml wparams val)
     hst2result (htmledits,wstate) = (htmledits, \env -> readval wparams env wstate)
     WuiSpec wparams showhtml readval = wuiSpecA (Just val)
 
-showAndReadWUI :: WuiLensSpec a -> (a -> IO HtmlForm)
+showAndReadWUI :: a -> WuiLensSpec a -> (a -> IO HtmlForm)
                             -> (HtmlExp -> WuiHandler -> IO HtmlForm)
                             -> (HtmlExp,CgiEnv -> (Maybe a,HtmlState))
                             -> (HtmlExp,WuiHandler)
-showAndReadWUI wSpecA store errorform (htmledits,readenv) =
-  (htmledits, WHandler (htmlhandler wSpecA))
+showAndReadWUI valA wSpecA store errorForm (htmlEdits,readEnv) =
+  (htmlEdits, WHandler htmlHandler)
  where
-  htmlhandler mToWui env =
-    let (mbnewval, (htmlerrform,errwstate)) = readenv env
-     in maybe (let (errhexp,errhdl) =
-                      showAndReadWUI mToWui
-                                     store
-                                     errorform
-                                     (htmlerrform,
-                                      \errenv -> readval wparams errenv errwstate)
-               in errorform errhexp errhdl)
-              (\newval -> seq (normalForm newval) -- to strip off unused lvars
-                              (store newval))
-              mbnewval
-  WuiSpec wparams _ readval = wSpecA Nothing
-
+  htmlHandler env =
+    maybe (errorForm errorExp errorHandler)
+          (\newVal -> seq (normalForm newVal) -- to strip off unused lvars
+                          (store newVal))
+          mValNew
+  (mValNew, (htmlErrorForm,errorWState)) = readEnv env
+  WuiSpec wParams _ readVal = wSpecA (Just valA)
+  (errorExp,errorHandler) =
+    showAndReadWUI valA
+                   wSpecA
+                   store
+                   errorForm
+                   (htmlErrorForm, \env -> readVal wParams env errorWState)
 
 --------------------------------------------------------------------------

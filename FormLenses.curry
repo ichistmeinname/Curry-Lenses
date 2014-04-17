@@ -148,7 +148,7 @@ address = isoLens inn out <.> keepFst
 
 
 addressWui :: WuiLensSpec Person
-addressWui = transformWSpec address (textWui "Address: " *> wString <* wHtml breakline)
+addressWui = transformWSpec address wRequiredString
 
 testPage person = form "WUI" [ addressHtml
                              , wuiHandler2button "Change Address" addressHandler]
