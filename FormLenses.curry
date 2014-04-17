@@ -49,7 +49,7 @@ noHtml = []
 unitForm :: FormLens ()
 unitForm = \_ is -> (noHtml, const (Just ()), is)
 
-unitWui :: WuiSpec ()
+unitWui :: WuiLensSpec ()
 unitWui = wHidden
 
 (<<*>>) :: FormLens a -> FormLens b -> FormLens (a,b)
@@ -71,10 +71,10 @@ fa <<* fu = lmap remSndOne (fa <<*>> fu)
 (*>>) :: FormLens () -> FormLens a -> FormLens a
 fu *>> fa = lmap remFstOne (fu <<*>> fa)
 
-(<*) :: WuiSpec a -> WuiSpec Unit -> WuiSpec a
+(<*) :: WuiLensSpec a -> WuiLensSpec Unit -> WuiLensSpec a
 wa <* wu = transformWSpec remSndOne' (wa `wPair` wu)
 
-(*>) :: WuiSpec Unit -> WuiSpec a -> WuiSpec a
+(*>) :: WuiLensSpec Unit -> WuiLensSpec a -> WuiLensSpec a
 wu *> wa = transformWSpec remFstOne' (wu `wPair` wa)
 
 remSndOne' :: Lens a (a,Unit)
@@ -86,13 +86,13 @@ remFstOne' = remFst (const Unit)
 htmlL :: HtmlExp -> FormLens ()
 htmlL h = \_ i -> ([h], \_ -> Just (), i)
 
-htmlWui :: HtmlExp -> WuiSpec Unit
+htmlWui :: HtmlExp -> WuiLensSpec Unit
 htmlWui h = wConstant (\Unit -> h)
 
 textL :: String -> FormLens ()
 textL s = htmlL (htxt s)
 
-textWui :: String -> WuiSpec Unit
+textWui :: String -> WuiLensSpec Unit
 textWui s = wHtml (htxt s)
 
 inputIntL :: FormLens Int
@@ -102,7 +102,7 @@ inputIntL = \v i@(h:t) ->
      , \e -> fmap readTerm (lookup n e)
      , (h+1):t)
 
--- inputIntWui :: WuiSpec Int
+-- inputIntWui :: WuiLensSpec Int
 -- inputIntWui = wInt
 
 numberField :: String -> String -> HtmlExp
@@ -124,17 +124,15 @@ dateL :: FormLens Date
 dateL = lmap dateLens (textL "Month: " *>> inputIntL <<* htmlL breakline
                    <<* textL "Day: " <<*>> inputIntL <<* htmlL breakline)
 
-dateWui :: WuiSpec Date
+dateWui :: WuiLensSpec Date
 dateWui = transformWSpec dateLens (textWui "Month: " *> wInt <* wHtml breakline
                                  <* textWui "Day: " `wPair` wInt <* wHtml breakline)
 
-dateTest :: WuiSpec Int
+dateTest :: WuiLensSpec Int
 dateTest = textWui "test" *> wInt
 
 mainForm = let (html,_,_) = dateL (Just date) [1..10]
            in return $ form "test" html
-
-dateForm = mainWUI dateWui date resultForm
 
 date :: Date
 date = Date 4 15
@@ -148,11 +146,24 @@ address = isoLens inn out <.> keepFst
   inn ((key, first, last), address)   = Person key first last address
   out (Person key first last address) = ((key, first, last), address) 
 
-addressWui :: WuiSpec Person
+
+addressWui :: WuiLensSpec Person
 addressWui = transformWSpec address (textWui "Address: " *> wString <* wHtml breakline)
 
-addressForm = mainWUI addressWui (Person 1 "Bastian" "Holst" "Gaarden") resultForm
+testPage person = form "WUI" [ addressHtml
+                             , wuiHandler2button "Change Address" addressHandler]
+ where
+  (addressHtml, addressHandler) = wui2html addressWui person personResultForm
 
-resultForm :: a -> IO HtmlForm
-resultForm v = return $ form "Result"
-                 [htxt ("Modified value: " ++ showQTerm v)]
+
+personResultForm :: Person -> IO HtmlForm
+personResultForm p = return $ form "Result"
+                 [ htxt ("Modified value: " ++ showQTerm p)
+                 , breakline
+                 , button "back" (\_ -> return (testPage p))]
+
+bastian :: Person
+bastian = Person 0 "Bastian" "Holst" "Gaarden"
+
+test :: IO HtmlForm
+test = return $ testPage bastian

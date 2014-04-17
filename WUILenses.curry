@@ -13,7 +13,7 @@
 
 module WUILenses(--WuiState,cgiRef2state,state2cgiRef,value2state,state2value,
            --states2state,state2states,altstate2state,state2altstate,
-           Rendering,WuiSpec,Unit(..),
+           Rendering,WuiLensSpec,Unit(..),
            withRendering,withError,withCondition,transformWSpec,
            wHidden,wConstant,wHtml,wInt,
            wString,wStringSize,wRequiredString,wRequiredStringSize,wTextArea,
@@ -44,6 +44,10 @@ infixl 0 `withError`
 infixl 0 `withCondition`
 
 data Unit = Unit
+
+maybeMap :: (a -> b) -> Maybe a -> Maybe b
+maybeMap _ Nothing  = Nothing
+maybeMap f (Just v) = Just (f v)
 
 ------------------------------------------------------------------------------
 --- An internal WUI state is used to maintain the cgi references of the input
@@ -123,27 +127,34 @@ wuiHandler2button title (WHandler handler) = button title handler
 --- If the value is not legal, Nothing is returned. The second component
 --- of the result contains an HTML edit expression
 --- together with a WUI state to edit the value again.
+type WuiLensSpec a = Maybe a -> WuiSpec a
+
 data WuiSpec a =
   WuiSpec (WuiParams a)
           (WuiParams a -> a -> HtmlState)
           (WuiParams a -> CgiEnv -> WuiState -> (Maybe a,HtmlState))
 
 --- Puts a new rendering function into a WUI specification.
-withRendering :: WuiSpec a -> Rendering -> WuiSpec a
-withRendering (WuiSpec (_,errmsg,legal) showhtml readvalue) render =
+withRendering :: WuiLensSpec a -> Rendering -> WuiLensSpec a
+withRendering wuiSpec render mVal =
   WuiSpec (render,errmsg,legal) showhtml readvalue
 
+ where
+  WuiSpec (_,errmsg,legal) showhtml readvalue = wuiSpec mVal
 
 --- Puts a new error message into a WUI specification.
-withError :: WuiSpec a -> String -> WuiSpec a
-withError (WuiSpec (render,_,legal) showhtml readvalue) errmsg =
+withError :: WuiLensSpec a -> String -> WuiLensSpec a
+withError wuiSpec errmsg mVal =
   WuiSpec (render,errmsg,legal) showhtml readvalue
+ where
+  WuiSpec (render,_,legal) showhtml readvalue = wuiSpec mVal
 
 --- Puts a new condition into a WUI specification.
-withCondition :: WuiSpec a -> (a -> Bool) -> WuiSpec a
-withCondition (WuiSpec (render,errmsg,_) showhtml readvalue) legal =
-              (WuiSpec (render,errmsg,legal) showhtml readvalue)
-
+withCondition :: WuiLensSpec a -> (a -> Bool) -> WuiLensSpec a
+withCondition wuiSpec legal mVal =
+  WuiSpec (render,errmsg,legal) showhtml readvalue
+ where
+   WuiSpec (render,errmsg,_) showhtml readvalue = wuiSpec mVal
 
 -- Lens b a = { put := Maybe b -> a -> b
 --            , get := b -> a
@@ -162,18 +173,18 @@ withCondition (WuiSpec (render,errmsg,_) showhtml readvalue) legal =
 --   transParam toa (render,errmsg,legal) = (render,errmsg,legal . toa)
 
 --- Transforms a WUI specification from one type to another.
-transformWSpec :: Lens b a -> WuiSpec a -> WuiSpec b
-transformWSpec lens (WuiSpec wparamsa showhtmla readvaluea) =
+transformWSpec :: Lens b a -> WuiLensSpec a -> WuiLensSpec b
+transformWSpec lens wuiSpec mValB =
   WuiSpec (transParam (get' lens) wparamsa)
-          (\wparamsb b -> showhtmla (transParam (put' lens (Just b)) wparamsb)
+          (\wparamsb b -> showhtmla (transParam (put' lens mValB) wparamsb)
                                     (get' lens b))
           (\wparamsb env wst ->
-            let (mba,errv) = readvaluea (transParam (put' lens Nothing) wparamsb) env wst
-             in (maybe Nothing (Just . (put' lens Nothing)) mba, errv))
+            let (mba,errv) = readvaluea (transParam (put' lens mValB) wparamsb) env wst
+             in (maybeMap (put' lens mValB) mba, errv))
  where
   transParam :: (b->a) -> WuiParams a -> WuiParams b
   transParam toa (render,errmsg,legal) = (render,errmsg,legal . toa)
-
+  WuiSpec wparamsa showhtmla readvaluea = wuiSpec (maybeMap (get' lens) mValB)
 
 ------------------------------------------------------------------------------
 -- A collection of basic WUIs and WUI combinators:
@@ -181,32 +192,32 @@ transformWSpec lens (WuiSpec wparamsa showhtmla readvaluea) =
 --- A hidden widget for a value that is not shown in the WUI.
 --- Usually, this is used in components of larger
 --- structures, e.g., internal identifiers, data base keys.
-wHidden :: WuiSpec a
-wHidden =
+wHidden :: WuiLensSpec a
+wHidden _ =
   WuiSpec (head,"?",const True) -- dummy values, not used
           (\_ v -> (hempty, value2state v))
           (\_ _ s -> (Just (state2value s), (hempty,s)))
 
-wHtml :: HtmlExp -> WuiSpec Unit
-wHtml h =
+wHtml :: HtmlExp -> WuiLensSpec Unit
+wHtml h _ =
   WuiSpec (head,"?",const True)
           (\wparams v -> ((renderOf wparams) [h], value2state v))
-          (\(render,_,_) _ s -> let v = (state2value s :: Unit) in
+          (\(render,_,_) _ s -> let v = state2value s in
                                 (Just v, (render [h],s)))
 
 --- A widget for values that are shown but cannot be modified.
 --- The first argument is a mapping of the value into a HTML expression
 --- to show this value.
-wConstant :: (a->HtmlExp) -> WuiSpec a
-wConstant showhtml =
+wConstant :: (a->HtmlExp) -> WuiLensSpec a
+wConstant showhtml _ =
   WuiSpec (head,"?",const True)
           (\wparams v -> ((renderOf wparams) [showhtml v], value2state v))
           (\(render,_,_) _ s -> let v = state2value s in
                                 (Just v, (render [showhtml v],s)))
 
 --- A widget for editing integer values.
-wInt :: WuiSpec Int
-wInt =
+wInt :: WuiLensSpec Int
+wInt _ =
   WuiSpec (head,"Illegal integer:",const True)
           (\wparams v -> intWidget (renderOf wparams) (show v))
           (\(render,errmsg,legal) env s ->
@@ -260,17 +271,17 @@ removeCRs (c1:c2:cs) =
                           else c1 : removeCRs (c2:cs)
 
 --- A widget for editing string values.
-wString :: WuiSpec String
-wString = wStringAttrs []
+wString :: WuiLensSpec String
+wString mVal = wStringAttrs [] mVal
 
 --- A widget for editing string values with a size attribute.
-wStringSize :: Int -> WuiSpec String
-wStringSize size = wStringAttrs [("size",show size)]
+wStringSize :: Int -> WuiLensSpec String
+wStringSize size mVal = wStringAttrs [("size",show size)] mVal
 
 --- A widget for editing string values with some attributes for the
 --- text field.
-wStringAttrs :: [(String,String)] -> WuiSpec String
-wStringAttrs attrs =
+wStringAttrs :: [(String,String)] -> WuiLensSpec String
+wStringAttrs attrs _ =
   WuiSpec (head, "?", const True)
           (\wparams v -> stringWidget (renderOf wparams) v)
           (\wparams env s ->
@@ -282,22 +293,22 @@ wStringAttrs attrs =
     (render [foldr (flip addAttr) (textfield ref v) attrs], cgiRef2state ref)
 
 --- A widget for editing string values that are required to be non-empty.
-wRequiredString :: WuiSpec String
+wRequiredString :: WuiLensSpec String
 wRequiredString =
   wString `withError`     "Missing input:"
-          `withCondition` (not . null)
+               `withCondition` (not . null)
 
 --- A widget with a size attribute for editing string values
 --- that are required to be non-empty.
-wRequiredStringSize :: Int -> WuiSpec String
+wRequiredStringSize :: Int -> WuiLensSpec String
 wRequiredStringSize size =
   wStringSize size `withError`     "Missing input:"
-                   `withCondition` (not . null)
+                        `withCondition` (not . null)
 
 --- A widget for editing string values in a text area.
 --- The argument specifies the height and width of the text area.
-wTextArea :: (Int,Int) -> WuiSpec String
-wTextArea dims =
+wTextArea :: (Int,Int) -> WuiLensSpec String
+wTextArea dims _ =
   WuiSpec (head, "?", const True)
           (\wparams v -> textareaWidget (renderOf wparams) v)
           (\wparams env s ->
@@ -312,8 +323,8 @@ wTextArea dims =
 --- The current value should be contained in the value list and is preselected.
 --- The first argument is a mapping from values into strings to be shown
 --- in the selection widget.
-wSelect :: (a->String) -> [a] -> WuiSpec a
-wSelect showelem selset =
+wSelect :: (a->String) -> [a] -> WuiLensSpec a
+wSelect showelem selset _ =
   WuiSpec (head,"?",const True)
           (\wparams v -> selWidget (renderOf wparams) v)
           (\wparams env s ->
@@ -332,8 +343,8 @@ wSelect showelem selset =
 --- A widget to select a value from a given list of integers (provided as
 --- the argument).
 --- The current value should be contained in the value list and is preselected.
-wSelectInt :: [Int] -> WuiSpec Int
-wSelectInt = wSelect show
+wSelectInt :: [Int] -> WuiLensSpec Int
+wSelectInt mVal = wSelect show mVal
 
 --- A widget to select a Boolean value via a selection box.
 --- The arguments are the strings that are shown for the values
@@ -341,14 +352,14 @@ wSelectInt = wSelect show
 --- @param true - string for selection of True
 --- @param false - string for selection of False
 --- @return a WUI specification for a Boolean selection widget
-wSelectBool :: String -> String -> WuiSpec Bool
-wSelectBool true false = wSelect (\b->if b then true else false) [True,False]
+wSelectBool :: String -> String -> WuiLensSpec Bool
+wSelectBool true false mVal = wSelect (\b->if b then true else false) [True,False] mVal
 
 --- A widget to select a Boolean value via a check box.
 --- The first argument are HTML expressions that are shown after the
 --- check box.  The result is True if the box is checked.
-wCheckBool :: [HtmlExp] -> WuiSpec Bool
-wCheckBool hexps =
+wCheckBool :: [HtmlExp] -> WuiLensSpec Bool
+wCheckBool hexps _ =
   WuiSpec (head, "?", const True)
           (\wparams v -> checkWidget (renderOf wparams) v)
           (\wparams env s ->
@@ -363,8 +374,8 @@ wCheckBool hexps =
 --- The current values should be contained in the value list and are preselected.
 --- The first argument is a mapping from values into HTML expressions
 --- that are shown for each item after the check box.
-wMultiCheckSelect :: (a->[HtmlExp]) -> [a] -> WuiSpec [a]
-wMultiCheckSelect showelem selset =
+wMultiCheckSelect :: (a->[HtmlExp]) -> [a] -> WuiLensSpec [a]
+wMultiCheckSelect showelem selset _ =
   WuiSpec (renderTuple, tupleError, const True)
           (\wparams vs -> checkWidget (renderOf wparams) vs)
           (\wparams env st ->
@@ -387,8 +398,8 @@ newVars = unknown : newVars
 --- The current value should be contained in the value list and is preselected.
 --- The first argument is a mapping from values into HTML expressions
 --- that are shown for each item after the radio button.
-wRadioSelect :: (a->[HtmlExp]) -> [a] -> WuiSpec a
-wRadioSelect showelem selset =
+wRadioSelect :: (a->[HtmlExp]) -> [a] -> WuiLensSpec a
+wRadioSelect showelem selset _ =
   WuiSpec (renderTuple, tupleError, const True)
           (\wparams v -> radioWidget (renderOf wparams) v)
           (\wparams env s ->
@@ -410,14 +421,14 @@ wRadioSelect showelem selset =
 --- @param true - HTML expressions for True radio button
 --- @param false - HTML expressions for False radio button
 --- @return a WUI specification for a Boolean selection widget
-wRadioBool :: [HtmlExp] -> [HtmlExp] -> WuiSpec Bool
+wRadioBool :: [HtmlExp] -> [HtmlExp] -> WuiLensSpec Bool
 wRadioBool truehexps falsehexps =
   wRadioSelect (\b->if b then truehexps else falsehexps) [True,False]
 
 
 --- WUI combinator for pairs.
-wPair :: WuiSpec a -> WuiSpec b -> WuiSpec (a,b)
-wPair (WuiSpec rendera showa reada) (WuiSpec renderb showb readb) =
+wPair :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec (a,b)
+wPair wuiSpecA wuiSpecB mValAB =
   WuiSpec (renderTuple, tupleError, const True) showc readc
  where
   showc wparams (va,vb) =
@@ -437,12 +448,16 @@ wPair (WuiSpec rendera showa reada) (WuiSpec renderb showb readb) =
              if legal value
              then (Just value, (render errhexps, errstate))
              else (Nothing,    (renderError render errmsg errhexps, errstate))
+  WuiSpec rendera showa reada = wuiSpecA mValA
+  WuiSpec renderb showb readb = wuiSpecB mValB
+  (mValA,mValB) = case mValAB of
+               Nothing    -> (Nothing, Nothing)
+               Just (a,b) -> (Just a, Just b)
 
 
 --- WUI combinator for triples.
-wTriple :: WuiSpec a -> WuiSpec b -> WuiSpec c -> WuiSpec (a,b,c)
-wTriple (WuiSpec rendera showa reada) (WuiSpec renderb showb readb)
-        (WuiSpec renderc showc readc) =
+wTriple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec (a,b,c)
+wTriple wuiSpecA wuiSpecB wuiSpecC mValABC =
   WuiSpec (renderTuple, tupleError, const True) showd readd
  where
   showd wparams (va,vb,vc) =
@@ -464,9 +479,15 @@ wTriple (WuiSpec rendera showa reada) (WuiSpec renderb showb readb)
              if legal value
              then (Just value, (render errhexps, errstate))
              else (Nothing,    (renderError render errmsg errhexps, errstate))
+  WuiSpec rendera showa reada = wuiSpecA mValA
+  WuiSpec renderb showb readb = wuiSpecB mValB
+  WuiSpec renderc showc readc = wuiSpecC mValC
+  (mValA,mValB,mValC) = case mValABC of
+                 Nothing      -> (Nothing, Nothing, Nothing)
+                 Just (a,b,c) -> (Just a, Just b, Just c)
 
 --- WUI combinator for tuples of arity 4.
-w4Tuple :: WuiSpec a -> WuiSpec b -> WuiSpec c -> WuiSpec d -> WuiSpec (a,b,c,d)
+w4Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec (a,b,c,d)
 w4Tuple wa wb wc wd =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (wPair wa wb) (wPair wc wd))
@@ -475,8 +496,8 @@ w4Tuple wa wb wc wd =
   inn ((a,b),(c,d)) = (a,b,c,d)
 
 --- WUI combinator for tuples of arity 5.
-w5Tuple :: WuiSpec a -> WuiSpec b -> WuiSpec c -> WuiSpec d -> WuiSpec e ->
-           WuiSpec (a,b,c,d,e)
+w5Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
+           WuiLensSpec (a,b,c,d,e)
 w5Tuple wa wb wc wd we =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (wTriple wa wb wc) (wPair wd we))
@@ -485,8 +506,8 @@ w5Tuple wa wb wc wd we =
   inn ((a,b,c),(d,e)) = (a,b,c,d,e)
 
 --- WUI combinator for tuples of arity 6.
-w6Tuple :: WuiSpec a -> WuiSpec b -> WuiSpec c -> WuiSpec d -> WuiSpec e ->
-           WuiSpec f -> WuiSpec (a,b,c,d,e,f)
+w6Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
+           WuiLensSpec f -> WuiLensSpec (a,b,c,d,e,f)
 w6Tuple wa wb wc wd we wf =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (wTriple wa wb wc) (wTriple wd we wf))
@@ -495,8 +516,8 @@ w6Tuple wa wb wc wd we wf =
   inn ((a,b,c),(d,e,f)) = (a,b,c,d,e,f)
 
 --- WUI combinator for tuples of arity 7.
-w7Tuple :: WuiSpec a -> WuiSpec b -> WuiSpec c -> WuiSpec d -> WuiSpec e ->
-           WuiSpec f -> WuiSpec g -> WuiSpec (a,b,c,d,e,f,g)
+w7Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
+           WuiLensSpec f -> WuiLensSpec g -> WuiLensSpec (a,b,c,d,e,f,g)
 w7Tuple wa wb wc wd we wf wg =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (w4Tuple wa wb wc wd) (wTriple we wf wg))
@@ -505,8 +526,8 @@ w7Tuple wa wb wc wd we wf wg =
   inn ((a,b,c,d),(e,f,g)) = (a,b,c,d,e,f,g)
 
 --- WUI combinator for tuples of arity 8.
-w8Tuple :: WuiSpec a -> WuiSpec b -> WuiSpec c -> WuiSpec d -> WuiSpec e ->
-           WuiSpec f -> WuiSpec g -> WuiSpec h -> WuiSpec (a,b,c,d,e,f,g,h)
+w8Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
+           WuiLensSpec f -> WuiLensSpec g -> WuiLensSpec h -> WuiLensSpec (a,b,c,d,e,f,g,h)
 w8Tuple wa wb wc wd we wf wg wh =
   transformWSpec (isoLens inn out)
              (wJoinTuple (w4Tuple wa wb wc wd) (w4Tuple we wf wg wh))
@@ -515,9 +536,9 @@ w8Tuple wa wb wc wd we wf wg wh =
   inn ((a,b,c,d),(e,f,g,h)) = (a,b,c,d,e,f,g,h)
 
 --- WUI combinator for tuples of arity 9.
-w9Tuple :: WuiSpec a -> WuiSpec b -> WuiSpec c -> WuiSpec d -> WuiSpec e ->
-           WuiSpec f -> WuiSpec g -> WuiSpec h -> WuiSpec i ->
-           WuiSpec (a,b,c,d,e,f,g,h,i)
+w9Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
+           WuiLensSpec f -> WuiLensSpec g -> WuiLensSpec h -> WuiLensSpec i ->
+           WuiLensSpec (a,b,c,d,e,f,g,h,i)
 w9Tuple wa wb wc wd we wf wg wh wi =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (w5Tuple wa wb wc wd we) (w4Tuple wf wg wh wi))
@@ -526,9 +547,9 @@ w9Tuple wa wb wc wd we wf wg wh wi =
   inn ((a,b,c,d,e),(f,g,h,i)) = (a,b,c,d,e,f,g,h,i)
 
 --- WUI combinator for tuples of arity 10.
-w10Tuple :: WuiSpec a -> WuiSpec b -> WuiSpec c -> WuiSpec d -> WuiSpec e ->
-            WuiSpec f -> WuiSpec g -> WuiSpec h -> WuiSpec i -> WuiSpec j ->
-            WuiSpec (a,b,c,d,e,f,g,h,i,j)
+w10Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
+            WuiLensSpec f -> WuiLensSpec g -> WuiLensSpec h -> WuiLensSpec i -> WuiLensSpec j ->
+            WuiLensSpec (a,b,c,d,e,f,g,h,i,j)
 w10Tuple wa wb wc wd we wf wg wh wi wj =
   transformWSpec (isoLens inn out)
              (wJoinTuple (w5Tuple wa wb wc wd we) (w5Tuple wf wg wh wi wj))
@@ -537,9 +558,9 @@ w10Tuple wa wb wc wd we wf wg wh wi wj =
   inn ((a,b,c,d,e),(f,g,h,i,j)) = (a,b,c,d,e,f,g,h,i,j)
 
 --- WUI combinator for tuples of arity 11.
-w11Tuple :: WuiSpec a -> WuiSpec b -> WuiSpec c -> WuiSpec d -> WuiSpec e ->
-            WuiSpec f -> WuiSpec g -> WuiSpec h -> WuiSpec i -> WuiSpec j ->
-            WuiSpec k -> WuiSpec (a,b,c,d,e,f,g,h,i,j,k)
+w11Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
+            WuiLensSpec f -> WuiLensSpec g -> WuiLensSpec h -> WuiLensSpec i -> WuiLensSpec j ->
+            WuiLensSpec k -> WuiLensSpec (a,b,c,d,e,f,g,h,i,j,k)
 w11Tuple wa wb wc wd we wf wg wh wi wj wk =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (w5Tuple wa wb wc wd we) (w6Tuple wf wg wh wi wj wk))
@@ -548,9 +569,9 @@ w11Tuple wa wb wc wd we wf wg wh wi wj wk =
   inn ((a,b,c,d,e),(f,g,h,i,j,k)) = (a,b,c,d,e,f,g,h,i,j,k)
 
 --- WUI combinator for tuples of arity 12.
-w12Tuple :: WuiSpec a -> WuiSpec b -> WuiSpec c -> WuiSpec d -> WuiSpec e ->
-            WuiSpec f -> WuiSpec g -> WuiSpec h -> WuiSpec i -> WuiSpec j ->
-            WuiSpec k -> WuiSpec l -> WuiSpec (a,b,c,d,e,f,g,h,i,j,k,l)
+w12Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
+            WuiLensSpec f -> WuiLensSpec g -> WuiLensSpec h -> WuiLensSpec i -> WuiLensSpec j ->
+            WuiLensSpec k -> WuiLensSpec l -> WuiLensSpec (a,b,c,d,e,f,g,h,i,j,k,l)
 w12Tuple wa wb wc wd we wf wg wh wi wj wk wl =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (w6Tuple wa wb wc wd we wf) (w6Tuple wg wh wi wj wk wl))
@@ -563,8 +584,8 @@ w12Tuple wa wb wc wd we wf wg wh wi wj wk wl =
 --- tuple provided that the components are already rendered as tuples,
 --- i.e., by the rendering function <code>renderTuple</code>.
 --- This combinator is useful to define combinators for large tuples.
-wJoinTuple :: WuiSpec a -> WuiSpec b -> WuiSpec (a,b)
-wJoinTuple (WuiSpec rendera showa reada) (WuiSpec renderb showb readb) =
+wJoinTuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec (a,b)
+wJoinTuple wuiSpecA wuiSpecB mValAB =
   WuiSpec (renderTuple, tupleError, const True) showc readc
  where
   render2joinrender render [h1,h2] =
@@ -590,12 +611,17 @@ wJoinTuple (WuiSpec rendera showa reada) (WuiSpec renderb showb readb) =
              if legal value
              then (Just value, (render errhexps, errstate))
              else (Nothing,    (renderError render errmsg errhexps, errstate))
+  WuiSpec rendera showa reada = wuiSpecA mValA
+  WuiSpec renderb showb readb = wuiSpecB mValB
+  (mValA,mValB) = case mValAB of
+                       Nothing    -> (Nothing, Nothing)
+                       Just (a,b) -> (Just a, Just b)
 
 
 --- WUI combinator for list structures where the list elements are vertically
 --- aligned in a table.
-wList :: WuiSpec a -> WuiSpec [a]
-wList (WuiSpec rendera showa reada) =
+wList :: WuiLensSpec a -> WuiLensSpec [a]
+wList wuiSpecA mValLA =
   WuiSpec (renderList,"Illegal list:",const True)
           (\wparams vas ->
               listWidget (renderOf wparams) (unzip (map (showa rendera) vas)))
@@ -610,9 +636,13 @@ wList (WuiSpec rendera showa reada) =
                                                (unzip (map snd rvs))) )
  where
   listWidget render (hes,refs) = (render hes, states2state refs)
+  WuiSpec rendera showa reada = wuiSpecA mValA
+  mValA = case mValLA of
+               Nothing     -> Nothing
+               Just (x:xs) -> Just x
 
 --- Add headings to a standard WUI for list structures:
-wListWithHeadings :: [String] -> WuiSpec a -> WuiSpec [a]
+wListWithHeadings :: [String] -> WuiLensSpec a -> WuiLensSpec [a]
 wListWithHeadings headings wspec =
   wList wspec `withRendering` renderHeadings
  where
@@ -620,14 +650,14 @@ wListWithHeadings headings wspec =
 
 --- WUI combinator for list structures where the list elements are horizontally
 --- aligned in a table.
-wHList :: WuiSpec a -> WuiSpec [a]
+wHList :: WuiLensSpec a -> WuiLensSpec [a]
 wHList wspec = wList wspec `withRendering` renderTuple
 
 
 --- WUI for matrices, i.e., list of list of elements
 --- visualized as a matrix.
-wMatrix :: WuiSpec a -> WuiSpec [[a]]
-wMatrix wspec = wList (wHList wspec)
+wMatrix :: WuiLensSpec a -> WuiLensSpec [[a]]
+wMatrix wspec mVal = wList (wHList wspec) mVal
 
 
 --- WUI for Maybe values. It is constructed from a WUI for
@@ -637,8 +667,8 @@ wMatrix wspec = wList (wHList wspec)
 --- @param wspecb - a WUI specification for Boolean values
 --- @param wspeca - a WUI specification for the type of potential values
 --- @param def - a default value that is used if the current value is Nothing
-wMaybe :: WuiSpec Bool -> WuiSpec a -> a -> WuiSpec (Maybe a)
-wMaybe (WuiSpec paramb showb readb) (WuiSpec parama showa reada) def =
+wMaybe :: WuiLensSpec Bool -> WuiLensSpec a -> a -> WuiLensSpec (Maybe a)
+wMaybe wuiSpecBool wuiSpecA def mValA =
  WuiSpec
    (renderTuple, tupleError, const True)
    (\wparams mbs ->
@@ -659,14 +689,20 @@ wMaybe (WuiSpec paramb showb readb) (WuiSpec parama showa reada) def =
               if legal value
               then (Just value, (render errhexps, errstate))
               else (Nothing,    (renderError render errmsg errhexps, errstate)))
+ where
+  WuiSpec paramb showb readb = wuiSpecBool (Just (mVal /= Nothing))
+  WuiSpec parama showa reada = wuiSpecA mVal
+  mVal = case mValA of
+              Just v -> v
+              Nothing -> Nothing
 
 --- A WUI for Maybe values where a check box is used to select Just.
 --- The value WUI is shown after the check box.
 --- @param wspec - a WUI specification for the type of potential values
 --- @param hexps - a list of HTML expressions shown after the check box
 --- @param def - a default value if the current value is Nothing
-wCheckMaybe :: WuiSpec a -> [HtmlExp] -> a -> WuiSpec (Maybe a)
-wCheckMaybe wspec exps = wMaybe (wCheckBool exps) wspec
+wCheckMaybe :: WuiLensSpec a -> [HtmlExp] -> a -> WuiLensSpec (Maybe a)
+wCheckMaybe wspec exps def = wMaybe (wCheckBool exps) wspec def
 
 --- A WUI for Maybe values where radio buttons are used to switch
 --- between Nothing and Just.
@@ -675,8 +711,8 @@ wCheckMaybe wspec exps = wMaybe (wCheckBool exps) wspec
 --- @param hexps - a list of HTML expressions shown after the Nothing button
 --- @param hexps - a list of HTML expressions shown after the Just button
 --- @param def - a default value if the current value is Nothing
-wRadioMaybe :: WuiSpec a -> [HtmlExp] -> [HtmlExp] -> a -> WuiSpec (Maybe a)
-wRadioMaybe wspec hnothing hjust = wMaybe wBool wspec
+wRadioMaybe :: WuiLensSpec a -> [HtmlExp] -> [HtmlExp] -> a -> WuiLensSpec (Maybe a)
+wRadioMaybe wspec hnothing hjust def mVal= wMaybe wBool wspec def mVal
  where
   wBool = wRadioSelect (\b->if b then hjust else hnothing) [False,True]
 
@@ -684,8 +720,8 @@ wRadioMaybe wspec hnothing hjust = wMaybe wBool wspec
 --- WUI for union types.
 --- Here we provide only the implementation for Either types
 --- since other types with more alternatives can be easily reduced to this case.
-wEither :: WuiSpec a -> WuiSpec b -> WuiSpec (Either a b)
-wEither (WuiSpec rendera showa reada) (WuiSpec renderb showb readb) =
+wEither :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec (Either a b)
+wEither wuiSpecA wuiSpecB mValEitherAB =
  WuiSpec (head, "?", const True) showEither readEither
  where
   showEither wparams (Left va) =
@@ -711,6 +747,12 @@ wEither (WuiSpec rendera showa reada) (WuiSpec renderb showb readb) =
         else if legal value
              then (Just value, (render [hexp], altstate))
              else (Nothing,    (renderError render errmsg [hexp], altstate))
+  WuiSpec rendera showa reada = wuiSpecA mValA
+  WuiSpec renderb showb readb = wuiSpecB mValB
+  (mValA,mValB) = case mValEitherAB of
+                       Nothing        -> (Nothing, Nothing)
+                       Just (Left v)  -> (Just v, Nothing)
+                       Just (Right v) -> (Nothing, Just v)
 
 --- A simple tree structure to demonstrate the construction of WUIs for tree
 --- types.
@@ -719,8 +761,8 @@ data WTree a = WLeaf a | WNode [WTree a]
 --- WUI for tree types.
 --- The rendering specifies the rendering of inner nodes.
 --- Leaves are shown with their default rendering.
-wTree :: WuiSpec a -> WuiSpec (WTree a)
-wTree (WuiSpec rendera showa reada) =
+wTree :: WuiLensSpec a -> WuiLensSpec (WTree a)
+wTree wuiSpecA mValTree =
  WuiSpec (renderList, "Illegal tree:", const True) showTree readTree
  where
   showTree _ (WLeaf va) =
@@ -749,6 +791,11 @@ wTree (WuiSpec rendera showa reada) =
              then (Just value, (rendertree hexps, altstate))
              else (Nothing,    (renderError rendertree (errorOf wpar) hexps,
                                 altstate))
+  WuiSpec rendera showa reada = wuiSpecA mValA
+  mValA = case mValTree of
+               Just (WLeaf v) -> Just v
+               Just (WNode _) -> Nothing
+               Nothing        -> Nothing
 
 
 -------------------------------------------------------------------------------
@@ -831,14 +878,14 @@ mergeRowWithSingleTableData
 
 --- Generates an HTML form from a WUI data specification,
 --- an initial value and an update form.
-mainWUI :: WuiSpec a -> a -> (a -> IO HtmlForm) -> IO HtmlForm
+mainWUI :: WuiLensSpec a -> a -> (a -> IO HtmlForm) -> IO HtmlForm
 mainWUI wuispec val store = do
   let (hexp,handler) = wui2html wuispec val store
   return $ form "WUI" [hexp, breakline, wuiHandler2button "Submit" handler]
 
 --- Generates HTML editors and a handler from a WUI data specification,
 --- an initial value and an update form.
-wui2html :: WuiSpec a -> a -> (a -> IO HtmlForm) -> (HtmlExp,WuiHandler)
+wui2html :: WuiLensSpec a -> a -> (a -> IO HtmlForm) -> (HtmlExp,WuiHandler)
 wui2html wspec val store = wuiWithErrorForm wspec val store standardErrorForm
 
 --- A standard error form for WUIs.
@@ -850,7 +897,7 @@ standardErrorForm hexp whandler =
 
 --- Puts a WUI into a HTML form containing "holes" for the WUI and the
 --- handler.
-wuiInForm :: WuiSpec a -> a -> (a -> IO HtmlForm)
+wuiInForm :: WuiLensSpec a -> a -> (a -> IO HtmlForm)
              -> (HtmlExp -> WuiHandler -> IO HtmlForm) -> IO HtmlForm
 wuiInForm wspec val store userform =
   answerForm (wuiWithErrorForm wspec val store userform)
@@ -860,28 +907,29 @@ wuiInForm wspec val store userform =
 --- Generates HTML editors and a handler from a WUI data specification,
 --- an initial value and an update form. In addition to wui2html,
 --- we can provide a skeleton form used to show illegal inputs.
-wuiWithErrorForm :: WuiSpec a -> a -> (a -> IO HtmlForm)
+wuiWithErrorForm :: WuiLensSpec a -> a -> (a -> IO HtmlForm)
                     -> (HtmlExp -> WuiHandler -> IO HtmlForm)
                     -> (HtmlExp,WuiHandler)
 wuiWithErrorForm wspec val store errorform =
         showAndReadWUI wspec store errorform (generateWUI wspec val)
 
-generateWUI :: WuiSpec a -> a -> (HtmlExp, CgiEnv -> (Maybe a,HtmlState))
-generateWUI (WuiSpec wparams showhtml readval) val = hst2result (showhtml wparams val)
+generateWUI :: WuiLensSpec a -> a -> (HtmlExp, CgiEnv -> (Maybe a,HtmlState))
+generateWUI wuiSpecA val = hst2result (showhtml wparams val)
   where
     hst2result (htmledits,wstate) = (htmledits, \env -> readval wparams env wstate)
+    WuiSpec wparams showhtml readval = wuiSpecA (Just val)
 
-showAndReadWUI :: WuiSpec a -> (a -> IO HtmlForm)
+showAndReadWUI :: WuiLensSpec a -> (a -> IO HtmlForm)
                             -> (HtmlExp -> WuiHandler -> IO HtmlForm)
                             -> (HtmlExp,CgiEnv -> (Maybe a,HtmlState))
                             -> (HtmlExp,WuiHandler)
-showAndReadWUI wspec store errorform (htmledits,readenv) =
-  (htmledits, WHandler (htmlhandler wspec))
+showAndReadWUI wSpecA store errorform (htmledits,readenv) =
+  (htmledits, WHandler (htmlhandler wSpecA))
  where
-  htmlhandler wui@(WuiSpec wparams _ readval) env =
+  htmlhandler mToWui env =
     let (mbnewval, (htmlerrform,errwstate)) = readenv env
      in maybe (let (errhexp,errhdl) =
-                      showAndReadWUI wui
+                      showAndReadWUI mToWui
                                      store
                                      errorform
                                      (htmlerrform,
@@ -890,6 +938,7 @@ showAndReadWUI wspec store errorform (htmledits,readenv) =
               (\newval -> seq (normalForm newval) -- to strip off unused lvars
                               (store newval))
               mbnewval
+  WuiSpec wparams _ readval = wSpecA Nothing
 
 
 --------------------------------------------------------------------------
