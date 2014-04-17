@@ -3,7 +3,7 @@
 # Definition of Curry installation to be used:
 CURRYEXEC=/Users/ichistmeinname/Documents/programming/kics2/bin/kics2
 
-LENSPATH=Users/ichistmeinname/Documents/programming/Curry-Lenses
+LENSPATH=/Users/ichistmeinname/Documents/programming/Curry-Lenses
 ORIGDIR=`pwd`                          # original directory (builtin)
 PROGNAME=`type $0 | awk '{print $3}'`  # search for executable on path
 PROGDIR=`dirname $PROGNAME`            # extract directory of program
