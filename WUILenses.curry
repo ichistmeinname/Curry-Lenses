@@ -256,11 +256,11 @@ removeCRs (c1:c2:cs) =
 
 --- A widget for editing string values.
 wString :: WuiLensSpec String
-wString mVal = wStringAttrs [] mVal
+wString = wStringAttrs []
 
 --- A widget for editing string values with a size attribute.
 wStringSize :: Int -> WuiLensSpec String
-wStringSize size mVal = wStringAttrs [("size",show size)] mVal
+wStringSize size = wStringAttrs [("size",show size)]
 
 --- A widget for editing string values with some attributes for the
 --- text field.
@@ -279,15 +279,15 @@ wStringAttrs attrs _ =
 --- A widget for editing string values that are required to be non-empty.
 wRequiredString :: WuiLensSpec String
 wRequiredString =
-  wString `withError`     "Missing input:"
-               `withCondition` (not . null)
+  wString `withError` "Missing input:"
+          `withCondition` (not . null)
 
 --- A widget with a size attribute for editing string values
 --- that are required to be non-empty.
 wRequiredStringSize :: Int -> WuiLensSpec String
 wRequiredStringSize size =
-  wStringSize size `withError`     "Missing input:"
-                        `withCondition` (not . null)
+  wStringSize size `withError` "Missing input:"
+                   `withCondition` (not . null)
 
 --- A widget for editing string values in a text area.
 --- The argument specifies the height and width of the text area.
@@ -296,11 +296,12 @@ wTextArea dims _ =
   WuiSpec (head, "?", const True)
           (\wparams v -> textareaWidget (renderOf wparams) v)
           (\wparams env s ->
-               checkLegalInput wparams textareaWidget
-                                       (filterStringInput (env (state2cgiRef s))))
+            checkLegalInput wparams textareaWidget
+                                    (filterStringInput (env (state2cgiRef s))))
  where
-  textareaWidget render v = let ref free in
-                            (render [textarea ref dims v], cgiRef2state ref)
+  textareaWidget render v =
+    let ref free
+    in (render [textarea ref dims v], cgiRef2state ref)
 
 
 --- A widget to select a value from a given list of values.
@@ -328,7 +329,7 @@ wSelect showelem selset _ =
 --- the argument).
 --- The current value should be contained in the value list and is preselected.
 wSelectInt :: [Int] -> WuiLensSpec Int
-wSelectInt mVal = wSelect show mVal
+wSelectInt = wSelect show
 
 --- A widget to select a Boolean value via a selection box.
 --- The arguments are the strings that are shown for the values
@@ -337,7 +338,7 @@ wSelectInt mVal = wSelect show mVal
 --- @param false - string for selection of False
 --- @return a WUI specification for a Boolean selection widget
 wSelectBool :: String -> String -> WuiLensSpec Bool
-wSelectBool true false mVal = wSelect (\b->if b then true else false) [True,False] mVal
+wSelectBool true false = wSelect (\b->if b then true else false) [True,False]
 
 --- A widget to select a Boolean value via a check box.
 --- The first argument are HTML expressions that are shown after the
@@ -372,11 +373,10 @@ wMultiCheckSelect showelem selset _ =
         numsetitems = zip refs selset
         showItem (ref,s) =
            inline ((if s `elem` vs then checkedbox else checkbox)
-                                                       ref "True" : showelem s)
-     in (render (map showItem numsetitems),
+                      ref "True" : showelem s)
+    in (render (map showItem numsetitems),
          states2state (map cgiRef2state refs))
-
-newVars = unknown : newVars
+  newVars = unknown : newVars
 
 --- A widget to select a value from a given list of values via a radio button.
 --- The current value should be contained in the value list and is preselected.
@@ -434,13 +434,16 @@ wPair wuiSpecA wuiSpecB mValAB =
              else (Nothing,    (renderError render errmsg errhexps, errstate))
   WuiSpec rendera showa reada = wuiSpecA mValA
   WuiSpec renderb showb readb = wuiSpecB mValB
-  (mValA,mValB) = case mValAB of
-               Nothing    -> (Nothing, Nothing)
-               Just (a,b) -> (Just a, Just b)
+  (mValA,mValB) = maybe (Nothing, Nothing)
+                        (\(a,b) -> (Just a, Just b))
+                        mValAB
 
 
 --- WUI combinator for triples.
-wTriple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec (a,b,c)
+wTriple :: WuiLensSpec a
+        -> WuiLensSpec b
+        -> WuiLensSpec c
+        -> WuiLensSpec (a,b,c)
 wTriple wuiSpecA wuiSpecB wuiSpecC mValABC =
   WuiSpec (renderTuple, tupleError, const True) showd readd
  where
@@ -466,12 +469,17 @@ wTriple wuiSpecA wuiSpecB wuiSpecC mValABC =
   WuiSpec rendera showa reada = wuiSpecA mValA
   WuiSpec renderb showb readb = wuiSpecB mValB
   WuiSpec renderc showc readc = wuiSpecC mValC
-  (mValA,mValB,mValC) = case mValABC of
-                 Nothing      -> (Nothing, Nothing, Nothing)
-                 Just (a,b,c) -> (Just a, Just b, Just c)
+  (mValA,mValB,mValC) =
+    maybe (Nothing, Nothing, Nothing)
+          (\(a,b,c) -> (Just a, Just b, Just c))
+          mValABC
 
 --- WUI combinator for tuples of arity 4.
-w4Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec (a,b,c,d)
+w4Tuple :: WuiLensSpec a
+        -> WuiLensSpec b
+        -> WuiLensSpec c
+        -> WuiLensSpec d
+        -> WuiLensSpec (a,b,c,d)
 w4Tuple wa wb wc wd =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (wPair wa wb) (wPair wc wd))
@@ -480,8 +488,12 @@ w4Tuple wa wb wc wd =
   inn ((a,b),(c,d)) = (a,b,c,d)
 
 --- WUI combinator for tuples of arity 5.
-w5Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
-           WuiLensSpec (a,b,c,d,e)
+w5Tuple :: WuiLensSpec a
+        -> WuiLensSpec b
+        -> WuiLensSpec c
+        -> WuiLensSpec d
+        -> WuiLensSpec e
+        -> WuiLensSpec (a,b,c,d,e)
 w5Tuple wa wb wc wd we =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (wTriple wa wb wc) (wPair wd we))
@@ -490,8 +502,13 @@ w5Tuple wa wb wc wd we =
   inn ((a,b,c),(d,e)) = (a,b,c,d,e)
 
 --- WUI combinator for tuples of arity 6.
-w6Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
-           WuiLensSpec f -> WuiLensSpec (a,b,c,d,e,f)
+w6Tuple :: WuiLensSpec a
+        -> WuiLensSpec b
+        -> WuiLensSpec c
+        -> WuiLensSpec d
+        -> WuiLensSpec e
+        -> WuiLensSpec f
+        -> WuiLensSpec (a,b,c,d,e,f)
 w6Tuple wa wb wc wd we wf =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (wTriple wa wb wc) (wTriple wd we wf))
@@ -500,8 +517,14 @@ w6Tuple wa wb wc wd we wf =
   inn ((a,b,c),(d,e,f)) = (a,b,c,d,e,f)
 
 --- WUI combinator for tuples of arity 7.
-w7Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
-           WuiLensSpec f -> WuiLensSpec g -> WuiLensSpec (a,b,c,d,e,f,g)
+w7Tuple :: WuiLensSpec a
+        -> WuiLensSpec b
+        -> WuiLensSpec c
+        -> WuiLensSpec d
+        -> WuiLensSpec e
+        -> WuiLensSpec f
+        -> WuiLensSpec g
+        -> WuiLensSpec (a,b,c,d,e,f,g)
 w7Tuple wa wb wc wd we wf wg =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (w4Tuple wa wb wc wd) (wTriple we wf wg))
@@ -510,8 +533,15 @@ w7Tuple wa wb wc wd we wf wg =
   inn ((a,b,c,d),(e,f,g)) = (a,b,c,d,e,f,g)
 
 --- WUI combinator for tuples of arity 8.
-w8Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
-           WuiLensSpec f -> WuiLensSpec g -> WuiLensSpec h -> WuiLensSpec (a,b,c,d,e,f,g,h)
+w8Tuple :: WuiLensSpec a
+        -> WuiLensSpec b
+        -> WuiLensSpec c
+        -> WuiLensSpec d
+        -> WuiLensSpec e
+        -> WuiLensSpec f
+        -> WuiLensSpec g
+        -> WuiLensSpec h
+        -> WuiLensSpec (a,b,c,d,e,f,g,h)
 w8Tuple wa wb wc wd we wf wg wh =
   transformWSpec (isoLens inn out)
              (wJoinTuple (w4Tuple wa wb wc wd) (w4Tuple we wf wg wh))
@@ -520,9 +550,16 @@ w8Tuple wa wb wc wd we wf wg wh =
   inn ((a,b,c,d),(e,f,g,h)) = (a,b,c,d,e,f,g,h)
 
 --- WUI combinator for tuples of arity 9.
-w9Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
-           WuiLensSpec f -> WuiLensSpec g -> WuiLensSpec h -> WuiLensSpec i ->
-           WuiLensSpec (a,b,c,d,e,f,g,h,i)
+w9Tuple :: WuiLensSpec a
+        -> WuiLensSpec b
+        -> WuiLensSpec c
+        -> WuiLensSpec d
+        -> WuiLensSpec e
+        -> WuiLensSpec f
+        -> WuiLensSpec g
+        -> WuiLensSpec h
+        -> WuiLensSpec i
+        -> WuiLensSpec (a,b,c,d,e,f,g,h,i)
 w9Tuple wa wb wc wd we wf wg wh wi =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (w5Tuple wa wb wc wd we) (w4Tuple wf wg wh wi))
@@ -531,9 +568,17 @@ w9Tuple wa wb wc wd we wf wg wh wi =
   inn ((a,b,c,d,e),(f,g,h,i)) = (a,b,c,d,e,f,g,h,i)
 
 --- WUI combinator for tuples of arity 10.
-w10Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
-            WuiLensSpec f -> WuiLensSpec g -> WuiLensSpec h -> WuiLensSpec i -> WuiLensSpec j ->
-            WuiLensSpec (a,b,c,d,e,f,g,h,i,j)
+w10Tuple :: WuiLensSpec a
+         -> WuiLensSpec b
+         -> WuiLensSpec c
+         -> WuiLensSpec d
+         -> WuiLensSpec e
+         -> WuiLensSpec f
+         -> WuiLensSpec g
+         -> WuiLensSpec h
+         -> WuiLensSpec i
+         -> WuiLensSpec j
+         -> WuiLensSpec (a,b,c,d,e,f,g,h,i,j)
 w10Tuple wa wb wc wd we wf wg wh wi wj =
   transformWSpec (isoLens inn out)
              (wJoinTuple (w5Tuple wa wb wc wd we) (w5Tuple wf wg wh wi wj))
@@ -542,9 +587,18 @@ w10Tuple wa wb wc wd we wf wg wh wi wj =
   inn ((a,b,c,d,e),(f,g,h,i,j)) = (a,b,c,d,e,f,g,h,i,j)
 
 --- WUI combinator for tuples of arity 11.
-w11Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
-            WuiLensSpec f -> WuiLensSpec g -> WuiLensSpec h -> WuiLensSpec i -> WuiLensSpec j ->
-            WuiLensSpec k -> WuiLensSpec (a,b,c,d,e,f,g,h,i,j,k)
+w11Tuple :: WuiLensSpec a
+         -> WuiLensSpec b
+         -> WuiLensSpec c
+         -> WuiLensSpec d
+         -> WuiLensSpec e
+         -> WuiLensSpec f
+         -> WuiLensSpec g
+         -> WuiLensSpec h
+         -> WuiLensSpec i
+         -> WuiLensSpec j
+         -> WuiLensSpec k
+         -> WuiLensSpec (a,b,c,d,e,f,g,h,i,j,k)
 w11Tuple wa wb wc wd we wf wg wh wi wj wk =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (w5Tuple wa wb wc wd we) (w6Tuple wf wg wh wi wj wk))
@@ -553,9 +607,19 @@ w11Tuple wa wb wc wd we wf wg wh wi wj wk =
   inn ((a,b,c,d,e),(f,g,h,i,j,k)) = (a,b,c,d,e,f,g,h,i,j,k)
 
 --- WUI combinator for tuples of arity 12.
-w12Tuple :: WuiLensSpec a -> WuiLensSpec b -> WuiLensSpec c -> WuiLensSpec d -> WuiLensSpec e ->
-            WuiLensSpec f -> WuiLensSpec g -> WuiLensSpec h -> WuiLensSpec i -> WuiLensSpec j ->
-            WuiLensSpec k -> WuiLensSpec l -> WuiLensSpec (a,b,c,d,e,f,g,h,i,j,k,l)
+w12Tuple :: WuiLensSpec a
+         -> WuiLensSpec b
+         -> WuiLensSpec c
+         -> WuiLensSpec d
+         -> WuiLensSpec e
+         -> WuiLensSpec f
+         -> WuiLensSpec g
+         -> WuiLensSpec h
+         -> WuiLensSpec i
+         -> WuiLensSpec j
+         -> WuiLensSpec k
+         -> WuiLensSpec l
+         -> WuiLensSpec (a,b,c,d,e,f,g,h,i,j,k,l)
 w12Tuple wa wb wc wd we wf wg wh wi wj wk wl =
   transformWSpec (isoLens inn out)
                  (wJoinTuple (w6Tuple wa wb wc wd we wf) (w6Tuple wg wh wi wj wk wl))
@@ -637,12 +701,10 @@ wListWithHeadings headings wspec =
 wHList :: WuiLensSpec a -> WuiLensSpec [a]
 wHList wspec = wList wspec `withRendering` renderTuple
 
-
 --- WUI for matrices, i.e., list of list of elements
 --- visualized as a matrix.
 wMatrix :: WuiLensSpec a -> WuiLensSpec [[a]]
 wMatrix wspec mVal = wList (wHList wspec) mVal
-
 
 --- WUI for Maybe values. It is constructed from a WUI for
 --- Booleans and a WUI for the potential values. Nothing corresponds
@@ -696,10 +758,9 @@ wCheckMaybe wspec exps def = wMaybe (wCheckBool exps) wspec def
 --- @param hexps - a list of HTML expressions shown after the Just button
 --- @param def - a default value if the current value is Nothing
 wRadioMaybe :: WuiLensSpec a -> [HtmlExp] -> [HtmlExp] -> a -> WuiLensSpec (Maybe a)
-wRadioMaybe wspec hnothing hjust def mVal= wMaybe wBool wspec def mVal
+wRadioMaybe wspec hnothing hjust def = wMaybe wBool wspec def
  where
   wBool = wRadioSelect (\b->if b then hjust else hnothing) [False,True]
-
 
 --- WUI for union types.
 --- Here we provide only the implementation for Either types
