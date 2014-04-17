@@ -156,22 +156,6 @@ withCondition wuiSpec legal mVal =
  where
    WuiSpec (render,errmsg,_) showhtml readvalue = wuiSpec mVal
 
--- Lens b a = { put := Maybe b -> a -> b
---            , get := b -> a
---            }
---- Transforms a WUI specification from one type to another.
--- transformWSpec :: Lens a b -> WuiSpec a -> WuiSpec b
--- transformWSpec lens (WuiSpec wparamsa showhtmla readvaluea) =
---   WuiSpec (transParam (put' lens Nothing) wparamsa)
---           (\wparamsb b -> showhtmla (transParam (get' lens) wparamsb)
---                                                 (put' lens Nothing b))
---           (\wparamsb env wst ->
---             let (mba,errv) = readvaluea (transParam (get' lens) wparamsb) env wst
---              in (maybe Nothing (Just . (get' lens)) mba, errv))
---  where
---   transParam :: (b->a) -> WuiParams a -> WuiParams b
---   transParam toa (render,errmsg,legal) = (render,errmsg,legal . toa)
-
 --- Transforms a WUI specification from one type to another.
 transformWSpec :: Lens b a -> WuiLensSpec a -> WuiLensSpec b
 transformWSpec lens wuiSpec mValB =
@@ -927,17 +911,19 @@ showAndReadWUI valA wSpecA store errorForm (htmlEdits,readEnv) =
   (htmlEdits, WHandler htmlHandler)
  where
   htmlHandler env =
-    maybe (errorForm errorExp errorHandler)
-          (\newVal -> seq (normalForm newVal) -- to strip off unused lvars
-                          (store newVal))
-          mValNew
-  (mValNew, (htmlErrorForm,errorWState)) = readEnv env
-  WuiSpec wParams _ readVal = wSpecA (Just valA)
-  (errorExp,errorHandler) =
-    showAndReadWUI valA
-                   wSpecA
-                   store
-                   errorForm
-                   (htmlErrorForm, \env -> readVal wParams env errorWState)
+    let (mValNew, (htmlErrorForm,errorWState)) = readEnv env
+        WuiSpec wParams _ readVal = wSpecA (Just valA)
+        (errorExp,errorHandler) =
+          showAndReadWUI valA
+                         wSpecA
+                         store
+                         errorForm
+                         ( htmlErrorForm
+                         , \env -> readVal wParams env errorWState )
+    in maybe (errorForm errorExp errorHandler)
+             (\newVal -> seq (normalForm newVal) -- to strip off unused lvars
+                             (store newVal))
+             mValNew
+  
 
 --------------------------------------------------------------------------
