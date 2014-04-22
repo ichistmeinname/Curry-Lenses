@@ -376,10 +376,11 @@ wMultiCheckSelect showelem selset _ =
                       ref "True" : showelem s)
     in (render (map showItem numsetitems),
          states2state (map cgiRef2state refs))
-  newVars = unknown : newVars
+
+newVars = unknown : newVars
 
 --- A widget to select a value from a given list of values via a radio button.
---- The current value should be contained in the value list and is preselected.
+--- The current valuE should be contained in the value list and is preselected.
 --- The first argument is a mapping from values into HTML expressions
 --- that are shown for each item after the radio button.
 wRadioSelect :: (a->[HtmlExp]) -> [a] -> WuiLensSpec a
