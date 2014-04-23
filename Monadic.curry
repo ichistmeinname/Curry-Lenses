@@ -2,7 +2,6 @@ module Monadic where
 
 import Maybe (isJust, isNothing, fromJust)
 import SetFunctions
-import Unsafe (trace)
 
 undefined = error "bottom"
 
