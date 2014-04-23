@@ -1,9 +1,8 @@
 module CommentView (
- wComment, tuple2Comment, comment2Tuple, wCommentType, blankCommentView,
+ wComment, {-tuple2Comment, comment2Tuple,-} wCommentType, blankCommentView,
  createCommentView, editCommentView, showCommentView, listCommentView
  ) where
 
-import WUI
 import HTML
 import Time
 import Sort
@@ -11,37 +10,74 @@ import Spicey
 import Blog
 import BlogEntitiesToHtml
 
+import Monadic
+
 --- The WUI specification for the entity type Comment.
 --- It also includes fields for associated entities.
-wComment :: [Entry] -> WuiSpec (String,String,CalendarTime,Entry)
+wComment :: [Entry] -> WuiLensSpec (String,String,CalendarTime,Entry)
 wComment entryList =
   withRendering
    (w4Tuple wRequiredString wRequiredString wDateType
      (wSelect entryToShortView entryList))
    (renderLabels commentLabelList)
 
---- Transformation from data of a WUI form to entity type Comment.
-tuple2Comment :: Comment -> (String,String,CalendarTime,Entry) -> Comment
-tuple2Comment commentToUpdate (text ,author ,date ,entry) =
-  setCommentText
-   (setCommentAuthor
-     (setCommentDate
-       (setCommentEntryCommentingKey commentToUpdate (entryKey entry)) date)
-     author)
-   text
+wCommentEdit :: [Entry] -> WuiLensSpec (String,Entry)
+wCommentEdit entryList =
+  withRendering
+   (wPair wRequiredString
+     (wSelect entryToShortView entryList))
+   (renderLabels commentEditLabelList)
 
---- Transformation from entity type Comment to a tuple
---- which can be used in WUI specifications.
-comment2Tuple :: Entry -> Comment -> (String,String,CalendarTime,Entry)
-comment2Tuple entry comment =
-  (commentText comment,commentAuthor comment,commentDate comment,entry)
+-- --- Transformation from data of a WUI form to entity type Comment.
+-- tuple2Comment :: Comment -> (String,String,CalendarTime,Entry) -> Comment
+-- tuple2Comment commentToUpdate (text ,author ,date ,entry) =
+--   setCommentText
+--    (setCommentAuthor
+--      (setCommentDate
+--        (setCommentEntryCommentingKey commentToUpdate (entryKey entry)) date)
+--      author)
+--    text
+
+-- --- Transformation from entity type Comment to a tuple
+-- --- which can be used in WUI specifications.
+-- comment2Tuple :: Entry -> Comment -> (String,String,CalendarTime,Entry)
+-- comment2Tuple entry comment =
+--   (commentText comment,commentAuthor comment,commentDate comment,entry)
+
+-- remFst :: (v -> v1) -> Lens v (v1,v)
+
+  -- entryZoom :: Lens (Entry,[Tag]) (String, String, [Tag])
+  -- entryZoom = isoLens inn out <.> keepFst
+  -- inn ((k,a,d),(t1,t2,tags))  = (Entry k t1 t2 a d, tags)
+  -- out (Entry k t1 t2 a d, tags) = ((k,a,d),(t1,t2,tags))
 
 --- WUI Type for editing or creating Comment entities.
 --- Includes fields for associated entities.
-wCommentType :: Comment -> Entry -> [Entry] -> WuiSpec Comment
+wCommentType :: Comment -> Entry -> [Entry] -> WuiLensSpec Comment
 wCommentType comment entry entryList =
-  transformWSpec (tuple2Comment comment,comment2Tuple entry)
-   (wComment entryList)
+  transformWSpec commentLens
+                 (wComment entryList)
+ where
+  commentLens :: Lens Comment (String,String,CalendarTime,Entry)
+  commentLens = isoLens inn out <.> keepFst
+  inn ((cKey,eKey),(text,author,date,entry)) =
+    setCommentEntryCommentingKey (Comment cKey text author date eKey)
+                                 (entryKey entry)
+  out (Comment cKey text author date eKey) =
+    ((cKey,eKey),(text,author,date,entry))
+
+wCommentEditType :: Comment -> Entry -> [Entry] -> WuiLensSpec Comment
+wCommentEditType comment entry entryList =
+  transformWSpec commentLens
+                 (wCommentEdit entryList)
+ where
+  commentLens :: Lens Comment (String,Entry)
+  commentLens = isoLens inn out <.> keepFst
+  inn ((cKey,eKey,author,date),(text,entry)) =
+    setCommentEntryCommentingKey (Comment cKey text author date eKey)
+                                 (entryKey entry)
+  out (Comment cKey text author date eKey) =
+    ((cKey,eKey,author,date),(text,entry))
 
 --- Supplies a WUI form to create a new Comment entity.
 --- The fields of the entity have some default values.
@@ -60,10 +96,8 @@ createCommentView
 createCommentView defaultText defaultAuthor defaultDate defaultEntry
                   possibleEntrys controller =
   let initdata = (defaultText,defaultAuthor,defaultDate,defaultEntry)
-      
       wuiframe = wuiEditForm "Create new Comment" "create"
                   (controller False initdata)
-      
       (hexp ,handler) = wuiWithErrorForm (wComment possibleEntrys) initdata
                          (nextControllerForData (controller True))
                          (wuiFrameToForm wuiframe)
@@ -77,12 +111,10 @@ editCommentView
   -> [HtmlExp]
 editCommentView comment relatedEntry possibleEntrys controller =
   let initdata = comment
-      
       wuiframe = wuiEditForm "Edit Comment" "change"
                   (controller False initdata)
-      
       (hexp ,handler) = wuiWithErrorForm
-                         (wCommentType comment relatedEntry possibleEntrys)
+                         (wCommentEditType comment relatedEntry possibleEntrys)
                          initdata (nextControllerForData (controller True))
                          (wuiFrameToForm wuiframe)
    in wuiframe hexp handler
@@ -119,7 +151,6 @@ listCommentView comments showCommentController editCommentController
               (nextController (showCommentController comment))
             ,spSmallButton "edit"
               (nextController (editCommentController comment))
-            
             ,spSmallButton "delete"
               (confirmNextController
                 (h3

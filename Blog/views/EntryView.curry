@@ -1,9 +1,8 @@
 module EntryView (
- wEntry, tuple2Entry, entry2Tuple, wEntryType, blankEntryView,
+ wEntry, {-tuple2Entry, entry2Tuple,-} wEntryType, blankEntryView,
  createEntryView, editEntryView, showEntryView, listEntryView
  ) where
 
-import WUILenses
 import HTML
 import Time
 import Sort
@@ -14,40 +13,6 @@ import BlogEntitiesToHtml
 import Monadic
 
 --------------------------------------------------------------------------------
------------------------------------- helper ------------------------------------
---------------------------------------------------------------------------------
-
-wDateType' :: WuiLensSpec CalendarTime
-wDateType' = transformWSpec dateLens wDate'
- where
-  dateLens = isoLens inn out
-  inn :: (Int, Int, Int) -> CalendarTime
-  inn (day, month, year) = CalendarTime year month day 0 0 0 0
-
-  out :: CalendarTime -> (Int, Int, Int)
-  out (CalendarTime year month day _ _ _ _) = (day, month, year)
-
---- A WUI for manipulating date entities.
-wDate' :: WuiLensSpec (Int, Int, Int)
-wDate' = wTriple (wSelectInt [1..31])
-                 (wSelectInt [1..12])
-                 (wSelectInt [1950..2050])
-
--- A standard HTML frame for editing data with WUIs.
-wuiEditForm' :: String -> String -> Controller
-           -> HtmlExp -> WuiHandler -> [HtmlExp]
-wuiEditForm' title buttontag controller hexp handler =
-  [h1 [htxt title],
-   blockstyle "editform" [hexp],
-   wuiHandler2button buttontag handler `addClass` "btn btn-primary",
-   spButton "cancel" (nextController (cancelOperation >> controller))]
-
---- Transforms a WUI frame into a standard form.
-wuiFrameToForm' :: (HtmlExp -> WuiHandler -> [HtmlExp])
-               -> HtmlExp -> WuiHandler -> IO HtmlForm
-wuiFrameToForm' wframe hexp wuihandler = getForm (wframe hexp wuihandler)
-
---------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
@@ -56,7 +21,7 @@ wuiFrameToForm' wframe hexp wuihandler = getForm (wframe hexp wuihandler)
 wEntry :: [Tag] -> WuiLensSpec (String,String,String,CalendarTime,[Tag])
 wEntry tagList =
   withRendering
-   (w5Tuple wRequiredString wRequiredString wRequiredString wDateType'
+   (w5Tuple wRequiredString wRequiredString wRequiredString wDateType
      (wMultiCheckSelect (\ tag -> [htxt (tagToShortView tag)]) tagList))
    (renderLabels entryLabelList)
 
@@ -67,20 +32,20 @@ wEntryEdit tagList =
      (wMultiCheckSelect (\ tag -> [htxt (tagToShortView tag)]) tagList))
    (renderLabels entryEditLabelList)
 
---- Transformation from data of a WUI form to entity type Entry.
-tuple2Entry
- :: Entry -> (String,String,String,CalendarTime,[Tag]) -> (Entry,[Tag])
-tuple2Entry entryToUpdate (title ,text ,author ,date ,tags) =
-  (setEntryTitle
-    (setEntryText (setEntryAuthor (setEntryDate entryToUpdate date) author)
-      text)
-    title,tags)
+-- --- Transformation from data of a WUI form to entity type Entry.
+-- tuple2Entry
+--  :: Entry -> (String,String,String,CalendarTime,[Tag]) -> (Entry,[Tag])
+-- tuple2Entry entryToUpdate (title ,text ,author ,date ,tags) =
+--   (setEntryTitle
+--     (setEntryText (setEntryAuthor (setEntryDate entryToUpdate date) author)
+--       text)
+--     title,tags)
 
---- Transformation from entity type Entry to a tuple
---- which can be used in WUI specifications.
-entry2Tuple :: (Entry,[Tag]) -> (String, String, String, CalendarTime, [Tag])
-entry2Tuple (entry, tags) =
-  (entryTitle entry,entryText entry,entryAuthor entry,entryDate entry,tags)
+-- --- Transformation from entity type Entry to a tuple
+-- --- which can be used in WUI specifications.
+-- entry2Tuple :: (Entry,[Tag]) -> (String, String, String, CalendarTime, [Tag])
+-- entry2Tuple (entry, tags) =
+--   (entryTitle entry,entryText entry,entryAuthor entry,entryDate entry,tags)
 
 --- WUI Type for editing or creating Entry entities.
 --- Includes fields for associated entities.
@@ -114,7 +79,7 @@ blankEntryView
   -> (Bool -> (String,String,String,CalendarTime,[Tag]) -> Controller)
   -> [HtmlExp]
 blankEntryView ctime possibleTags controller =
-  createEntryView [] [] "Sandra" ctime [] possibleTags controller
+  createEntryView "" "" "" ctime [] possibleTags controller
 
 --- Supplies a WUI form to create a new Entry entity.
 --- Takes default values to be prefilled in the form fields.
@@ -127,12 +92,12 @@ createEntryView defaultTitle defaultText defaultAuthor defaultDate defaultTags
   let initdata = (defaultTitle,defaultText,defaultAuthor,defaultDate
                  ,defaultTags)
       
-      wuiframe = wuiEditForm' "Create new Entry" "create"
+      wuiframe = wuiEditForm "Create new Entry" "create"
                   (controller False initdata)
       
       (hexp,handler) = wuiWithErrorForm (wEntry possibleTags) initdata
                          (nextControllerForData (controller True))
-                         (wuiFrameToForm' wuiframe)
+                         (wuiFrameToForm wuiframe)
    in wuiframe hexp handler
 
 --- Supplies a WUI form to edit the given Entry entity.
@@ -144,11 +109,11 @@ editEntryView
 editEntryView (entry ,tags) possibleTags controller =
   let initdata = (entry,tags)
       
-      wuiframe = wuiEditForm' "Edit Entry" "change" (controller False initdata)
+      wuiframe = wuiEditForm "Edit Entry" "change" (controller False initdata)
       
       (hexp ,handler) = wuiWithErrorForm (wEntryEditType entry possibleTags)
                          initdata (nextControllerForData (controller True))
-                         (wuiFrameToForm' wuiframe)
+                         (wuiFrameToForm wuiframe)
    in wuiframe hexp handler
 
 --- Supplies a view to show the details of a Entry.

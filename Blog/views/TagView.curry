@@ -1,9 +1,8 @@
 module TagView (
- wTag, tuple2Tag, tag2Tuple, wTagType, blankTagView, createTagView,
+ wTag, {-tuple2Tag, tag2Tuple,-} wTagType, blankTagView, createTagView,
  editTagView, showTagView, listTagView
  ) where
 
-import WUI
 import HTML
 import Time
 import Sort
@@ -11,23 +10,28 @@ import Spicey
 import Blog
 import BlogEntitiesToHtml
 
+import Monadic
+
 --- The WUI specification for the entity type Tag.
-wTag :: WuiSpec String
+wTag :: WuiLensSpec String
 wTag = withRendering wRequiredString (renderLabels tagLabelList)
 
---- Transformation from data of a WUI form to entity type Tag.
-tuple2Tag :: Tag -> String -> Tag
-tuple2Tag tagToUpdate name = setTagName tagToUpdate name
+-- --- Transformation from data of a WUI form to entity type Tag.
+-- tuple2Tag :: Tag -> String -> Tag
+-- tuple2Tag tagToUpdate name = setTagName tagToUpdate name
 
---- Transformation from entity type Tag to a tuple
---- which can be used in WUI specifications.
-tag2Tuple :: Tag -> String
-tag2Tuple tag = tagName tag
+-- --- Transformation from entity type Tag to a tuple
+-- --- which can be used in WUI specifications.
+-- tag2Tuple :: Tag -> String
+-- tag2Tuple tag = tagName tag
 
 --- WUI Type for editing or creating Tag entities.
 --- Includes fields for associated entities.
-wTagType :: Tag -> WuiSpec Tag
-wTagType tag = transformWSpec (tuple2Tag tag,tag2Tuple) wTag
+wTagType :: Tag -> WuiLensSpec Tag
+wTagType tag = transformWSpec (isoLens inn out <.> keepFst) wTag
+ where
+  inn (key,name)     = Tag key name
+  out (Tag key name) = (key,name)
 
 --- Supplies a WUI form to create a new Tag entity.
 --- The fields of the entity have some default values.

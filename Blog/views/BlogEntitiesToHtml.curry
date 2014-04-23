@@ -78,6 +78,12 @@ commentLabelList =
   ,[textstyle "label label_for_type_calendarTime" "Date"]
   ,[textstyle "label label_for_type_relation" "Entry"]]
 
+commentEditLabelList :: [[HtmlExp]]
+commentEditLabelList =
+  [[textstyle "label label_for_type_string" "Text"]
+  ,[textstyle "label label_for_type_relation" "Entry"]]
+
+
 --- The list view of a Tag entity in HTML format.
 --- This view is used in a row of a table of all entities.
 tagToListView :: Tag -> [[HtmlExp]]

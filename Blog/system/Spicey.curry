@@ -7,6 +7,7 @@ module Spicey (
   module System, 
   module HTML, 
   module ReadNumeric, 
+  module WUILenses,
   Controller,
   nextController, nextControllerForData, confirmNextController,
   getControllerURL,getControllerParams, showControllerURL,
@@ -26,7 +27,7 @@ import System
 import HTML
 import ReadNumeric
 import KeyDatabase
-import WUI
+import WUILenses
 import Time
 import Routes
 import Processes
@@ -34,6 +35,7 @@ import UserProcesses
 import Session
 import Global
 import Authentication
+import Monadic
 
 ---------------- vvvv -- Framework functions -- vvvv -----------------------
 
@@ -116,6 +118,7 @@ showControllerURL :: String -> [String] -> String
 showControllerURL ctrlurl params = '?' : ctrlurl ++ concatMap ('/':) params
 
 --------------------------------------------------------------------------
+
 -- A standard HTML frame for editing data with WUIs.
 wuiEditForm :: String -> String -> Controller
            -> HtmlExp -> WuiHandler -> [HtmlExp]
@@ -130,33 +133,33 @@ wuiFrameToForm :: (HtmlExp -> WuiHandler -> [HtmlExp])
                -> HtmlExp -> WuiHandler -> IO HtmlForm
 wuiFrameToForm wframe hexp wuihandler = getForm (wframe hexp wuihandler)
 
-
 --- A WUI for manipulating CalendarTime entities.
 --- It is based on a WUI for dates, i.e., the time is ignored.
-wDateType :: WuiSpec CalendarTime
-wDateType = transformWSpec (tuple2date,date2tuple) wDate
+wDateType :: WuiLensSpec CalendarTime
+wDateType = transformWSpec dateLens wDate
  where
-  tuple2date :: (Int, Int, Int) -> CalendarTime
-  tuple2date (day, month, year) = CalendarTime year month day 0 0 0 0
+  dateLens = isoLens inn out
+  inn :: (Int, Int, Int) -> CalendarTime
+  inn (day, month, year) = CalendarTime year month day 0 0 0 0
 
-  date2tuple :: CalendarTime -> (Int, Int, Int)
-  date2tuple( CalendarTime year month day _ _ _ _) = (day, month, year)
+  out :: CalendarTime -> (Int, Int, Int)
+  out (CalendarTime year month day _ _ _ _) = (day, month, year)
 
 --- A WUI for manipulating date entities.
-wDate :: WuiSpec (Int, Int, Int)
+wDate :: WuiLensSpec (Int, Int, Int)
 wDate = wTriple (wSelectInt [1..31])
-                (wSelectInt [1..12])
-                (wSelectInt [1950..2050])
+                 (wSelectInt [1..12])
+                 (wSelectInt [1950..2050])
 
 --- A WUI for manipulating Boolean entities. In general, this view should
 --- be specialized by replacing true and false by more comprehensible strings.
-wBoolean :: WuiSpec Bool
+wBoolean :: WuiLensSpec Bool
 wBoolean = wSelectBool "True" "False"
 
 --- A WUI transformer to map WUIs into WUIs for corresponding Maybe types.
-wUncheckMaybe :: a -> WuiSpec a -> WuiSpec (Maybe a)
+wUncheckMaybe :: a -> WuiLensSpec a -> WuiLensSpec (Maybe a)
 wUncheckMaybe defval wspec =
-  wMaybe (transformWSpec (not,not) (wCheckBool [htxt "No value"]))
+  wMaybe (transformWSpec (isoLens not not) (wCheckBool [htxt "No value"]))
          wspec
          defval
 

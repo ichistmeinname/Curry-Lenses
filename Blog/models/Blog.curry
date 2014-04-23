@@ -1,5 +1,5 @@
 module Blog (
- Entry(..), Comment, Tag(..), EntryKey, CommentKey, TagKey, Tagging, entryTitle,
+ Entry(..), Comment(..), Tag(..), EntryKey, CommentKey, TagKey, Tagging, entryTitle,
  setEntryTitle, entryText, setEntryText, entryAuthor, setEntryAuthor,
  entryDate, setEntryDate, commentText, setCommentText, commentAuthor,
  setCommentAuthor, commentDate, setCommentDate, commentEntryCommentingKey,
