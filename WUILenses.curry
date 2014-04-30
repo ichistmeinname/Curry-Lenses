@@ -31,7 +31,7 @@ module WUILenses(--WuiState,cgiRef2state,state2cgiRef,value2state,state2value,
            mainWUI,wui2html,wuiInForm,wuiWithErrorForm)
  where
 
-import Monadic
+import PutLenses
 import HTML
 import Read(readNat)
 import List(elemIndex)
@@ -688,7 +688,7 @@ wList wuiSpecA mValLA =
   WuiSpec rendera showa reada = wuiSpecA mValA
   mValA = case mValLA of
                Nothing     -> Nothing
-               Just (x:xs) -> Just x
+               Just (x:_) -> Just x
 
 --- Add headings to a standard WUI for list structures:
 wListWithHeadings :: [String] -> WuiLensSpec a -> WuiLensSpec [a]
@@ -981,7 +981,7 @@ showAndReadWUI valA wSpecA store errorForm (htmlEdits,readEnv) =
                          store
                          errorForm
                          ( htmlErrorForm
-                         , \env -> readVal wParams env errorWState )
+                         , \env' -> readVal wParams env' errorWState )
     in maybe (errorForm errorExp errorHandler)
              (\newVal -> seq (normalForm newVal) -- to strip off unused lvars
                              (store newVal))

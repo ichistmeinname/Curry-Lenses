@@ -10,28 +10,19 @@ import Spicey
 import Blog
 import BlogEntitiesToHtml
 
-import Monadic
+import PutLenses
 
 --- The WUI specification for the entity type Tag.
 wTag :: WuiLensSpec String
 wTag = withRendering wRequiredString (renderLabels tagLabelList)
 
--- --- Transformation from data of a WUI form to entity type Tag.
--- tuple2Tag :: Tag -> String -> Tag
--- tuple2Tag tagToUpdate name = setTagName tagToUpdate name
-
--- --- Transformation from entity type Tag to a tuple
--- --- which can be used in WUI specifications.
--- tag2Tuple :: Tag -> String
--- tag2Tuple tag = tagName tag
-
 --- WUI Type for editing or creating Tag entities.
 --- Includes fields for associated entities.
 wTagType :: Tag -> WuiLensSpec Tag
-wTagType tag = transformWSpec (isoLens inn out <.> keepFst) wTag
+wTagType tag = transformWSpec tagLens wTag
  where
-  inn (key,name)     = Tag key name
-  out (Tag key name) = (key,name)
+  tagLens :: Lens Tag String
+  tagLens (Tag key _) name' = Tag key name'
 
 --- Supplies a WUI form to create a new Tag entity.
 --- The fields of the entity have some default values.

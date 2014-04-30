@@ -10,7 +10,7 @@ import Spicey
 import Blog
 import BlogEntitiesToHtml
 
-import Monadic
+import PutLenses
 
 --- The WUI specification for the entity type Comment.
 --- It also includes fields for associated entities.
@@ -28,29 +28,6 @@ wCommentEdit entryList =
      (wSelect entryToShortView entryList))
    (renderLabels commentEditLabelList)
 
--- --- Transformation from data of a WUI form to entity type Comment.
--- tuple2Comment :: Comment -> (String,String,CalendarTime,Entry) -> Comment
--- tuple2Comment commentToUpdate (text ,author ,date ,entry) =
---   setCommentText
---    (setCommentAuthor
---      (setCommentDate
---        (setCommentEntryCommentingKey commentToUpdate (entryKey entry)) date)
---      author)
---    text
-
--- --- Transformation from entity type Comment to a tuple
--- --- which can be used in WUI specifications.
--- comment2Tuple :: Entry -> Comment -> (String,String,CalendarTime,Entry)
--- comment2Tuple entry comment =
---   (commentText comment,commentAuthor comment,commentDate comment,entry)
-
--- remFst :: (v -> v1) -> Lens v (v1,v)
-
-  -- entryZoom :: Lens (Entry,[Tag]) (String, String, [Tag])
-  -- entryZoom = isoLens inn out <.> keepFst
-  -- inn ((k,a,d),(t1,t2,tags))  = (Entry k t1 t2 a d, tags)
-  -- out (Entry k t1 t2 a d, tags) = ((k,a,d),(t1,t2,tags))
-
 --- WUI Type for editing or creating Comment entities.
 --- Includes fields for associated entities.
 wCommentType :: Comment -> Entry -> [Entry] -> WuiLensSpec Comment
@@ -59,12 +36,9 @@ wCommentType comment entry entryList =
                  (wComment entryList)
  where
   commentLens :: Lens Comment (String,String,CalendarTime,Entry)
-  commentLens = isoLens inn out <.> keepFst
-  inn ((cKey,eKey),(text,author,date,entry)) =
-    setCommentEntryCommentingKey (Comment cKey text author date eKey)
+  commentLens (Comment cKey _ _ _ eKey) (text',author',date',entry) =
+    setCommentEntryCommentingKey (Comment cKey text' author' date' eKey)
                                  (entryKey entry)
-  out (Comment cKey text author date eKey) =
-    ((cKey,eKey),(text,author,date,entry))
 
 wCommentEditType :: Comment -> Entry -> [Entry] -> WuiLensSpec Comment
 wCommentEditType comment entry entryList =
@@ -72,12 +46,9 @@ wCommentEditType comment entry entryList =
                  (wCommentEdit entryList)
  where
   commentLens :: Lens Comment (String,Entry)
-  commentLens = isoLens inn out <.> keepFst
-  inn ((cKey,eKey,author,date),(text,entry)) =
-    setCommentEntryCommentingKey (Comment cKey text author date eKey)
+  commentLens (Comment cKey _ author date eKey) (text',entry) =
+    setCommentEntryCommentingKey (Comment cKey text' author date eKey)
                                  (entryKey entry)
-  out (Comment cKey text author date eKey) =
-    ((cKey,eKey,author,date),(text,entry))
 
 --- Supplies a WUI form to create a new Comment entity.
 --- The fields of the entity have some default values.

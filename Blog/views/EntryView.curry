@@ -10,7 +10,7 @@ import Spicey
 import Blog
 import BlogEntitiesToHtml
 
-import Monadic
+import PutLenses
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -32,21 +32,6 @@ wEntryEdit tagList =
      (wMultiCheckSelect (\ tag -> [htxt (tagToShortView tag)]) tagList))
    (renderLabels entryEditLabelList)
 
--- --- Transformation from data of a WUI form to entity type Entry.
--- tuple2Entry
---  :: Entry -> (String,String,String,CalendarTime,[Tag]) -> (Entry,[Tag])
--- tuple2Entry entryToUpdate (title ,text ,author ,date ,tags) =
---   (setEntryTitle
---     (setEntryText (setEntryAuthor (setEntryDate entryToUpdate date) author)
---       text)
---     title,tags)
-
--- --- Transformation from entity type Entry to a tuple
--- --- which can be used in WUI specifications.
--- entry2Tuple :: (Entry,[Tag]) -> (String, String, String, CalendarTime, [Tag])
--- entry2Tuple (entry, tags) =
---   (entryTitle entry,entryText entry,entryAuthor entry,entryDate entry,tags)
-
 --- WUI Type for editing or creating Entry entities.
 --- Includes fields for associated entities.
 wEntryType :: Entry -> [Tag] -> WuiLensSpec (Entry,[Tag])
@@ -54,23 +39,17 @@ wEntryType entry tagList =
   transformWSpec entryWOKey (wEntry tagList)
  where
   entryWOKey :: Lens (Entry,[Tag]) (String,String,String,CalendarTime,[Tag])
-  entryWOKey = isoLens inn out <.> keepFst
-  inn (k, (t1,t2,a,d,tags)) = (Entry k t1 t2 a d, tags)
-  out (Entry k t1 t2 a d, tags) = (k, (t1,t2,a,d,tags))
-  -- transformWSpec (tuple2Entry entry, entry2Tuple) (wEntry tagList)
+  entryWOKey (Entry k _ _ _ _, _) (t1',t2',a',d',tags') =
+    (Entry k t1' t2' a' d', tags')
 
 wEntryEditType :: Entry -> [Tag] -> WuiLensSpec (Entry,[Tag])
 wEntryEditType entry tagList =
   transformWSpec entryZoom (wEntryEdit tagList)
  where
   entryZoom :: Lens (Entry,[Tag]) (String, String, [Tag])
-  entryZoom = isoLens inn out <.> keepFst
-  inn ((k,a,d),(t1,t2,tags))  = (Entry k t1 t2 a d, tags)
-  out (Entry k t1 t2 a d, tags) = ((k,a,d),(t1,t2,tags))
- -- transformWSpec (toEntry entry, toTuple) (wEntryEdit tagList)
- -- where
- --  toEntry (Entry k _ _ a d) (t1,t2,tags) = (Entry k t1 t2 a d,tags)
- --  toTuple (Entry _ t1 t2 _ _, tags)      = (t1,t2,tags)
+  entryZoom  (Entry k _ _ a d, _) (t1',t2',tags') =
+    (Entry k t1' t2' a d, tags')
+
 
 --- Supplies a WUI form to create a new Entry entity.
 --- The fields of the entity have some default values.
