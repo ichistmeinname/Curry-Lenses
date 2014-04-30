@@ -23,16 +23,15 @@
 * _PUTDETERMINATION_: $\forall s,s',v,v' . put s v = put s' v'
   \rightarrow v = v'$
 * _PUTSTABILITY_: $\forall s . \exists v . put s v = s$
-* validity = A put function is valif if and only if it satisfies the
+* validity - A put function is valid if and only if it satisfies the
   _PUTDETERMINATION_ and _PUTSTABILITY_ properties
-
 
 ### Spicey
 
 * labeling bug: if a corresponding label is missing, a
   non-determinism error occurs
 * high-potential library to include lenses for getter, setter and projection
-
+* reads entities from database on page load - why?
 
 ## WUI
 
