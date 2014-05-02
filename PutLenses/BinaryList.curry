@@ -30,7 +30,7 @@ length (NonEmpty list) = Pos (lengthL list)
 -- = NonEmpty _|_
 
 cons :: a -> BinaryList a -> BinaryList a
-cons x xs = NonEmpty (cons' x xs)
+cons x' xs' = NonEmpty (cons' x' xs')
  where
   cons' x Empty           = LIHi x
   cons' x (NonEmpty list) = consL x list
@@ -47,7 +47,7 @@ decons (NonEmpty list@(LI _ _)) = (\(x,y) -> (x, NonEmpty y)) $ deconsL list
 
 deconsL :: L a -> (a, L a)
 deconsL xs' = case xs' of
-  LIHi x          -> failed
+  LIHi _          -> failed
   LI xs x         -> (x, LO xs)
   LO (LIHi (x,y)) -> (x, LIHi y)
   LO xs           -> let ((x',y'),ys) = deconsL xs
