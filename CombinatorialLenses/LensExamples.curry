@@ -4,7 +4,7 @@ import Integer ( even, odd )
 import Maybe ( fromJust )
 import List ( nub )
 import Float ((*.), (/.), (+.), (-.))
-import Monadic
+import Lens
 
 ----- Height examples
 
@@ -82,8 +82,8 @@ innT m = Time (m `quot` 60) (m `mod` 60)
 ----- Person examples
 
 data Person = Person Name City
-type Name = String
-type City = String
+type First = String
+type Address = String
 
 inPerson :: Lens Person (Name,City)
 inPerson = isoLens inn out
@@ -104,13 +104,13 @@ julia   = Person "Julia"   "Schreventeich"
 -- julia   = Person "Julia"   "Kiel"
 
 nameOrCity :: Lens Person String
-nameOrCity = name ? city
+nameOrCity = nameLens ? cityLens
 
-name :: Lens Person Name
-name = inPerson <.> keepSnd
+nameLens :: Lens Person First
+nameLens = inPerson <.> keepSnd
 
-city :: Lens Person City
-city = inPerson <.> keepFst
+addressLens :: Lens Person Address
+addressLens = inPerson <.> keepFst
 
 inout :: Lens Person Person
 inout = inPerson <.> outPerson
@@ -166,12 +166,72 @@ putRmdups s v
  where
   s' = nub s
 
+----- Examples from "Putback is the Essence of Bidirectional Programming
+
+-- getFirst (x,_) = x
+
+-- putFirst (_,y) z = (z,y)
+
+-- putFirstCount (n,c) m | n==m      = (m,c)
+--                       | otherwise = (m,c+1)
+
+-- putFirstDiff (x,y) z = (z,z+y-x)
+
+data PersonData = PersonData Name City
+
+data Name = Hugo | Sebastian | Zhenjiang
+data City = Kiel | Tokyo | Braga
+
+-- city :: Lens PersonData City
+-- city (PersonData n _) c = PersonData n c
+
+-- name :: Lens PersonData Name
+-- name (PersonData _ c) n = PersonData n c
+
+people = [hugo, sebastian, zhenjiang ]
+hugo = PersonData Hugo Braga
+sebastian = PersonData Sebastian Tokyo
+zhenjiang = PersonData Zhenjiang Tokyo
+
+isFrom :: City -> PersonData -> Bool
+isFrom c p = c == get' city p
+
+mergePeople :: [PersonData] -> [PersonData] -> [PersonData]
+mergePeople old new = merge (sorted old) (sorted new)
+ where
+  merge [ ] ps                = ps
+  merge (p : ps) [ ]          = p : ps
+  merge (p : ps) (q : qs)
+   | get name p < get' name q  = p : merge ps (q : qs)
+   | get name p == get' name q = q : merge ps qs
+   | get name p > get' name q  = q : merge (p : ps) qs
+  sorted [ ]      = [ ]
+  sorted (p : ps) = ascending p ps
+  ascending p []               = [p]
+  ascending p (q : qs)
+    |  get name p < get' name q = p : ascending q qs
+
+-- peopleFrom :: City -> Lens [PersonData] [PersonData]
+-- peopleFrom c source view =
+--   let elsewhere = filter (not . isFrom c) source
+--   in mergePeople elsewhere (map ensureCity view)
+--  where
+--   ensureCity q | isFrom c q = q
+
+-- peopleFromTo :: City -> City -> Lens [PersonData] [PersonData]
+-- peopleFromTo from to source view =
+--   let moved = map move source
+--   in peopleFrom from moved view
+--  where
+--   move p | get city p == from = put city p to
+--          | otherwise          = p
+
 ----- Examples from "Validity Check"
 
-data Elem a = A a | B a
+-- data Elem a = A a | B a
 
-putAs [ ] [ ] = [ ]
-putAs (ss@[])    (v:vs)   = A v : putAs ss vs
-putAs (A _ : ss) (vs@[ ]) = putAs ss vs
-putAs (A _ : ss) (v:vs)   = A v : putAs ss vs
-putAs (B b : ss) vs       = B b : putAs ss vs
+-- putAs [ ] [ ] = [ ]
+-- putAs (ss@[])    (v:vs)   = A v : putAs ss vs
+-- putAs (A _ : ss) (vs@[ ]) = putAs ss vs
+-- putAs (A _ : ss) (v:vs)   = A v : putAs ss vs
+-- putAs (B b : ss) vs       = B b : putAs ss vs

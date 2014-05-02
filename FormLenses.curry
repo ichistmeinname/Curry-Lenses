@@ -1,12 +1,12 @@
 module FormLenses where
 
 import Time
-import PutLenses
 import HTML
 import WUILenses
 import List (intercalate)
 import Maybe (maybe)
 import ReadShowTerm (readTerm,showQTerm)
+import Lens
 import LensExamples
 import SetFunctions
 
@@ -90,7 +90,7 @@ wa <* wu = transformWSpec remSndOne' (wa `wPair` wu)
 wu *> wa = transformWSpec remFstOne' (wu `wPair` wa)
 
 htmlWui :: HtmlExp -> WuiLensSpec Unit
-htmlWui h = wConstant (\Unit -> h)
+htmlWui h = wConstant (const h)
 
 textWui :: String -> WuiLensSpec Unit
 textWui s = wHtml (htxt s)
@@ -133,7 +133,7 @@ date :: Date
 date = Date 4 15
 
 bastian :: Person
-bastian = Person 0 "Bastian" "Holst" "Gaarden"
+bastian = Person "Bastian" "Gaarden"
 
 main :: IO HtmlForm
 main = return $ testPage bastian

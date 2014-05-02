@@ -31,7 +31,7 @@ module WUILenses(--WuiState,cgiRef2state,state2cgiRef,value2state,state2value,
            mainWUI,wui2html,wuiInForm,wuiWithErrorForm)
  where
 
-import PutLenses
+import Lens
 import HTML
 import Read(readNat)
 import List(elemIndex)

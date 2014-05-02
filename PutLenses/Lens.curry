@@ -4,7 +4,7 @@
 -- http://research.nii.ac.jp/~hu/pub/grace12_08.pdf
 -------------------------------------------------------------------------------}
 
-module PutLenses where
+module Lens where
 
 import Maybe (isJust)
 import SetFunctions (set2,isEmpty,chooseValue,selectValue,select)

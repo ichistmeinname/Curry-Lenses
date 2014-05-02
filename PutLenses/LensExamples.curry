@@ -3,20 +3,18 @@ module LensExamples where
 import Integer ( even, odd )
 import Maybe ( fromJust )
 import List ( nub )
-import PutLenses
+import Lens
 import qualified BinaryList as BL
 import Binary
 import qualified Peano as P
 
 type Month   = Int
 type Day     = Int
-type Key     = Int
-type First   = String
-type Last    = String
+type First = String
 type Address = String
 
 data Date = Date Month Day
-data Person = Person First Last Address
+data Person = Person First Address
 
 dateLens :: Lens Date (Month,Day)
 dateLens _ (m,d) = Date m d
@@ -27,28 +25,11 @@ monthLens (Date _ d) m = Date m d
 dayLens :: Lens Date Day
 dayLens (Date m _) d = Date m d
 
--- dateLens :: Lens Date (Int,Int)
--- dateLens = isoLens inn out
---  where
---   inn (m, d) = Date m d
---   out (Date m d) = (m,d)
-
 addressLens :: Lens Person Address
-addressLens (Person f l _) address = Person f l address
+addressLens (Person n _) a = Person n a
 
 nameLens :: Lens Person First
-nameLens (Person _ l a) first = Person first l a
-
--- addressLens :: Lens Person String
--- addressLens = isoLens inn out <.> keepFst
---  where
---   inn ((key, first, last), address)   = Person key first last address
---   out (Person key first last address) = ((key, first, last), address)
-
--- embed an element in a list
--- embedAt :: Int -> Lens [a] a
--- embedAt i = if i == 0 then unhead
---                       else untail <.> embedAt (i-1)
+nameLens (Person _ a) n = Person n a
 
 falsePut :: Lens Int Bool
 falsePut s _ = s
@@ -74,8 +55,6 @@ putHalveBinaryList xs xs' | BL.length xs' == n = xs' BL.++ BL.drop n xs
 test :: [a] -> Bool
 test xs' | length xs' == 1 = True
          | otherwise        = False
-
------ Examples from "Putback is the Essence of Bidirectional Programming
 
 data Tree a = Leaf a | Node (Tree a) (Tree a)
 
@@ -110,8 +89,7 @@ putRmdups' s v
  where
   s' = nub s
 
---------------------------------------------------------------------------------
-
+----- Examples from "Putback is the essence of bidirecitional programming"
 
 getFirst (x,_) = x
 
@@ -171,7 +149,7 @@ peopleFromTo from to source view =
   move p | get city p == from = put city p to
          | otherwise          = p
 
---------------------------------
+----- Examples from "Validity Check"
 data Elem a = A a | B a
 
 putAs [ ] [ ] = [ ]

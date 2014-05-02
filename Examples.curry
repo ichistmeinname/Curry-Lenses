@@ -1,4 +1,4 @@
-import Monadic
+import Lens
 import LensExamples
 
 -- yields y for xs = y:ys
@@ -44,52 +44,52 @@ injRPut eV v = put' injR (Just eV) v
 injRPut _ v = put' injR Nothing v
 
 -- embed an element in a list
-embedAt :: Int -> Lens [a] a
-embedAt i = if i == 0 then unhead'
-                      else untail' <.> embedAt (i-1)
+-- embedAt :: Int -> Lens [a] a
+-- embedAt i = if i == 0 then unhead'
+--                       else untail' <.> embedAt (i-1)
 
-embedAtGet :: Int -> [a] -> Maybe a
-embedAtGet i xs = getM (embedAt i) xs
+-- embedAtGet :: Int -> [a] -> Maybe a
+-- embedAtGet i xs = getM (embedAt i) xs
 
-embedAtPut :: Int -> [a] -> a -> [a]
-embedAtPut i xs x = put' (embedAt i) (Just xs) x
-embedAtPut i _  x = put' (embedAt i) Nothing x
+-- embedAtPut :: Int -> [a] -> a -> [a]
+-- embedAtPut i xs x = put' (embedAt i) (Just xs) x
+-- embedAtPut i _  x = put' (embedAt i) Nothing x
 
 -- fails
 fstOrSndGet :: (a,a) -> Either a a
 fstOrSndGet pair = get' (keepFst \/ keepSnd) pair
 
 ifSGet :: (Int,Int) -> Int
-ifSGet s = get' (ifSThenElse (\(a,b) -> a > 3) keepFst keepSnd) s
+ifSGet s = get' (ifSThenElse (\(a,_) -> a > 3) keepFst keepSnd) s
 
 ifSPut :: (Int,Int) -> Int -> (Int,Int)
-ifSPut s v = put' (ifSThenElse (\(a,b) -> a > 3) keepFst keepSnd) (Just s) v
-ifSPut _ v = put' (ifSThenElse (\(a,b) -> a > 3) keepFst keepSnd) Nothing v
+ifSPut s v = put' (ifSThenElse (\(a,_) -> a > 3) keepFst keepSnd) (Just s) v
+ifSPut _ v = put' (ifSThenElse (\(a,_) -> a > 3) keepFst keepSnd) Nothing v
 
-ifGet :: (Maybe (Either v v) -> v -> Bool) -> v -> v
-ifGet p s = get' (ifThenElse p idLens botLens) s
+-- ifGet :: (Maybe (Either v v) -> v -> Bool) -> v -> v
+-- ifGet p s = get' (ifThenElse p idLens botLens) s
 
-ifPut p s v = put' (ifThenElse p botLens idLens) (Just s) v
+-- ifPut p s v = put' (ifThenElse p botLens idLens) (Just s) v
 
 predicate (Just (Left  v)) v' = v > v'
 predicate (Just (Right v)) v' = v > v'
-predicate Nothing          v' = True
+predicate Nothing          _ = True
 
 ----- LensExamples.curry
 
-centigradeGet :: Float -> Float
-centigradeGet temp = get' centigrade (Temp temp)
+-- centigradeGet :: Float -> Float
+-- centigradeGet temp = get' centigrade (Temp temp)
 
-centigradePut :: Float -> Float -> Temp
-centigradePut temp celsius = put' centigrade (Just (Temp temp)) celsius
-centigradePut _    celsius = put' centigrade Nothing celsius
+-- centigradePut :: Float -> Float -> Temp
+-- centigradePut temp celsius = put' centigrade (Just (Temp temp)) celsius
+-- centigradePut _    celsius = put' centigrade Nothing celsius
 
-minsGet :: Int -> Int -> Int
-minsGet h m = get' mins (Time h m)
-minsGet h m = get' inTime (Time h m)
+-- minsGet :: Int -> Int -> Int
+-- minsGet h m = get' mins (Time h m)
+-- minsGet h m = get' inTime (Time h m)
 
-minsPut :: Int -> Int -> Int -> Time
-minsPut h m newM = put' mins (Just (Time h m)) newM
-minsPut h m newM = put' inTime (Just (Time h m)) newM
-minsPut h m newM = put' mins Nothing newM
-minsPut h m newM = put' inTime Nothing newM
+-- minsPut :: Int -> Int -> Int -> Time
+-- minsPut h m newM = put' mins (Just (Time h m)) newM
+-- minsPut h m newM = put' inTime (Just (Time h m)) newM
+-- minsPut _ _ newM = put' mins Nothing newM
+-- minsPut _ _ newM = put' inTime Nothing newM
