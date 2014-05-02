@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # target directory where the compiled cgi program should be stored:
-WEBSERVERDIR=/Applications/MAMP/bin/blog
+WEBSERVERDIR=/Applications/MAMP/htdocs/blog
 # makecurrycgi script to deploy the system (included in the PAKCS distribution):
 MAKECURRYPATH=/Users/ichistmeinname/Documents/programming/kics2/bin/makecurrycgi
 
@@ -15,8 +15,9 @@ if [ ! -d $WEBSERVERDIR ] ; then
   chmod 755 $WEBSERVERDIR
 fi
 
+LENSPATH=/Users/ichistmeinname/Documents/programming/Curry-Lenses/PutLenses
 ORIGDIR=`pwd`                          # original directory (builtin)
-CODEPATH=$ORIGDIR/views:$ORIGDIR/controllers:$ORIGDIR/models:$ORIGDIR/system:$ORIGDIR/config
+CODEPATH=$ORIGDIR/views:$ORIGDIR/controllers:$ORIGDIR/models:$ORIGDIR/system:$ORIGDIR/config:$LENSPATH:$CODEPATH
 
 CURRYPATH=$CODEPATH
 export CURRYPATH

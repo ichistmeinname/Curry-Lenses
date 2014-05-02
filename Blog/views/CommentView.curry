@@ -1,5 +1,5 @@
 module CommentView (
- wComment, {-tuple2Comment, comment2Tuple,-} wCommentType, blankCommentView,
+ wComment, wCommentType, blankCommentView,
  createCommentView, editCommentView, showCommentView, listCommentView
  ) where
 
@@ -10,7 +10,7 @@ import Spicey
 import Blog
 import BlogEntitiesToHtml
 
-import PutLenses
+import BlogLenses
 
 --- The WUI specification for the entity type Comment.
 --- It also includes fields for associated entities.
@@ -28,27 +28,13 @@ wCommentEdit entryList =
      (wSelect entryToShortView entryList))
    (renderLabels commentEditLabelList)
 
---- WUI Type for editing or creating Comment entities.
---- Includes fields for associated entities.
-wCommentType :: Comment -> Entry -> [Entry] -> WuiLensSpec Comment
-wCommentType comment entry entryList =
-  transformWSpec commentLens
-                 (wComment entryList)
- where
-  commentLens :: Lens Comment (String,String,CalendarTime,Entry)
-  commentLens (Comment cKey _ _ _ eKey) (text',author',date',entry) =
-    setCommentEntryCommentingKey (Comment cKey text' author' date' eKey)
-                                 (entryKey entry)
+wCommentType :: Entry -> [Entry] -> WuiLensSpec Comment
+wCommentType entry entryList =
+  transformWSpec (commentWOKey entry) $ wComment entryList
 
-wCommentEditType :: Comment -> Entry -> [Entry] -> WuiLensSpec Comment
-wCommentEditType comment entry entryList =
-  transformWSpec commentLens
-                 (wCommentEdit entryList)
- where
-  commentLens :: Lens Comment (String,Entry)
-  commentLens (Comment cKey _ author date eKey) (text',entry) =
-    setCommentEntryCommentingKey (Comment cKey text' author date eKey)
-                                 (entryKey entry)
+wCommentEditType :: Entry -> [Entry] -> WuiLensSpec Comment
+wCommentEditType entry entryList =
+  transformWSpec (commentZoom entry) $ wCommentEdit entryList
 
 --- Supplies a WUI form to create a new Comment entity.
 --- The fields of the entity have some default values.
@@ -85,7 +71,7 @@ editCommentView comment relatedEntry possibleEntrys controller =
       wuiframe = wuiEditForm "Edit Comment" "change"
                   (controller False initdata)
       (hexp ,handler) = wuiWithErrorForm
-                         (wCommentEditType comment relatedEntry possibleEntrys)
+                         (wCommentEditType relatedEntry possibleEntrys)
                          initdata (nextControllerForData (controller True))
                          (wuiFrameToForm wuiframe)
    in wuiframe hexp handler

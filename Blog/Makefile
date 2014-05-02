@@ -5,24 +5,36 @@ CURRYBIN=/Users/ichistmeinname/Documents/programming/kics2/bin
 
 .PHONY: all
 all:
-	@echo "make: deploy compile load clean?"
+	@echo "make: putDeploy combDeploy putLoad combLoad putCompile CombCompile"
 
 # Deploy the generated Spicey application, i.e., install it in the
 # web pages:
-.PHONY: deploy
-deploy:
-	scripts/deploy.sh
 
-# Compile the generated Spicey application:
-.PHONY: compile
-compile:
-	scripts/compile.sh
+.PHONY: putCompile
+putCompile:
+	scripts/putCompile.sh
 
-# Load the generated Spicey application into the Curry system so that
-# one can evaluate some expressions:
-.PHONY: load
-load:
-	scripts/load.sh
+.PHONY:	putLoad
+putLoad:
+	scripts/putLoad.sh
+
+
+.PHONY:	putDeploy
+putDeploy:
+	scripts/putDeploy.sh
+
+
+.PHONY:	combCompile
+combCompile:
+	scripts/combCompile.sh
+
+.PHONY: combLoad
+combLoad:
+	scripts/combLoad.sh
+
+.PHONY: combDeploy
+combDeploy:
+	scripts/combDeploy.sh
 
 # clean up generated programs
 .PHONY: clean

@@ -10,7 +10,7 @@ import Spicey
 import Blog
 import BlogEntitiesToHtml
 
-import PutLenses
+import BlogLenses
 
 --- The WUI specification for the entity type Tag.
 wTag :: WuiLensSpec String
@@ -18,11 +18,8 @@ wTag = withRendering wRequiredString (renderLabels tagLabelList)
 
 --- WUI Type for editing or creating Tag entities.
 --- Includes fields for associated entities.
-wTagType :: Tag -> WuiLensSpec Tag
-wTagType tag = transformWSpec tagLens wTag
- where
-  tagLens :: Lens Tag String
-  tagLens (Tag key _) name' = Tag key name'
+wTagType :: WuiLensSpec Tag
+wTagType = transformWSpec tagWOKey wTag
 
 --- Supplies a WUI form to create a new Tag entity.
 --- The fields of the entity have some default values.
@@ -52,7 +49,7 @@ editTagView tag controller =
       
       wuiframe = wuiEditForm "Edit Tag" "change" (controller False initdata)
       
-      (hexp ,handler) = wuiWithErrorForm (wTagType tag) initdata
+      (hexp ,handler) = wuiWithErrorForm wTagType initdata
                          (nextControllerForData (controller True))
                          (wuiFrameToForm wuiframe)
    in wuiframe hexp handler

@@ -1,5 +1,5 @@
 module EntryView (
- wEntry, {-tuple2Entry, entry2Tuple,-} wEntryType, blankEntryView,
+ wEntry, wEntryType, blankEntryView,
  createEntryView, editEntryView, showEntryView, listEntryView
  ) where
 
@@ -10,7 +10,7 @@ import Spicey
 import Blog
 import BlogEntitiesToHtml
 
-import PutLenses
+import BlogLenses
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -37,19 +37,10 @@ wEntryEdit tagList =
 wEntryType :: Entry -> [Tag] -> WuiLensSpec (Entry,[Tag])
 wEntryType entry tagList =
   transformWSpec entryWOKey (wEntry tagList)
- where
-  entryWOKey :: Lens (Entry,[Tag]) (String,String,String,CalendarTime,[Tag])
-  entryWOKey (Entry k _ _ _ _, _) (t1',t2',a',d',tags') =
-    (Entry k t1' t2' a' d', tags')
 
 wEntryEditType :: Entry -> [Tag] -> WuiLensSpec (Entry,[Tag])
 wEntryEditType entry tagList =
   transformWSpec entryZoom (wEntryEdit tagList)
- where
-  entryZoom :: Lens (Entry,[Tag]) (String, String, [Tag])
-  entryZoom  (Entry k _ _ a d, _) (t1',t2',tags') =
-    (Entry k t1' t2' a d, tags')
-
 
 --- Supplies a WUI form to create a new Entry entity.
 --- The fields of the entity have some default values.

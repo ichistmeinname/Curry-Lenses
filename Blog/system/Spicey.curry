@@ -35,7 +35,7 @@ import UserProcesses
 import Session
 import Global
 import Authentication
-import PutLenses
+import BlogLenses
 
 ---------------- vvvv -- Framework functions -- vvvv -----------------------
 
@@ -137,13 +137,6 @@ wuiFrameToForm wframe hexp wuihandler = getForm (wframe hexp wuihandler)
 --- It is based on a WUI for dates, i.e., the time is ignored.
 wDateType :: WuiLensSpec CalendarTime
 wDateType = transformWSpec dateLens wDate
- where
-  dateLens = isoLens inn out
-  inn :: (Int, Int, Int) -> CalendarTime
-  inn (day, month, year) = CalendarTime year month day 0 0 0 0
-
-  out :: CalendarTime -> (Int, Int, Int)
-  out (CalendarTime year month day _ _ _ _) = (day, month, year)
 
 --- A WUI for manipulating date entities.
 wDate :: WuiLensSpec (Int, Int, Int)
@@ -159,7 +152,7 @@ wBoolean = wSelectBool "True" "False"
 --- A WUI transformer to map WUIs into WUIs for corresponding Maybe types.
 wUncheckMaybe :: a -> WuiLensSpec a -> WuiLensSpec (Maybe a)
 wUncheckMaybe defval wspec =
-  wMaybe (transformWSpec (isoLens not not) (wCheckBool [htxt "No value"]))
+  wMaybe (transformWSpec negationLens (wCheckBool [htxt "No value"]))
          wspec
          defval
 

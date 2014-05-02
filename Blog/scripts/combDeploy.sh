@@ -15,9 +15,10 @@ if [ ! -d $WEBSERVERDIR ] ; then
   chmod 755 $WEBSERVERDIR
 fi
 
-LENSPATH=/Users/ichistmeinname/Documents/programming/Curry-Lenses
+LENSBIB=/Users/ichistmeinname/Documents/programming/Curry-Lenses
+LENSPATH=$LENSBIB:$LENSBIB/CombinatorialLenses
 ORIGDIR=`pwd`                          # original directory (builtin)
-CODEPATH=$ORIGDIR/views:$ORIGDIR/controllers:$ORIGDIR/models:$ORIGDIR/system:$ORIGDIR/config:$LENSPATH
+CODEPATH=$ORIGDIR/views:$ORIGDIR/controllers:$ORIGDIR/models:$ORIGDIR/system:$ORIGDIR/config:$LENSPATH:$CODEPATH
 
 CURRYPATH=$CODEPATH
 export CURRYPATH
