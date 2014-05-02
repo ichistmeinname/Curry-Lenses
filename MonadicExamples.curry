@@ -1,4 +1,5 @@
 import Monadic
+import LensExamples
 
 -- yields y for xs = y:ys
 unheadGet :: [a] -> Maybe a
@@ -73,3 +74,22 @@ ifPut p s v = put' (ifThenElse p botLens idLens) (Just s) v
 predicate (Just (Left  v)) v' = v > v'
 predicate (Just (Right v)) v' = v > v'
 predicate Nothing          v' = True
+
+----- LensExamples.curry
+
+centigradeGet :: Float -> Float
+centigradeGet temp = get' centigrade (Temp temp)
+
+centigradePut :: Float -> Float -> Temp
+centigradePut temp celsius = put' centigrade (Just (Temp temp)) celsius
+centigradePut _    celsius = put' centigrade Nothing celsius
+
+minsGet :: Int -> Int -> Int
+minsGet h m = get' mins (Time h m)
+minsGet h m = get' inTime (Time h m)
+
+minsPut :: Int -> Int -> Int -> Time
+minsPut h m newM = put' mins (Just (Time h m)) newM
+minsPut h m newM = put' inTime (Just (Time h m)) newM
+minsPut h m newM = put' mins Nothing newM
+minsPut h m newM = put' inTime Nothing newM

@@ -3,56 +3,133 @@ module LensExamples where
 import Integer ( even, odd )
 import Maybe ( fromJust )
 import List ( nub )
-import PutLenses
+import Float ((*.), (/.), (+.), (-.))
+import Monadic
+
+----- Height examples
+
+putHeight1 :: Lens (Int,Int) Int
+putHeight1 = keepFst
+
+putHeight2 :: Lens (Int,Int) Int
+putHeight2 = addFst (\p v ->
+  maybe failed
+        (uncurry (putSquare v))
+        p)
+ where
+  putSquare v s1 s2 | s1 == s2  = v
+                    | otherwise = failed
+
+putHeight3 :: Int -> Lens (Int,Int) Int
+putHeight3 i = addFst (\p v ->
+  maybe failed
+        (uncurry (putChange v))
+        p)
+ where
+  putChange v s1 s2 | v == s2   = s1
+                    | otherwise = i
+
+----- Date examples
 
 type Month   = Int
 type Day     = Int
-type Key     = Int
-type First   = String
-type Last    = String
-type Address = String
-
 data Date = Date Month Day
-data Person = Person Key First Last Address
-
-dateLens :: Lens Date (Month,Day)
-dateLens _ (m,d) = Date m d
 
 monthLens :: Lens Date Month
-monthLens (Date _ d) m = Date m d
+monthLens = dateLens <.> keepSnd
 
 dayLens :: Lens Date Day
-dayLens (Date m _) d = Date m d
+dayLens = dateLens <.> keepFst
 
--- dateLens :: Lens Date (Int,Int)
--- dateLens = isoLens inn out
---  where
---   inn (m, d) = Date m d
---   out (Date m d) = (m,d)
+dateLens :: Lens Date (Month,Day)
+dateLens = isoLens inn out
+ where
+  inn (m, d) = Date m d
+  out (Date m d) = (m,d)
 
-addressLens :: Lens Person Address
-addressLens (Person k f l _) address = Person k f l address
+----- Temperature examples
 
--- addressLens :: Lens Person String
--- addressLens = isoLens inn out <.> keepFst
---  where
---   inn ((key, first, last), address)   = Person key first last address
---   out (Person key first last address) = ((key, first, last), address)
+-- type Temp = { fahrenheit :: Float }
+data Temp = Temp Float
+
+centigrade :: Lens Temp Float
+centigrade = isoLens inn out
+ where
+  inn :: Float -> Temp
+  inn celsius = Temp (cToF celsius)
+  out :: Temp -> Float
+  out (Temp temp) = fToC temp
+
+cToF :: Float -> Float
+cToF c = c *. 1.8 +. 32
+fToC :: Float -> Float
+fToC f = (f -. 32) *. (5/.9)
+
+----- Time examples
+
+-- type Time = { hour :: Int, min :: Int }
+data Time = Time Int Int
+
+inTime :: Lens Time Int
+inTime = isoLens innT (\(Time hour min) -> hour * 60 + min)
+
+mins :: Lens Time Int
+mins = isoLens innT (\(Time _ min) -> min)
+
+innT :: Int -> Time
+innT m = Time (m `quot` 60) (m `mod` 60)
+
+----- Person examples
+
+data Person = Person Name City
+type Name = String
+type City = String
+
+inPerson :: Lens Person (Name,City)
+inPerson = isoLens inn out
+ where
+  inn (n,c)        = Person n c
+  out (Person n c) = (n,c)
+
+outPerson :: Lens (Name, City) Person
+outPerson = isoLens out inn
+ where
+  inn (n,c)        = Person n c
+  out (Person n c) = (n,c)
+
+people  = [bastian, lennart, julia]
+bastian = Person "Bastian" "Gaarden"
+lennart = Person "Lennart" "Kronshagen"
+julia   = Person "Julia"   "Schreventeich"
+-- julia   = Person "Julia"   "Kiel"
+
+nameOrCity :: Lens Person String
+nameOrCity = name ? city
+
+name :: Lens Person Name
+name = inPerson <.> keepSnd
+
+city :: Lens Person City
+city = inPerson <.> keepFst
+
+inout :: Lens Person Person
+inout = inPerson <.> outPerson
+
+peopleNames :: City -> Lens [Person] [Name]
+peopleNames c = mapLens (inPerson <.> addSnd cityOf)
+ where
+  cityOf s _ = maybe c snd s
+
+-----
 
 -- embed an element in a list
--- embedAt :: Int -> Lens [a] a
--- embedAt i = if i == 0 then unhead
---                       else untail <.> embedAt (i-1)
+embedAt :: Int -> Lens [a] a
+embedAt i = if i == 0 then unhead
+                      else untail <.> embedAt (i-1)
 
-falsePut :: Lens Int Bool
-falsePut s _ = s
+-- falsePut :: Lens Int Bool
 
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
----------------- Examples from Bidirectionalization for Free -------------------
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
+----- Examples from "Bidirectionalization for Free"
 
 halve :: [a] -> [a]
 halve xs = take (length xs `div` 2) xs
@@ -62,9 +139,6 @@ putHalve xs xs' | length xs' == n = xs' ++ drop n xs
                 | otherwise       = failed
  where
   n = length xs `div` 2
-
--- (Rule [1,2] (Let [(3,Comb FuncCall ("Prelude","div") [Comb FuncCall ("Prelude","length") [Var 1],Lit (Intc  2)])] (Case  Rigid (Comb FuncCall ("Prelude","==") [Comb FuncCall ("Prelude","length") [Var 2],Var 3]) [Branch (Pattern ("Prelude","True") []) (Comb FuncCall ("Prelude","++") [Var 2,Comb FuncCall ("Prelude","drop") [Var 3,Var 1]]),Branch (Pattern ("Prelude","False") []) (Case  Rigid (Comb FuncCall ("Prelude","otherwise") []) [Branch (Pattern ("Prelude","True") []) (Comb FuncCall ("Prelude","failed") []),Branch (Pattern ("Prelude","False") []) (Comb FuncCall ("Prelude","failed") [])])])))
-
 
 data Tree a = Leaf a | Node (Tree a) (Tree a)
 
@@ -85,10 +159,6 @@ putFlatten s v = case go s v of
 rmdups :: [a] -> [a]
 rmdups = nub
 
--- PutGet: put s (get s) = s
--- GetPut: get (put s v) = v
--- PutDetermination: forall s,s',v,v'. put s v = put s' v' => v = v'
--- PutStability: forall s. exists v. put s v = s
 putRmdups :: [a] -> [a] -> [a]
 putRmdups s v
   | v == nub v && length v == length s' = map (fromJust . flip lookup (zip s' v)) s
@@ -96,20 +166,8 @@ putRmdups s v
  where
   s' = nub s
 
+----- Examples from "Validity Check"
 
---------------------------------------------------------------------------------
-
-evens :: [Int] -> [Int]
-evens xs = filter even xs
-
-putEvens :: [Int] -> [Int] -> [Int]
-putEvens (x:xs) ys | any odd ys                  = failed
-                   | even x && x `elem` ys       = x : putEvens xs ys
-                   | even x && not (x `elem` ys) = putEvens xs ys
-                   | otherwise                   = x : putEvens xs ys
-putEvens [] ys                                   = []
-
---------------------------------
 data Elem a = A a | B a
 
 putAs [ ] [ ] = [ ]
