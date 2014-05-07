@@ -27,3 +27,20 @@ drop :: Peano -> [a] -> [a]
 drop Z     xs     = xs
 drop (S n) (x:xs) = drop n xs
 drop (S n) []     = []
+
+data Neg = N
+
+sub :: Peano -> Peano -> Either Neg Peano
+sub n Z         = Right n
+sub Z (S n)     = Left N
+sub (S n) (S m) = sub n m
+
+div :: Peano -> Peano -> Peano
+div n Z     = error "div: division by zero"
+div Z (S n) = Z
+div n@(S _) m@(S _) = fst $ divMod n m
+ where
+  divMod x y = case sub x y of
+                    Left _ -> (Z, y)
+                    Right m' -> let (q,r) = divMod m' y
+                                in (S q, r)

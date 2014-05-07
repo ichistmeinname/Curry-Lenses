@@ -44,7 +44,6 @@ putHalve :: [a] -> [a] -> [a]
 putHalve xs xs' | length xs' == n = xs' ++ drop n xs
                 | otherwise        = failed
  where
-  -- n' = intToPeano n
   n  = length xs `div` 2
 
 putHalveBinaryList :: BL.BinaryList a -> BL.BinaryList a -> BL.BinaryList a
@@ -52,9 +51,10 @@ putHalveBinaryList xs xs' | BL.length xs' == n = xs' BL.++ BL.drop n xs
  where
   n = BL.length xs `divInteger` Pos (O IHi)
 
-test :: [a] -> Bool
-test xs' | length xs' == 1 = True
-         | otherwise        = False
+putHalvePeano :: [a] -> [a] -> [a]
+putHalvePeano xs xs' | P.length xs' == n = xs' ++ P.drop n xs
+ where
+  n = P.length xs `P.div` (P.S (P.S P.Z))
 
 data Tree a = Leaf a | Node (Tree a) (Tree a)
 
@@ -62,8 +62,8 @@ flatten :: Tree a -> [a]
 flatten (Leaf e)     = [e]
 flatten (Node t1 t2) = flatten t1 ++ flatten t2
 
-putFlatten :: Tree a -> [a] -> Tree a
-putFlatten s v = case go s v of
+putflatten :: Tree a -> [a] -> Tree a
+putflatten s v = case go s v of
                       (t,[]) -> t
                       _      -> failed
  where
