@@ -15,16 +15,26 @@
     * adapt formlens idea for WUI/Spicey framework - (16.-17.4.)
     * use formlenses for blog example of Spicey framework (22.-23.4)
   
-* definition of `put` and generating corresponding `get` [1]  - (24. - 30.4)
+* definition of `put` and generating corresponding `get` [1]  - (24. - 09.05)
     * naive implementation + basic combinators - (24.4.)
     * examples: is it natural to define well-behaved put-based lenses? -
-    (25.-26.4.)
-        * test examples from paper - (25.4.)
-        * test examples from SPJ's presentation - (25.4.)
-        * test examples for web programming with Spicey - (26.4.)
+    (25.4.)
+        * test examples of Fischer's et al paper - (25.4.)
+        * test examples of SPJ's presentation - (25.4.)
+        * test examples for web programming with Spicey - (25.4.)
+        * test examples of Voiglaender's paper [8] (30.4)
+          * examples caused non-terminating search for `get`, see
+            notes in `curry-lens.md` (1.5., 5.5)
   
     * efficient implementation
     * check requirements for `put` (static analysis (approx.)) [4]
+      (28.-29.04), see notes in `curry-lens.md`
+        * study [4] (28.-29.04)
+        * try to implement transformation to get inverse mapping
+          (`rPut`) (28.-29.04) -> fiddly work, go back to test
+          examples in order to see how invalid lenses look like and to
+          search for `get`-definitions that cannot be generated with
+          the built-in search mechanism
 
 * definition of `get` and generating `put` + choosing _best_
   `get` function [3]
@@ -48,3 +58,7 @@
 Lenses for Web Data 
 
 [7] http://www.informatik.uni-kiel.de/~mh/papers/TPLP14.pdf - An ER-based Framework for Declarative Web Programming
+
+[8]
+http://www.iai.uni-bonn.de/~jv/papers/BidirectionalizationForFree.pdf -
+Bidirectionalization for Free!
