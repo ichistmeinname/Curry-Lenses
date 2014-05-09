@@ -2,11 +2,13 @@ module LensExamples where
 
 import Integer ( even, odd )
 import Maybe ( fromJust )
-import List ( nub )
+import List ( nub, intercalate, last )
 import Lens
 import qualified BinaryList as BL
 import Binary
 import qualified Peano as P
+
+----- Data type projections
 
 type Month   = Int
 type Day     = Int
@@ -31,8 +33,24 @@ addressLens (Person n _) a = Person n a
 nameLens :: Lens Person First
 nameLens (Person _ a) n = Person n a
 
+-- invalid put!
 falsePut :: Lens Int Bool
 falsePut s _ = s
+
+data Time = Time BinInt BinInt
+
+time :: BinInt -> BinInt -> Time
+time h m = putHours (putMins (Time Zero Zero) m) h
+
+putHours :: Lens Time BinInt
+putHours t@(Time _ m) h = Time h m
+
+-- a smarter projection
+putMins :: Lens Time BinInt
+putMins t            Zero    = Time Zero Zero
+putMins t@(Time _ _) (Pos m) = Time q r
+ where
+  (q,r) = m `quotRemNat'` (O (O (I (I (I IHi)))))
 
 
 ----- Examples from "Bidirectionalization for Free"
@@ -45,6 +63,22 @@ putHalve xs xs' | length xs' == n = xs' ++ drop n xs
                 | otherwise        = failed
  where
   n  = length xs `div` 2
+
+putHalveNat :: [a] -> [a] -> [a]
+putHalveNat xs xs' | lengthN xs' == n = xs' ++ drop' n xs
+ where
+  n = div2 (lengthN xs)
+  drop' :: Nat -> [a] -> [a]
+  drop' IHi   []     = []
+  drop' (I _) []     = []
+  drop' (O _) []     = []
+  drop' IHI   (_:xs) = xs
+  drop' (I n) (_:xs) = drop' (pred (I n)) xs
+  drop' (O n) (_:xs) = drop' (pred (O n)) xs
+
+lengthN :: [a] -> Nat
+lengthN [_]      = IHi
+lengthN (_:y:ys) = succ (lengthN (y:ys))
 
 putHalveBinaryList :: BL.BinaryList a -> BL.BinaryList a -> BL.BinaryList a
 putHalveBinaryList xs xs' | BL.length xs' == n = xs' BL.++ BL.drop n xs
@@ -88,6 +122,7 @@ putRmdups' s v
   | otherwise = failed
  where
   s' = nub s
+
 
 ----- Examples from "Putback is the essence of bidirecitional programming"
 
@@ -149,7 +184,9 @@ peopleFromTo from to source view =
   move p | get city p == from = put city p to
          | otherwise          = p
 
+
 ----- Examples from "Validity Check"
+
 data Elem a = A a | B a
 
 putAs [ ] [ ] = [ ]
@@ -157,3 +194,132 @@ putAs (ss@[])    (v:vs)   = A v : putAs ss vs
 putAs (A _ : ss) (vs@[ ]) = putAs ss vs
 putAs (A _ : ss) (v:vs)   = A v : putAs ss vs
 putAs (B b : ss) vs       = B b : putAs ss vs
+
+
+----- "data-base" examples
+
+data UPerson = P Prof | S Student
+data Prof = Prof String String
+data Student = Student String String
+
+putStudents :: Lens [UPerson] [Student]
+putStudents []         []         = []
+putStudents (S s : ps) (s' : sts) = S s' : putStudents ps sts
+putStudents (P p : ps) sts        = P p : putStudents ps sts
+
+testUPersons = [ P (Prof "Huch" "Computer Science")
+               , S (Student "Dylus" "Computer Sciene")
+               , S (Student "Cordes" "Chemistry")]
+
+testStudents = [Student "Beck" "Linguistics", Student "Danilenko" "Mathematics"]
+
+
+----- Lists
+
+putHead :: [a] -> a -> [a]
+putHead []     y = [y]
+putHead (x:xs) y = y:xs
+
+putTail :: [a] -> [a] -> [a]
+putTail []     ys = ys
+putTail (x:xs) ys = x:ys
+
+putReverse :: [a] -> [a] -> [a]
+putReverse [] []         = []
+putReverse (x:xs) (y:ys) = putReverse xs ys ++ [y]
+
+putLength :: Lens [a] Int
+putLength [] n     | n <  0    = failed
+                   | n == 0    = []
+                   | n >  0    = failed
+putLength (x:xs) n | n <  0    = failed
+                   | n == 0    = []
+                   | otherwise = x : putLength xs (n-1)
+
+putZip :: Lens ([a],[b]) [(a,b)]
+putZip _           []           = ([],[])
+putZip (xs,ys)    ((v1,v2):vs)   = let (xs',ys') = putZip (xs,ys) vs
+                                   in (v1:xs',v2:ys')
+
+-- a more restrictive version of `putZip`, fails if the view list is
+-- longer than the shortest list of the source tuple 
+putZip' :: Lens ([a],[b]) [(a,b)]
+putZip' _           []           = ([],[])
+putZip' (x:xs,y:ys) ((v1,v2):vs) = let (xs',ys') = putZip' (xs,ys) vs
+                                   in (v1:xs',v2:ys')
+
+putAlt :: Lens [a] [a]
+putAlt []       []     = []
+putAlt [x]      []     = [x]
+putAlt [x]      (z:zs) = [x,z]
+putAlt (x:y:xs) (z:zs) = x:z: putAlt xs zs
+
+putAppend :: Lens ([a],[a]) [a]
+putAppend ([],_)     zs     = ([],zs)
+putAppend (x:xs,ys) (z:zs) = let (xs',ys') = putAppend (xs,ys) zs
+                             in (z:xs',ys')
+
+
+putLookup :: a -> Lens [(a,b)] (Maybe b)
+putLookup _ []       Nothing                = []
+putLookup k (kv:kvs) Nothing  | k /= fst kv = kv : putLookup k kvs Nothing
+                              | otherwise   = putLookup k kvs Nothing
+putLookup k []       (Just v)               = [(k,v)]
+putLookup k (kv:kvs) (Just v) | k == fst kv = (k,v):kvs
+                              | otherwise   = kv : putLookup k kvs (Just v)
+
+----- Trees
+
+putSumTree :: Lens (Tree Int) Int
+putSumTree (Leaf _)   n = Leaf n
+putSumTree (Node l r) n = Node (putSumTree l n')
+                               (putSumTree r (n-n'))
+ where
+  n' = n `div` 2
+
+binIntTree = Node (Node (Leaf (Pos IHi))
+                        (Leaf (Pos (O IHi))))
+                  (Leaf (Pos (I IHi)))
+
+putSumTreeShift :: Lens (Tree BinInt) BinInt
+putSumTreeShift (Leaf _)   n         = Leaf n
+putSumTreeShift (Node l r) Zero      =
+  Node (putSumTreeShift l Zero)
+       (putSumTreeShift r Zero)
+putSumTreeShift (Node l r) m@(Pos _) =
+  Node (putSumTreeShift l n')
+       (putSumTreeShift r (m -# n'))
+ where
+  n' = shiftLeft m
+
+putSumTreeDivNat :: Lens (Tree BinInt) BinInt
+putSumTreeDivNat (Leaf _)   n         = Leaf n
+putSumTreeDivNat (Node l r) Zero      =
+  Node (putSumTreeDivNat l Zero)
+       (putSumTreeDivNat r Zero)
+putSumTreeDivNat (Node l r) m@(Pos n) =
+  Node (putSumTreeDivNat l n')
+       (putSumTreeDivNat r (m -# n'))
+ where
+  n' = divNat n (O IHi)
+
+putAt :: Int -> Lens [a] a
+putAt n []     v | n < 0     = failed
+                 | n == 0    = [v]
+                 | otherwise = []
+putAt n (x:xs) v | n < 0     = failed
+                 | n == 0    = v:xs
+                 | otherwise = x : putAt (n-1) xs v
+
+putLines :: Lens String [String]
+putLines x xs | any ('\n' `elem`) xs = failed
+              | otherwise            = intercalate "\n" xs
+
+putDiv :: Int -> Lens Int Int
+putDiv x 0 z = failed
+putDiv x y z | r > 0 && r < y && x == y*z + r = y where r free
+
+putInit :: Lens [a] [a]
+putInit []       []     = failed
+putInit [x]      []     = [x]
+putInit (x:y:xs) (x:ys) = x : putInit (y:xs) ys
