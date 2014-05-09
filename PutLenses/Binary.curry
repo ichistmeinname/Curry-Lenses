@@ -1,5 +1,8 @@
 module Binary where
 
+infixl 7 *^, `div2`, `mod2`, `quotRemNat`, *#, `divInteger`, `modInteger`, `quotInteger`, `remInteger`
+infixl 6 +^, -^, +#, -#
+
 -- ---------------------------------------------------------------------------
 -- Nat
 -- ---------------------------------------------------------------------------
@@ -211,3 +214,63 @@ x `quotInteger` y = fst (x `quotRemInteger` y)
 
 remInteger :: BinInt -> BinInt -> BinInt
 x `remInteger` y = snd (x `quotRemInteger` y)
+
+----- new implementations
+
+shiftLeft :: BinInt -> BinInt
+shiftLeft Zero      = Zero
+shiftLeft (Pos IHi) = Zero
+shiftLeft (Pos n)   = Pos (Binary.div2 n)
+shiftLeft (Neg IHi) = Neg IHi
+shiftLeft (Neg n)   = Neg (pred (Binary.div2 n))
+
+quotRemNat' :: Nat -> Nat -> (BinInt, BinInt)
+quotRemNat' x     IHi     = (Pos x, Zero)
+quotRemNat' IHi   y@(O _) = (Zero, Pos IHi)
+quotRemNat' (O x) (O y) = (q, o r)
+ where
+  (q,r) = quotRemNat' x y
+quotRemNat' (I x) (O y) = (q, i r)
+ where
+  (q,r) = quotRemNat' x y
+quotRemNat' x (I y) =
+  case q' of 
+       Zero -> (Zero, r')
+       Pos n -> let (q,b) = n `quotRemNat'` (O IHi)
+                    r     = r' -# q +# b *# (Pos y)
+                    (i,j) = case r of
+                                 Neg n' -> (q -# Pos IHi,Pos (I y) +# r) 
+                                           -- let (i',j') = n' `quotRemNat'` I y
+                                           -- in (q -# i', j')
+                                               
+                                 Pos _ -> (q,r)
+                                 Zero -> (q,r)
+                in (i, j)
+ where
+  (q',r') = x `quotRemNat'` y
+-- quotRemNat' x y@(I _)
+--   | x <^ y      = (Zero, Pos x)
+--   | otherwise   = case Pos x -# Pos y of
+--                        Zero -> (Pos IHi, Zero)
+--                        Pos n -> let (q,r) = quotRemNat' n y
+--                                 in (inc q,r)
+
+o :: BinInt -> BinInt
+o Zero    = Zero
+o (Pos n) = Pos (O n)
+
+i :: BinInt -> BinInt
+i Zero    = Pos IHi
+i (Pos n) = Pos (I n)
+
+(<^) :: Nat -> Nat -> Bool
+_ <^ IHi = False
+IHi <^ (O n) = True
+IHi <^ (I n) = True
+(O n) <^ (O m) = n <^ m
+(I n) <^ (I m) = n <^ m
+(O n) <^ (I m) = not (m <^ n)
+(I n) <^ (O m) = n <^ m
+
+divNat :: Nat -> Nat -> BinInt
+divNat x y = fst (quotRemNat' x y)
