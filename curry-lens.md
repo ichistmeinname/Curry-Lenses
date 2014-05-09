@@ -28,6 +28,8 @@
 * validity - A put function is valid if and only if it satisfies the
   _PUTDETERMINATION_ and _PUTSTABILITY_ properties
 
+## Combining Syntactic and Semantic Bidirectionalization
+
 # Implementations
 
 ## "Combinator-Lenses"
@@ -35,9 +37,17 @@
 ## "Put-Lenses"
 
 * generating corresponding `get` for a defined `put`-function
-* examples of "Bidirectionalization for free" do not terminate (see
-  [Problems with internal structures](#structures)
 
+* tidious to formulate definitions for `put` direction
+  * `putAppend`, `putZip` (in the end, definition is pretty simple)
+  * `putLength`
+
+* non-terminating examples (see
+  [Problems with internal structures](#structures))
+  * `putHalve`
+  * `putSumTree` - `quotRemNat` is too strict (fixed for free variables in
+    first component)
+    
 # Practical Examples
 
 ## Spicey
@@ -190,18 +200,43 @@ free variables. For our example, we can illustrate the
 built-in search as follows.
 
 `length v == Pos IHi where v free`
-$\rightarrow$ `length ([] ? _x2:xs) == Pos IHi where _x2,xs free`
-$\rightarrow$ `(length [] ? length _x2:xs) == Pos IHi where _x2, xs free`  
-$\rightarrow$ `length [] == Pos IHi ? length _x2:xs == Pos IHi where
+
+$\rightarrow$
+
+`length ([] ? _x2:xs) == Pos IHi where _x2,xs free`
+
+$\rightarrow$
+
+`(length [] ? length _x2:xs) == Pos IHi where _x2, xs free`  
+
+$\rightarrow$
+
+`length [] == Pos IHi ? length _x2:xs == Pos IHi where
 _x2,xs free`  
-$\rightarrow$ `Zero == Pos IHi ? length _x2:xs == Pos IHi where _x2,xs
+
+$\rightarrow$
+
+`Zero == Pos IHi ? length _x2:xs == Pos IHi where _x2,xs
 free`  
-$\rightarrow$ `False ? length _x2:xs == Pos IHi where _x2,xs free`  
-$\rightarrow$ `False ? inc (length xs) == PosIHi where xs free`  
-$\rightarrow$ `False ? inc (length [] ? length _x4:ys) == PosIHi where
+
+$\rightarrow$
+
+`False ? length _x2:xs == Pos IHi where _x2,xs free`  
+
+$\rightarrow$
+
+`False ? inc (length xs) == PosIHi where xs free`  
+
+$\rightarrow$
+
+`False ? inc (length [] ? length _x4:ys) == PosIHi where
 _x4,ys free`  
-$\rightarrow$ `False ? inc length [] == Pos IHi  ? inc (length _x4:ys) == PosIHi where _x4,ys free`  
-`...`
+
+$\rightarrow$
+
+`False ? inc length [] == Pos IHi  ? inc (length _x4:ys) == PosIHi where _x4,ys free`  
+
+$\rightarrow$ ...
 
 ```
 {v = []} False
@@ -230,7 +265,58 @@ set is used for further function calls.
 As we said in the beginning, the internal structure for lists and
 numbers do not harmonise well - how can we solve the problem that
 `putHalve` does not terminate with the current implementation? We will
-present two different approaches.
+present two different approaches. Beforehand, we exchange the usage of
+`BinInt` by `Nat` to see, if this little change will do the
+difference. Up to now, it seems the built-in search cannot termine,
+because the `Pos` constructor takes to long to be propagated in
+front of the expression.
+
+```{.haskell}
+lengthNat :: [a] -> Nat
+lengthNat [_]      = IHi
+lengthNat (_:y:ys) = succ (lengthNat (y:ys))
+```
+
+`lengthNat v == IHI where v free`
+
+$\rightarrow$
+
+`lengthNat ([] ? _x2:xs) == IHi where _x2,xs free`
+
+$\rightarrow$
+
+`(lengthNat [] ? lengthNat (_x2:xs)) == IHi where _x2,xs free`
+
+$\rightarrow$
+
+`lengthNat [] == IHi ? lengthNat (_x2:xs) == IHi where _x2,xs
+free`
+
+$\rightarrow$
+
+`failed ? lengthNat (_x2:xs) == IHi where _x2,xs free`
+
+$\rightarrow$
+
+`failed ? lengthNat (_x2:([] ? (_x4:ys))) == IHI where _x2,_x4,ys free`
+
+$\rightarrow$ .. $\rightarrow$
+
+`failed ? lengthNat [_x2] == IHI ? lengthNat (_x2:_x4:ys) == IHi where
+_x2 _x4,ys`
+
+$\rightarrow$
+
+`failed ? IHi == IHi ? succ (lengthNat (_x4:ys)) == IHi where _x4,ys free`
+
+$\rightarrow$
+
+`failed ? True ? succ (lengthNat (_x4:([] ? (_x6:zs)))) == IHi where
+_x4,_x6,zs`
+
+$\rightarrow$
+
+...
 
 ### Peano numbers
 At first, we use another data structure for numbers that has an unary representation, i.e. we will
