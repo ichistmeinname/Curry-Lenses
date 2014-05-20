@@ -15,7 +15,7 @@
     * adapt formlens idea for WUI/Spicey framework - (16.-17.4.)
     * use formlenses for blog example of Spicey framework (22.-23.4)
   
-* definition of `put` and generating corresponding `get` [1]  - (24. - 09.05)
+* definition of `put` and generating corresponding `get` [1]  - (24. - 23.05)
     * naive implementation + basic combinators - (24.4.)
     * examples: is it natural to define well-behaved put-based lenses? -
     (25.4.)
@@ -25,7 +25,17 @@
         * test examples of Voiglaender's paper [8] (30.4)
           * examples caused non-terminating search for `get`, see
             notes in `curry-lens.md` (1.5., 5.5)
-  
+        * even more examples (6.-8.5.,14.-16.5)
+        * implementation of better `quotRemNat` in `Binary.curry`
+            (6.5.)
+        * simple parser/printer (19.-21.5)
+        * regular expressions in strings (19.-21.5)
+        * XML (19.-21.5)
+
+* Test framework (12.5;19.5-20.5)
+  * reanimate "Easy Check" [9] (12.5)
+  * run tests for all examples (19.5)
+
     * efficient implementation
     * check requirements for `put` (static analysis (approx.)) [4]
       (28.-29.04), see notes in `curry-lens.md`
@@ -40,6 +50,8 @@
   `get` function [3]
 
 * practical examples: WUI [5, 6]
+
+* add .bib file (12.5.)
 
 ## Sources
 
@@ -62,3 +74,7 @@ Lenses for Web Data
 [8]
 http://www.iai.uni-bonn.de/~jv/papers/BidirectionalizationForFree.pdf -
 Bidirectionalization for Free!
+
+[9]
+http://www-ps.informatik.uni-kiel.de/~sebf/data/pub/flops08.pdf
+EasyCheck - Test Data for Free
