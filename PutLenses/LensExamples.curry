@@ -43,60 +43,54 @@ time :: BinInt -> BinInt -> Time
 time h m = putHours (putMins (Time Zero Zero) m) h
 
 putHours :: Lens Time BinInt
-putHours t@(Time _ m) h = Time h m
+putHours (Time _ m) h = Time h m
 
 -- a smarter projection
 putMins :: Lens Time BinInt
-putMins t            Zero    = Time Zero Zero
-putMins t@(Time _ _) (Pos m) = Time q r
+putMins _            Zero  = Time Zero Zero
+putMins (Time _ _) (Pos m) = Time q r
  where
   (q,r) = m `quotRemNat'` (O (O (I (I (I IHi)))))
 
 
 ----- Examples from "Bidirectionalization for Free"
 
-halve :: [a] -> [a]
-halve xs = take (length xs `div` 2) xs
+--- Do not work
+-- putHalve :: Lens [a] [a]
+-- putHalve xs xs' | length xs' == n = xs' ++ drop n xs
+--                 | otherwise        = failed
+--  where
+--   n  = length xs `div` 2
 
-putHalve :: [a] -> [a] -> [a]
-putHalve xs xs' | length xs' == n = xs' ++ drop n xs
-                | otherwise        = failed
- where
-  n  = length xs `div` 2
-
-putHalveNat :: [a] -> [a] -> [a]
-putHalveNat xs xs' | lengthN xs' == n = xs' ++ drop' n xs
- where
-  n = div2 (lengthN xs)
-  drop' :: Nat -> [a] -> [a]
-  drop' IHi   []     = []
-  drop' (I _) []     = []
-  drop' (O _) []     = []
-  drop' IHI   (_:xs) = xs
-  drop' (I n) (_:xs) = drop' (pred (I n)) xs
-  drop' (O n) (_:xs) = drop' (pred (O n)) xs
+-- putHalveNat :: Lens [a] [a]
+-- putHalveNat xs xs' | lengthN xs' == n = xs' ++ drop' n xs
+--  where
+--   n = div2 (lengthN xs)
+--   drop' :: Nat -> [a] -> [a]
+--   drop' IHi   []     = []
+--   drop' (I _) []     = []
+--   drop' (O _) []     = []
+--   drop' IHi   (_:ys) = ys
+--   drop' (I m) (_:ys) = drop' (pred (I m)) ys
+--   drop' (O m) (_:ys) = drop' (pred (O m)) ys
 
 lengthN :: [a] -> Nat
 lengthN [_]      = IHi
 lengthN (_:y:ys) = succ (lengthN (y:ys))
 
-putHalveBinaryList :: BL.BinaryList a -> BL.BinaryList a -> BL.BinaryList a
+putHalveBinaryList :: Lens (BL.BinaryList a) (BL.BinaryList a)
 putHalveBinaryList xs xs' | BL.length xs' == n = xs' BL.++ BL.drop n xs
  where
   n = BL.length xs `divInteger` Pos (O IHi)
 
-putHalvePeano :: [a] -> [a] -> [a]
+putHalvePeano :: Lens [a] [a]
 putHalvePeano xs xs' | P.length xs' == n = xs' ++ P.drop n xs
  where
   n = P.length xs `P.div` (P.S (P.S P.Z))
 
 data Tree a = Leaf a | Node (Tree a) (Tree a)
 
-flatten :: Tree a -> [a]
-flatten (Leaf e)     = [e]
-flatten (Node t1 t2) = flatten t1 ++ flatten t2
-
-putflatten :: Tree a -> [a] -> Tree a
+putflatten :: Lens (Tree a) [a]
 putflatten s v = case go s v of
                       (t,[]) -> t
                       _      -> failed
@@ -106,29 +100,31 @@ putflatten s v = case go s v of
    where (t1,cs) = go s1 bs
          (t2,ds) = go s2 cs
 
-rmdups :: [a] -> [a]
-rmdups = nub
+--- Do not work
+-- putRmdups :: Lens [a] [a]
+-- putRmdups s v
+--   | length v == length s' && v == nub v =
+--       map (fromJust . flip lookup (zip s' v)) s
+--   | otherwise = failed
+--  where
+--   s' = nub s
 
-putRmdups :: [a] -> [a] -> [a]
-putRmdups s v
-  | length v == length s' && v == nub v = map (fromJust . flip lookup (zip s' v)) s
-  | otherwise = failed
- where
-  s' = nub s
-
-putRmdups' :: [a] -> [a] -> [a]
-putRmdups' s v
-  | nub v == v && P.length v == P.length s' = map (fromJust . flip lookup (zip s' v)) s
-  | otherwise = failed
- where
-  s' = nub s
+-- putRmdups' :: Lens [a] [a]
+-- putRmdups' s v
+--   | nub v == v && P.length v == P.length s' =
+--       map (fromJust . flip lookup (zip s' v)) s
+--   | otherwise = failed
+--  where
+--   s' = nub s
 
 
 ----- Examples from "Putback is the essence of bidirecitional programming"
 
-getFirst (x,_) = x
+putFirst :: Lens (a,b) a
+putFirst (_,y) x' = (x',y)
 
-putFirst (_,y) z = (z,y)
+putSecond :: Lens (a,b) b
+putSecond (x,_) y' = (x,y')
 
 putFirstCount (n,c) m | n==m      = (m,c)
                       | otherwise = (m,c+1)
@@ -204,7 +200,7 @@ data Student = Student String String
 
 putStudents :: Lens [UPerson] [Student]
 putStudents []         []         = []
-putStudents (S s : ps) (s' : sts) = S s' : putStudents ps sts
+putStudents (S _ : ps) (s' : sts) = S s' : putStudents ps sts
 putStudents (P p : ps) sts        = P p : putStudents ps sts
 
 testUPersons = [ P (Prof "Huch" "Computer Science")
@@ -216,17 +212,17 @@ testStudents = [Student "Beck" "Linguistics", Student "Danilenko" "Mathematics"]
 
 ----- Lists
 
-putHead :: [a] -> a -> [a]
+putHead :: Lens [a] a
 putHead []     y = [y]
-putHead (x:xs) y = y:xs
+putHead (_:xs) y = y:xs
 
-putTail :: [a] -> [a] -> [a]
+putTail :: Lens [a] [a]
 putTail []     ys = ys
-putTail (x:xs) ys = x:ys
+putTail (x:_) ys = x:ys
 
-putReverse :: [a] -> [a] -> [a]
+putReverse :: Lens [a] [a]
 putReverse [] []         = []
-putReverse (x:xs) (y:ys) = putReverse xs ys ++ [y]
+putReverse (_:xs) (y:ys) = putReverse xs ys ++ [y]
 
 putLength :: Lens [a] Int
 putLength [] n     | n <  0    = failed
@@ -242,23 +238,33 @@ putZip (xs,ys)    ((v1,v2):vs)   = let (xs',ys') = putZip (xs,ys) vs
                                    in (v1:xs',v2:ys')
 
 -- a more restrictive version of `putZip`, fails if the view list is
--- longer than the shortest list of the source tuple 
+-- longer than the shortest list of the source tuple
 putZip' :: Lens ([a],[b]) [(a,b)]
 putZip' _           []           = ([],[])
-putZip' (x:xs,y:ys) ((v1,v2):vs) = let (xs',ys') = putZip' (xs,ys) vs
+putZip' (_:xs,_:ys) ((v1,v2):vs) = let (xs',ys') = putZip' (xs,ys) vs
                                    in (v1:xs',v2:ys')
 
 putAlt :: Lens [a] [a]
 putAlt []       []     = []
 putAlt [x]      []     = [x]
-putAlt [x]      (z:zs) = [x,z]
-putAlt (x:y:xs) (z:zs) = x:z: putAlt xs zs
+putAlt [x]      (z:_) = [x,z]
+putAlt (x:_:xs) (z:zs) = x:z: putAlt xs zs
 
 putAppend :: Lens ([a],[a]) [a]
 putAppend ([],_)     zs     = ([],zs)
-putAppend (x:xs,ys) (z:zs) = let (xs',ys') = putAppend (xs,ys) zs
+putAppend (_:xs,ys) (z:zs) = let (xs',ys') = putAppend (xs,ys) zs
                              in (z:xs',ys')
 
+putDrop :: Lens [a] Int
+putDrop []        _ = []
+putDrop xs@(_:ys) n | n <  0    = failed
+                    | n == 0    = xs
+                    | otherwise = putDrop ys (n-1)
+
+putInsertAt :: Int -> Lens [a] a
+putInsertAt _ []     y = [y]
+putInsertAt n (x:xs) y | n == 0  = y:xs
+                     | otherwise = x : putInsertAt (n-1) xs y
 
 putLookup :: a -> Lens [(a,b)] (Maybe b)
 putLookup _ []       Nothing                = []
@@ -267,6 +273,46 @@ putLookup k (kv:kvs) Nothing  | k /= fst kv = kv : putLookup k kvs Nothing
 putLookup k []       (Just v)               = [(k,v)]
 putLookup k (kv:kvs) (Just v) | k == fst kv = (k,v):kvs
                               | otherwise   = kv : putLookup k kvs (Just v)
+
+putMap :: Lens a b -> Lens [a] [b]
+putMap _ []     []     = []
+putMap lensF (x:xs) (y:ys) = lensF x y : putMap lensF xs ys
+
+-- does not work
+-- putFoldr :: Lens (a,b) b -> b -> Lens [a] b
+-- putFoldr _ _ []     _ = []
+-- putFoldr f e (x:xs) r = v : putFoldr f e xs r
+--  where
+--   (v,_) = f (x,r) e
+
+-- does not work
+-- putFoldl :: (a -> Lens a a) -> a -> Lens [a] a
+-- putFoldl _     _ []     _ = []
+-- putFoldl lensF e (x:xs) r = get (lensF r) x : putFoldl lensF e xs r
+
+-- -- does not work
+-- putFilter :: (a -> Bool) -> Lens [a] [a]
+-- putFilter _ []     []     = []
+-- putFilter p (x:xs) (y:ys) | p x       = y : putFilter p xs ys
+--                           | otherwise = putFilter p xs (y:ys)
+
+putInit :: Lens [a] [a]
+putInit []       []     = failed
+putInit [x]      []     = [x]
+putInit (x:y:xs) (x:ys) = x : putInit (y:xs) ys
+
+putCons :: Lens [a] (a,[a])
+putCons _ (y,ys) = y:ys
+
+putUncons :: Lens (a,[a]) [a]
+putUncons _ (y:ys) = (y,ys)
+
+filterLPut :: Lens [Either a b] ([a],[b])
+filterLPut (Left  _:es) (x':xs,ys) = Left x'  : filterLPut es (xs,ys)
+filterLPut (Right _:es) (xs,y':ys) = Right y' : filterLPut es (xs,ys)
+filterLPut []           (x:xs,ys)  = Left x : filterLPut [] (xs,ys)
+filterLPut []           ([],y:ys)  = Right y : filterLPut [] ([],ys)
+filterLPut []           ([],[])    = []
 
 ----- Trees
 
@@ -311,15 +357,12 @@ putAt n (x:xs) v | n < 0     = failed
                  | n == 0    = v:xs
                  | otherwise = x : putAt (n-1) xs v
 
+----- Misc
+
 putLines :: Lens String [String]
-putLines x xs | any ('\n' `elem`) xs = failed
+putLines _ xs | any ('\n' `elem`) xs = failed
               | otherwise            = intercalate "\n" xs
 
 putDiv :: Int -> Lens Int Int
-putDiv x 0 z = failed
-putDiv x y z | r > 0 && r < y && x == y*z + r = y where r free
-
-putInit :: Lens [a] [a]
-putInit []       []     = failed
-putInit [x]      []     = [x]
-putInit (x:y:xs) (x:ys) = x : putInit (y:xs) ys
+putDiv x y z | y == 0 = failed
+             | r > 0 && r < y && x == y*z + r = y where r free
