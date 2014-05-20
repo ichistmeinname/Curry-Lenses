@@ -30,6 +30,22 @@
 
 ## Combining Syntactic and Semantic Bidirectionalization
 
+## Matching Lenses - Alihnment and View Update
+
+* problem: previous papers only consider positional lens updates -
+  reordering is not considered
+* heuristics for calculating alignments
+* sources $S$, views $V$, complements $C$ with following functions for a
+  lens $l$
+   * `l.get` $\in S \rightarrow V$
+   * `l.res` $\in S \rightarrow C$
+   * `l.put` $\in V \rightarrow C \rightarrow S$
+   * `l.create` $\in V \rightarrow S$
+* set of all basic lenses between $S$ and $V$ with respect to $C$: $S \LeftRightarrow^C V$
+* laws
+  * `l.get (l.put v c) = v` (PutGet)
+  * `l.put (l.get s) (l.res s) = s` (GetPut)
+
 # Implementations
 
 ## "Combinator-Lenses"
@@ -38,13 +54,16 @@
 
 * generating corresponding `get` for a defined `put`-function
 
-* tidious to formulate definitions for `put` direction
-  * `putAppend`, `putZip` (in the end, definition is pretty simple)
-  * `putLength`
+* functions for `put` direction are kind of dull
+  * `putAppend`, `putZip`
+* tedious to define `put` direction
+  * `putLength` (`put` for length is `take`)
+* corresponding `get` function is dull
+  * `putDrop` just yields `0` for `get` direction
 
 * non-terminating examples (see
   [Problems with internal structures](#structures))
-  * `putHalve`
+  * `putHalve` - combination of `length` and lists
   * `putSumTree` - `quotRemNat` is too strict (fixed for free variables in
     first component)
     
