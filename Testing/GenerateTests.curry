@@ -1,5 +1,5 @@
 module GenerateTests (
-  readFlatCurryForModule,writeLensTestsForModule,
+  writeLensTestsForModule,
   Config(..), Verbosity(..), MainConfig(..)
   )
 where
@@ -10,15 +10,16 @@ import FlatCurryRead (readFlatCurryWithImportsInPath,readFlatCurryWithImports)
 import FlatCurry ( Prog(..), FuncDecl(..), TypeExpr(..), Rule(..), CombType(..)
                  , Expr(..), QName, Visibility(..) )
 import FlatCurryGoodies ( progName, progFuncs, tConsName, funcType, funcName
-                        , domain, funcArity )
+                        , domain, funcArity, funcVisibility )
 import FlatCurryShow ( showCurryExpr, showCurryType )
 import Distribution ( lookupFileInLoadPath )
 import LensCheck
 
---- Auxs
 
-data Config     = Config Verbosity (Maybe MainConfig)
-data MainConfig = Main | MainWithOutPutPut
+--- data type and constant declarations
+
+data Config     = Config Verbosity MainConfig
+data MainConfig = Main | MainWithPutPut | MainOnlyPutStabDet | NoMain
 data Verbosity  = Verbose | Default
 data CurryFile  = CurryFile String
 type FilePath   = String
@@ -32,8 +33,17 @@ easyCheck = CurryFile "EasyCheck.curry"
 lensCheck = CurryFile "LensCheck.curry"
 
 testFunctionNames,listTestFunctionNames :: [String]
-testFunctionNames    = ["checkGetPut","checkPutGet","checkPutPut"]
-listTestFunctionNames = ["checkListGetPut","checkListPutGet","checkListPutPut"]
+testFunctionNames    = ["checkGetPut"
+                       ,"checkPutGet"
+                       ,"checkPutPut"
+                       ,"checkPutDet"
+                       ,"checkPutStab"]
+listTestFunctionNames = ["checkListGetPut"
+                        ,"checkListPutGet"
+                        ,"checkListPutPut"
+                        ,"checkListPutDet"
+                        ,"checkListPutStab"]
+
 
 --- file helper
 
@@ -59,22 +69,23 @@ checkFile (CurryFile file) = do
   err = error ("Couldn't find " ++ file
                ++" in loadpath, please check your current path.")
 
---- Lens specific tests
-
 -- Collects lens functions from a given module, provided that the module exists
 --  in the given load path
 readLensFuncDeclsForModule :: [FilePath] -> ModuleName -> IO [FuncDecl]
 readLensFuncDeclsForModule loadPath modulePath = do
   prog <- readFlatCurryForModule loadPath modulePath
   let funcs     = progFuncs prog
-      lensFuncs = filter isLensFunc funcs
+      lensFuncs = filter isTopLevelLensFunc funcs
   return lensFuncs
 
+
+--- Tests for function declarations
+
 -- Checks if a given function declaration is of type "Lens _ _"
-isLensFunc :: FuncDecl -> Bool
-isLensFunc funcDecl =
+isTopLevelLensFunc :: FuncDecl -> Bool
+isTopLevelLensFunc funcDecl =
   case funcType funcDecl of
-       FuncType x (FuncType _ y) -> x == y
+       FuncType x (FuncType _ y) -> x == y && funcVisibility funcDecl == Public
        _                         -> False
 
 -- Checks if the given type expression is of type List
@@ -82,6 +93,19 @@ isListType :: TypeExpr -> Bool
 isListType typeExpr = case typeExpr of
                            TCons ("Prelude","[]") _ -> True
                            _                        -> False
+
+
+--- Operations on function declarations
+
+-- looks up a function name in a list of function declaration
+--  and yields this function, if it exists
+--  and throws an error otherwise
+lookupFunction :: [FuncDecl] -> String -> FuncDecl
+lookupFunction functions name =
+  case filter (\f -> snd (funcName f) == name) functions of
+       [x] -> x
+       _   -> error ("Couldn't find function " ++ name ++ " in module "
+                     ++ toCurryModule lensCheck ++ ".")
 
 funcDeclToTestFuncs :: Verbosity
                     -> [FuncDecl]
@@ -91,48 +115,34 @@ funcDeclToTestFuncs :: Verbosity
 funcDeclToTestFuncs config testFuncs listTestFuncs (Func qName _ _ typeExpr _) =
   zipWith (mkFuncString config qName) labels funcs
  where
-  labels                               = ["GetPut","PutGet","PutPut"]
+  labels = ["GetPut","PutGet","PutPut","PutDet","PutStab"]
   funcs | isListType (domain typeExpr) = listTestFuncs
         | otherwise                    = testFuncs
 
-lookupFunction :: [FuncDecl] -> String -> FuncDecl
-lookupFunction functions name =
-  case filter (\f -> snd (funcName f) == name) functions of
-       [x] -> x
-       _   -> error (show (map funcName functions))
-                    -- ("Couldn't find function " ++ name ++ " in module "
-                     -- ++ toCurryModule lensCheck ++ ".")
 
--- main function to generate tests for specif
-writeLensTestsForModule :: Config -> [String] -> ModuleName -> IO ()
-writeLensTestsForModule (Config vConfig mConfig) loadPath moduleName = do
-  mapIO checkFile [easyCheck,lensCheck]
-  lensFuncs <- readLensFuncDeclsForModule loadPath moduleName
-  checkModule <- readFlatCurryForModule loadPath (toCurryModule lensCheck)
-  let funcs           = progFuncs checkModule
-      checkFuncs      = map (lookupFunction funcs) testFunctionNames
-      checkListFuncs  = map (lookupFunction funcs) listTestFunctionNames
-      lensFuncStrings = map (funcDeclToTestFuncs vConfig
-                                                 checkFuncs
-                                                 checkListFuncs)
-                            lensFuncs
-  uncurry writeFile (progToString mConfig modName (concat lensFuncStrings))
- where
-  modName = baseName moduleName
+--- String generations
 
-mainTestFunction :: Maybe MainConfig -> [String] -> String
-mainTestFunction Nothing funcNames           = ""
-mainTestFunction (Just mainConfig) funcNames =
-  "mainTest = do\n" ++ concatMap addFunction funcNames'
+--- generates a main test function, if `mainConfig` is set
+mainTestFunction :: MainConfig -> [String] -> String
+mainTestFunction mainConfig funcNames =
+  case mainConfig of
+       NoMain -> ""
+       _      -> "mainTest = do\n" ++ concatMap addFunction funcNames'
  where
   funcNames'
-    | mainConfig == MainWithOutPutPut = filter (not . isSuffixOf "PutPut")
-                                               funcNames
-    | otherwise                       = funcNames
-  addFunction :: String -> String
-  addFunction name = replicate 2 ' ' ++ name ++ "\n"
+    | mainConfig == Main               =
+        filter (not . isSuffixOf "PutPut") funcNames
+    | mainConfig == MainOnlyPutStabDet =
+        filter (\fn -> isSuffixOf "PutDet" fn || isSuffixOf "PutStab" fn)
+               funcNames
+    | otherwise                        = funcNames
+  addFunction, printName :: String -> String
+  addFunction name = printName name ++ replicate 2 ' ' ++ name ++ "\n"
+  printName   name = replicate 2 ' '
+                   ++ "putStrLn " ++ show ("\n+++++" ++ name ++ "+++++")
+                   ++ "\n"
 
-progToString :: Maybe MainConfig -> String -> [FuncString] -> (String,String)
+progToString :: MainConfig -> String -> [FuncString] -> (String,String)
 progToString mainConfig modName funcs =
    (path, moduleDecl ++ importModule (toCurryModule lensCheck)
             ++ importModule modName ++ importModule "EasyCheck"
@@ -172,3 +182,23 @@ mkFuncString config (modName,funName) funSuffix funDecl =
   checkFun = case config of
                   Verbose -> "verboseCheck"
                   Default -> "easyCheck"
+
+
+-- main function to generate tests for a specific module;
+--  the given config determines `EasyCheck`s test function and
+--  if a main function is generated as well
+writeLensTestsForModule :: Config -> [String] -> ModuleName -> IO ()
+writeLensTestsForModule (Config vConfig mConfig) loadPath moduleName = do
+  mapIO checkFile [easyCheck,lensCheck]
+  lensFuncs <- readLensFuncDeclsForModule loadPath moduleName
+  checkModule <- readFlatCurryForModule loadPath (toCurryModule lensCheck)
+  let funcs           = progFuncs checkModule
+      checkFuncs      = map (lookupFunction funcs) testFunctionNames
+      checkListFuncs  = map (lookupFunction funcs) listTestFunctionNames
+      lensFuncStrings = map (funcDeclToTestFuncs vConfig
+                                                 checkFuncs
+                                                 checkListFuncs)
+                            lensFuncs
+  uncurry writeFile (progToString mConfig modName (concat lensFuncStrings))
+ where
+  modName = baseName moduleName
