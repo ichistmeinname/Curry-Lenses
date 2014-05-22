@@ -30,7 +30,7 @@
 
 ## Combining Syntactic and Semantic Bidirectionalization
 
-## Matching Lenses - Alihnment and View Update
+## Matching Lenses - Alignment and View Update
 
 * problem: previous papers only consider positional lens updates -
   reordering is not considered
@@ -66,6 +66,16 @@
   * `putHalve` - combination of `length` and lists
   * `putSumTree` - `quotRemNat` is too strict (fixed for free variables in
     first component)
+
+# Testing
+
+* test laws: PutGet, GetPut, PutPut
+   * adjust PutGet and GetPut: laws has to hold for valid
+     domains/defined values only
+     (that cannot be guarenteed by type)
+* test put laws: PutDet PutStab (TODO)
+* reanimate EasyCheck
+    * inefficient for lists
     
 # Practical Examples
 

@@ -28,13 +28,6 @@
         * even more examples (6.-8.5.,14.-16.5)
         * implementation of better `quotRemNat` in `Binary.curry`
             (6.5.)
-        * simple parser/printer (19.-21.5)
-        * regular expressions in strings (19.-21.5)
-        * XML (19.-21.5)
-
-* Test framework (12.5;19.5-20.5)
-  * reanimate "Easy Check" [9] (12.5)
-  * run tests for all examples (19.5)
 
     * efficient implementation
     * check requirements for `put` (static analysis (approx.)) [4]
@@ -46,10 +39,23 @@
           search for `get`-definitions that cannot be generated with
           the built-in search mechanism
 
+* Test framework (12.5;19.5-21.5)
+    * reanimate "Easy Check" [9] (12.5)
+    * implement tests for _GetPut_, _PutGet_ and _PutPut_ law (19.5.)
+    * generate test environment for all lens definitions within a
+      module (20.5.)
+    * run tests for all examples (21.5.)
+    * implement tests for _PutDet_, _PutStab_ (21.5.)
+
 * definition of `get` and generating `put` + choosing _best_
   `get` function [3]
 
-* practical examples: WUI [5, 6]
+* practical examples
+    * WUI [5, 6] (16.-17.4.)
+    * simple parser/printer (21.-23.5.)
+    * regular expressions with strings (21.-23.5.)
+    * XML (21.-23.5.)
+
 
 * add .bib file (12.5.)
 
