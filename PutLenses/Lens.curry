@@ -22,6 +22,10 @@ put' :: Lens s v -> Maybe s -> v -> s
 put' lens (Just s) v = lens s v
 put' _    Nothing  _ = error "put': no value"
 
+putM :: Lens s v -> s -> v -> Maybe s
+putM lens s v | isEmpty (set2 lens s v) = Nothing
+              | otherwise               = Just (lens s v)
+
 get :: Lens s v -> s -> v
 get lens s | put lens s v == s = v
  where v free
@@ -33,9 +37,9 @@ get' lens s | isEmpty moreSolutions = selectedS
   (selectedS, moreSolutions) = select $ set2 get lens s
 
 getM :: Lens s v -> s -> Maybe v
-getM lens s | put lens s v == s = Just v
-            | otherwise         = Nothing
- where v free
+getM lens s | isEmpty (set2 get lens s) = Nothing
+            | otherwise                 = Just (get' lens s)
+
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
