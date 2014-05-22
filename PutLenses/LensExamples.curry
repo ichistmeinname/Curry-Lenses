@@ -150,20 +150,22 @@ zhenjiang = PersonData Zhenjiang Tokyo
 isFrom :: City -> PersonData -> Bool
 isFrom c p = c == get' city p
 
+-- GetPut fails for `[(PersonData Sebastian Kiel),(PersonData Hugo Kiel)]`
+-- PutGet fails for `[]` and `[PersonData Hugo Kiel]`
 mergePeople :: [PersonData] -> [PersonData] -> [PersonData]
 mergePeople old new = merge (sorted old) (sorted new)
  where
   merge [ ] ps                = ps
   merge (p : ps) [ ]          = p : ps
   merge (p : ps) (q : qs)
-   | get name p < get' name q  = p : merge ps (q : qs)
-   | get name p == get' name q = q : merge ps qs
-   | get name p > get' name q  = q : merge (p : ps) qs
+   | get' name p < get' name q  = p : merge ps (q : qs)
+   | get' name p == get' name q = q : merge ps qs
+   | get' name p > get' name q  = q : merge (p : ps) qs
   sorted [ ]      = [ ]
   sorted (p : ps) = ascending p ps
   ascending p []               = [p]
   ascending p (q : qs)
-    |  get name p < get' name q = p : ascending q qs
+    |  get' name p < get' name q = p : ascending q qs
 
 peopleFrom :: City -> Lens [PersonData] [PersonData]
 peopleFrom c source view =
@@ -243,7 +245,7 @@ putZip' :: Lens ([a],[b]) [(a,b)]
 putZip' _           []           = ([],[])
 putZip' (_:xs,_:ys) ((v1,v2):vs) = let (xs',ys') = putZip' (xs,ys) vs
                                    in (v1:xs',v2:ys')
-
+-- PutGet fails for `[()]` `[(),()]`
 putAlt :: Lens [a] [a]
 putAlt []       []     = []
 putAlt [x]      []     = [x]
@@ -255,11 +257,13 @@ putAppend ([],_)     zs     = ([],zs)
 putAppend (_:xs,ys) (z:zs) = let (xs',ys') = putAppend (xs,ys) zs
                              in (z:xs',ys')
 
-putDrop :: Lens [a] Int
-putDrop []        _ = []
-putDrop xs@(_:ys) n | n <  0    = failed
-                    | n == 0    = xs
-                    | otherwise = putDrop ys (n-1)
+-- does not work; `putDrop [] _` does not instantiate `_`, so the expression
+--  `get putDrop []` yields an unbounden variable
+-- putDrop :: Lens [a] Int
+-- putDrop []        _ = []
+-- putDrop xs@(_:ys) n | n <  0    = failed
+--                     | n == 0    = xs
+--                     | otherwise = putDrop ys (n-1)
 
 putInsertAt :: Int -> Lens [a] a
 putInsertAt _ []     y = [y]
@@ -316,12 +320,13 @@ filterLPut []           ([],[])    = []
 
 ----- Trees
 
-putSumTree :: Lens (Tree Int) Int
-putSumTree (Leaf _)   n = Leaf n
-putSumTree (Node l r) n = Node (putSumTree l n')
-                               (putSumTree r (n-n'))
- where
-  n' = n `div` 2
+-- Does not work (because `div` is too strict)
+-- putSumTree :: Lens (Tree Int) Int
+-- putSumTree (Leaf _)   n = Leaf n
+-- putSumTree (Node l r) n = Node (putSumTree l n')
+--                                (putSumTree r (n-n'))
+--  where
+--   n' = n `div` 2
 
 binIntTree = Node (Node (Leaf (Pos IHi))
                         (Leaf (Pos (O IHi))))
@@ -359,9 +364,10 @@ putAt n (x:xs) v | n < 0     = failed
 
 ----- Misc
 
-putLines :: Lens String [String]
-putLines _ xs | any ('\n' `elem`) xs = failed
-              | otherwise            = intercalate "\n" xs
+-- Does not work - why?
+-- putLines :: Lens String [String]
+-- putLines x xs = if (not $ any ('\n' `elem`) xs) then intercalate "\n" xs
+--                                                 else failed
 
 putDiv :: Int -> Lens Int Int
 putDiv x y z | y == 0 = failed
