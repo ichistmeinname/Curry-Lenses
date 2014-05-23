@@ -40,16 +40,8 @@ ppBool :: PP Bool
                    -- | otherwise             = show b ++ str'
 ppBool _ (b,str') = show b ++ str'
 
-ppExpr :: PP Expr
-ppExpr str (BinOp op e1 e2,str') =
-  ((ppOp <** ppWhitespace) <**> (ppExpr <** ppWhitespace)
-                           <**> ppExpr) str (((op,e1),e2),str')
-ppExpr str (Paren expr,str')     = "(" ++ ppExpr str (expr,"") ++ ")" ++ str'
-ppExpr str (Lit v,str')          = ppNum str (v,str')
-
 infixl 4 <**>
 
--- PP ((Op,Expr),Expr)
 (<**>) :: PP a -> PP b -> PP (a,b)
 (pA <**> pB) str ((expr1,expr2),str') = pA str (expr1, newString)
  where
@@ -61,9 +53,45 @@ infixl 4 <**>
 (**>) :: PP () -> PP b -> PP b
 (pA **> pB) str (expr,str') = (pA <**> pB) str (((),expr),str')
 
+(<||>) :: PP a -> PP a -> PP a
+(pA1 <||> pA2) str pair = case pA1 str pair of
+                               []   -> pA2 str pair
+                               str' -> str'
+
+ppExpr :: PP Expr
+ppExpr str (BinOp op e1 e2,str') =
+  ((ppOp <** ppWhitespace) <**> (ppExpr <** ppWhitespace)
+                           <**> ppExpr) str (((op,e1),e2),str')
+ppExpr str (Paren expr,str')     = "(" ++ ppExpr str (expr,"") ++ ")" ++ str'
+ppExpr str (Lit v,str')          = ppNum str (v,str')
+
+ppExpr' :: PP Expr
+ppExpr' str b@(BinOp op e1 e2,str') =
+  ((ppTerm <** ppWhitespace)
+   <**> ppPlusMinus
+   <**> (ppWhitespace **> ppExpr')) str (((e1,op),e2),str')
+ppExpr' str t = ppTerm str t
+
+ppTerm :: PP Expr
+ppTerm str (BinOp op e1 e2, str') =
+  (ppFactor <**> ppMultDiv <**> ppTerm) str (((e1,op),e2),str')
+ppTerm str f = ppFactor str f
+
+ppFactor :: PP Expr
+ppFactor str (Paren expr,str') = "(" ++ ppExpr' str (expr,"") ++ ")"
+ppFactor str (Lit v,str') = ppNum str (v,str')
+
+ppMultDiv :: PP Op
+ppMultDiv str (Mult,str') = "*" ++ str'
+ppMultdiv str (Div,str')  = "/" ++ str'
+
+ppPlusMinus :: PP Op
+ppPlusMinus str (Plus,str')  = "+" ++ str'
+ppPlusMinus str (Minus,str') = "-" ++ str'
+
 ppOp :: PP Op
-ppOp str (Plus,str')  = "+" ++ str'
-ppOp str (Mult,str')  = "*" ++ str'
+ppOp str (Plus,str') = "+" ++ str'
+ppOp str (Mult,str') = "*" ++ str'
 
 ppNum :: PP Int
 ppNum _ (d,str') | d <= 9 && d >= 0 = show d ++ str'
