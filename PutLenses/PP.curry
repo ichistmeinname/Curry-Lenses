@@ -26,7 +26,7 @@ import List (isSuffixOf)
 data Expr     = BinOp Op Expr Expr
               | Paren Expr
               | Lit Int
-data Op       = Plus | Mult
+data Op       = Plus | Mult | Div | Minus
 
 type Parser a = String -> [(a,String)]
 type Printer a = String -> a -> String
@@ -51,11 +51,9 @@ infixl 4 <**>
 
 -- PP ((Op,Expr),Expr)
 (<**>) :: PP a -> PP b -> PP (a,b)
-(pA <**> pB) str ((expr1,expr2),str') = strExpr1 ++ strExpr2 ++ str'
+(pA <**> pB) str ((expr1,expr2),str') = pA str (expr1, newString)
  where
-  strExpr1 = pA str (expr1,"")
-  strExpr2 = pB str (expr2,"")
-  strRest free
+  newString = pB str (expr2,str')
 
 (<**) :: PP a -> PP () -> PP a
 (pA <** pB) str (expr,str') = (pA <**> pB) str ((expr,()),str')
@@ -81,7 +79,9 @@ ppWhitespace str ((),str') = " " ++ str'
 -- ppExpr _ str = case pExpr str of
 -- type Lens a b = a -> b -> a
 
+--- TODO: Infix operator in pretty printing!
 infixl 4 <*>, <$>, <*, *>
+infixl 3 <|>
 
 (<*>) :: Parser (a -> b) -> Parser a -> Parser b
 (pF <*> pA) str = [ (f v, str'') | (f,str') <- pF str, (v,str'') <- pA str']
@@ -105,15 +105,43 @@ pA *> pB = flip const <$> pA <*> pB
 pure :: a -> Parser a
 pure v = \str -> [(v,str)]
 
+pExpr' :: Parser Expr
+pExpr' = (\t op e -> BinOp op t e) <$> pTerm <*> pPlusMinus <*> pExpr' <|> pTerm
+pTerm = (\f op t -> BinOp op f t) <$> pFactor <*> pMultDiv <*> pTerm <|> pFactor
+pFactor = pTerminal '(' *> pExpr' <* pTerminal ')' <|> pNum
+
+pPlusMinus :: Parser Op
+pPlusMinus []                   = []
+pPlusMinus (op:str) | op == '+' = [(Plus,"")]
+                    | op == '-' = [(Minus,"")]
+                    | otherwise = []
+
+pMultDiv :: Parser Op
+pMultDiv []                   = []
+pMultDiv (op:str) | op == '*' = [(Mult,"")]
+                  | op == '/' = [(Div,"")]
+                  | otherwise = []
+
+pTerminal :: Char -> Parser ()
+pTerminal _ []                   = []
+pTerminal c (c':str) | c == c'   = [((),str)]
+                     | otherwise = []
+
 pExpr :: Parser Expr
-pExpr (c:str)
-  | c == '+'  = ((\e1 e2 -> BinOp Plus e1 e2) <$>
-                  (pWhitespace *> pExpr) <*> (pWhitespace *> pExpr)) str
-  | isDigit c = pNum (c:str)
-  | otherwise = []
+pExpr = pBinOp <|> pNum
+ where
+  pBinOp = ((\e1 op e2 -> BinOp Plus e1 e2) <$>
+              (pExpr <* pWhitespace) <*> pOp <*> (pWhitespace *> pExpr))
+
+pOp :: Parser Op
+pOp [] = []
+pOp (op:str) | op == '+' = [(Plus,str)]
+             | op == '*' = [(Mult,str)]
+             | otherwise = []
 
 pNum :: Parser Expr
-pNum (n:str) = (\n -> [(Lit n, str)]) $
+pNum [] = []
+pNum (n:str) | isDigit n = (\n -> [(Lit n, str)]) $
   case n of
        '0' -> 0
        '1' -> 1
