@@ -55,7 +55,7 @@ putMins (Time _ _) (Pos m) = Time q r
 
 ----- Examples from "Bidirectionalization for Free"
 
---- Do not work
+--- Do not terminate
 -- putHalve :: Lens [a] [a]
 -- putHalve xs xs' | length xs' == n = xs' ++ drop n xs
 --                 | otherwise        = failed
@@ -100,7 +100,7 @@ putflatten s v = case go s v of
    where (t1,cs) = go s1 bs
          (t2,ds) = go s2 cs
 
---- Do not work
+--- Do not terminate
 -- putRmdups :: Lens [a] [a]
 -- putRmdups s v
 --   | length v == length s' && v == nub v =
@@ -320,7 +320,7 @@ filterLPut []           ([],[])    = []
 
 ----- Trees
 
--- Does not work (because `div` is too strict)
+-- Does not terminate (because `div` is too strict)
 -- putSumTree :: Lens (Tree Int) Int
 -- putSumTree (Leaf _)   n = Leaf n
 -- putSumTree (Node l r) n = Node (putSumTree l n')
