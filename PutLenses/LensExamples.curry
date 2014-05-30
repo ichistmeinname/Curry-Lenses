@@ -150,29 +150,27 @@ zhenjiang = PersonData Zhenjiang Tokyo
 isFrom :: City -> PersonData -> Bool
 isFrom c p = c == get' city p
 
--- GetPut fails for `[(PersonData Sebastian Kiel),(PersonData Hugo Kiel)]`
--- PutGet fails for `[]` and `[PersonData Hugo Kiel]`
-mergePeople :: [PersonData] -> [PersonData] -> [PersonData]
-mergePeople old new = merge (sorted old) (sorted new)
- where
-  merge [ ] ps                = ps
-  merge (p : ps) [ ]          = p : ps
-  merge (p : ps) (q : qs)
-   | get' name p < get' name q  = p : merge ps (q : qs)
-   | get' name p == get' name q = q : merge ps qs
-   | get' name p > get' name q  = q : merge (p : ps) qs
-  sorted [ ]      = [ ]
-  sorted (p : ps) = ascending p ps
-  ascending p []               = [p]
-  ascending p (q : qs)
-    |  get' name p < get' name q = p : ascending q qs
-
 peopleFrom :: City -> Lens [PersonData] [PersonData]
 peopleFrom c source view =
   let elsewhere = filter (not . isFrom c) source
   in mergePeople elsewhere (map ensureCity view)
  where
   ensureCity q | isFrom c q = q
+  mergePeople :: [PersonData] -> [PersonData] -> [PersonData]
+  mergePeople old new = merge (sorted old) (sorted new)
+   where
+    merge [ ] ps                = ps
+    merge (p : ps) [ ]          = p : ps
+    merge (p : ps) (q : qs)
+      | get name p < get name q  = p : merge ps (q : qs)
+      | get name p == get name q = q : merge ps qs
+      | get name p > get name q  = q : merge (p : ps) qs
+    sorted [ ]      = [ ]
+    sorted (p : ps) = ascending p ps
+    ascending p []               = [p]
+    ascending p (q : qs)
+      |  get name p < get name q = p : ascending q qs
+
 
 peopleFromTo :: City -> City -> Lens [PersonData] [PersonData]
 peopleFromTo from to source view =
@@ -222,17 +220,11 @@ putTail :: Lens [a] [a]
 putTail []     ys = ys
 putTail (x:_) ys = x:ys
 
-putReverse :: Lens [a] [a]
-putReverse [] []         = []
-putReverse (_:xs) (y:ys) = putReverse xs ys ++ [y]
-
-putLength :: Lens [a] Int
-putLength [] n     | n <  0    = failed
-                   | n == 0    = []
-                   | n >  0    = failed
-putLength (x:xs) n | n <  0    = failed
-                   | n == 0    = []
-                   | otherwise = x : putLength xs (n-1)
+-- a more restrictive version of `take`
+putTake :: Lens [a] Int
+putTake [] n     | n == 0    = []
+putTake (x:xs) n | n == 0    = []
+                   | otherwise = x : putTake xs (n-1)
 
 putZip :: Lens ([a],[b]) [(a,b)]
 putZip _           []           = ([],[])
@@ -265,10 +257,13 @@ putAppend (_:xs,ys) (z:zs) = let (xs',ys') = putAppend (xs,ys) zs
 --                     | n == 0    = xs
 --                     | otherwise = putDrop ys (n-1)
 
-putInsertAt :: Int -> Lens [a] a
-putInsertAt _ []     y = [y]
-putInsertAt n (x:xs) y | n == 0  = y:xs
-                     | otherwise = x : putInsertAt (n-1) xs y
+putReplaceAt :: Int -> Lens [a] a
+putReplaceAt n (x:xs) y | n == 0  = y:xs
+                        | otherwise = x : putReplaceAt (n-1) xs y
+
+-- Replaces each element of the list with the given element nondeterministicly
+putReplace :: Lens [a] a
+putReplace (x:xs) y = y:xs ? x : putReplace xs y
 
 putLookup :: a -> Lens [(a,b)] (Maybe b)
 putLookup _ []       Nothing                = []
@@ -371,4 +366,4 @@ putAt n (x:xs) v | n < 0     = failed
 
 putDiv :: Int -> Lens Int Int
 putDiv x y z | y == 0 = failed
-             | r > 0 && r < y && x == y*z + r = y where r free
+             | r >= 0 && r < y && x == y*z + r = y where r free
