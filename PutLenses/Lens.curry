@@ -7,7 +7,7 @@
 module Lens where
 
 import Maybe (isJust)
-import SetFunctions (set2,isEmpty,chooseValue,selectValue,select)
+import SetFunctions (set2,set3,isEmpty,select,sortValuesBy)
 
 fmap :: (a -> b) -> Maybe a -> Maybe b
 fmap f (Just v) = Just (f v)
@@ -40,6 +40,11 @@ getM :: Lens s v -> s -> Maybe v
 getM lens s | isEmpty (set2 get lens s) = Nothing
             | otherwise                 = Just (get' lens s)
 
+getND :: Lens s v -> s -> [v]
+getND lens s = sortValuesBy (\_ _ -> True) $ set2 get lens s
+
+putND :: Lens s v -> s -> v -> [s]
+putND lens s v = sortValuesBy (\_ _ -> True) $ set3 put lens s v
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------

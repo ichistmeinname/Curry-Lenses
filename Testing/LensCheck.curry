@@ -62,3 +62,17 @@ checkPutDet lens (x1,x2) (y1,y2) =
 checkPutStab :: Lens a b -> a -> [Test]
 checkPutStab lens x = not (isEmpty $ set2 (==) (put lens x y) x) <~> True
  where y free
+
+checkPutGetND :: Lens a b -> a -> b -> [Test]
+checkPutGetND lens x y = not (null (putND lens x y))
+                           ==> all (y `elem`) getVs <~> True
+ where
+  putVs = putND lens x y
+  getVs = map (getND lens) putVs
+
+checkGetPutND :: Lens a b -> a -> [Test]
+checkGetPutND lens x = not (null (getND lens x))
+                         ==> all (x `elem`) putVs <~> True
+ where
+  putVs = map (putND lens x) getVs
+  getVs = getND lens x 
