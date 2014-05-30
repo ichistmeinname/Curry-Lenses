@@ -17,8 +17,9 @@ data Op = Plus | Minus | Mult | Divs
 -- expr str (BinOp op e1 e2,str') =
 --   ((plusMinus <<< whitespace) <> (expr <<< whitespace)
 --                            <> expr) str (((op,e1),e2),str')
--- expr str (Paren e,str') | head str == '(' = "(" ++ expr (tail str) (e,")"++str')
---                         | otherwise = "(" ++ expr str (e,')':str')
+-- expr str (Paren e,str')
+--   | head str == '(' = "(" ++ expr (tail str) (e,")"++str')
+--   | otherwise = "(" ++ expr str (e,')':str')
 -- expr str (Num v,str')   = num str (v,str')
 
 num :: PReplace Int
