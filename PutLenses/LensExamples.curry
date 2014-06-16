@@ -8,6 +8,8 @@ import qualified BinaryList as BL
 import Binary
 import qualified Peano as P
 
+import HTML
+
 ----- Data type projections
 
 type Month   = Int
@@ -277,6 +279,10 @@ putMap :: Lens a b -> Lens [a] [b]
 putMap _ []     []     = []
 putMap lensF (x:xs) (y:ys) = lensF x y : putMap lensF xs ys
 
+putFoldr :: (a -> b -> b) -> Lens b [a]
+putFoldr f v []     = v
+putFoldr f v (x:xs) = f x (putFoldr f v xs)
+
 -- does not work
 -- putFoldr :: Lens (a,b) b -> b -> Lens [a] b
 -- putFoldr _ _ []     _ = []
@@ -367,3 +373,32 @@ putAt n (x:xs) v | n < 0     = failed
 putDiv :: Int -> Lens Int Int
 putDiv x y z | y == 0 = failed
              | r >= 0 && r < y && x == y*z + r = y where r free
+
+-- With additional rule for `Nothing` the lens becomes non-deterministic
+putFromMaybe :: Lens a (Maybe a)
+-- putFromMaybe v Nothing  = v
+putFromMaybe _ (Just x) = x
+
+putUpdateMaybe :: Lens (Maybe a) a
+putUpdateMaybe Nothing  _ = Nothing
+putUpdateMaybe (Just _) v = Just v
+
+putSetMaybe :: Lens (Maybe a) Bool
+putSetMaybe Nothing  False = Nothing
+putSetMaybe (Just v) True  = Just v
+putSetMaybe (Just v) False = Nothing
+
+
+----- HTML Replace
+
+replaceExprByTag :: String -> Lens [HtmlExp] HtmlExp
+replaceExprByTag tag hs hExp = map replaceExpr hs
+ where
+  replaceExpr h@(HtmlStruct t _ _) | tag == t  = hExp
+                                   | otherwise = h
+
+replaceTag :: String -> Lens [HtmlExp] String
+replaceTag tag hs newTag = map replaceTag' hs
+ where
+  replaceTag' (HtmlStruct t atts hExps)
+    | tag == t = HtmlStruct newTag atts hExps
