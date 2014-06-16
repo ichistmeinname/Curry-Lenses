@@ -9,12 +9,49 @@ import Lens
 type LensReg1 = RegExp -> Lens String (Int,String)
 type LensReg  = RegExp -> Lens String String
 
-type LensReg1' = RegExp -> Lens (Maybe String) (Int,String)
-
--- type Lens a b = put :: Maybe a -> b -> Maybe a
---                 get :: Maybe a -> b
+type LensReg1M = RegExp -> Lens (Maybe String) (Int,String)
 
 type RegExp = String -> (Bool,String)
+
+type RegLensT  = Lens String (Int,String,String)
+type RegLens1M = Lens (Maybe String) (Int,String)
+type RegLens1  = Lens String (Int,String)
+type RegLens   = Lens String String
+
+copy :: (Char -> Bool) -> RegLens
+copy regMatch s v | all regMatch s = v
+
+abQ :: RegLens
+abQ ('a':'b':cs) sub = sub ++ cs
+abQ ('a':cs)     sub = sub ++ cs
+
+charLT :: (Char -> Bool) -> RegLensT
+charLT f = alpha' 0
+ where
+  alpha' n (c:cs) (index,sub,rs)
+    | f c && n == index && cs == rs = sub ++ cs
+    | otherwise                     = c: alpha' (n+1) cs (index,sub,rs)
+
+charL1M :: (Char -> Bool) -> RegLens1M
+charL1M f = alpha' 0
+ where
+  alpha' _ Nothing       _           = Nothing
+  alpha' n (Just (c:cs)) (index,sub)
+    | f c && n == index = Just (sub ++ cs)
+    | otherwise               = case alpha' (n+1) (Just cs) (index,sub) of
+                                     Just str -> Just (c : str)
+                                     Nothing  -> Nothing
+
+charL1 :: (Char -> Bool) -> RegLens1
+charL1 f = alpha' 0
+ where
+  alpha' n (c:cs) (index,sub)
+    | f c && n == index = sub ++ cs
+    | otherwise               = c: alpha' (n+1) cs (index,sub)
+
+charL :: (Char -> Bool) -> RegLens
+charL f (c:cs) sub | f c = sub ++ cs
+charL f (c:cs) sub             = c : charL f cs sub
 
 alpha :: RegExp
 alpha (c:cs) = (isAlpha c,[c])
@@ -45,12 +82,12 @@ allMatches regMatch str =
   filter isJust $ map (matchSubString regMatch) (zip [0..] $ tails str)
 
 matchSubString :: RegExp -> (Int,String) -> Maybe (Int,String)
-matchSubString _        (_,[])       = Nothing
+matchSubString _        (_,"")       = Nothing
 matchSubString checkReg (n,cs@(_:_)) = case checkReg cs of
   (True,match) -> Just (n,match)
   _            -> Nothing
 
-replaceRegInString1' :: LensReg1'
+replaceRegInString1' :: LensReg1M
 replaceRegInString1' regMatch (Just str) (n,sub)
   | n == index = Just $ replaceRegInString1 regMatch str (n,sub)
   | otherwise  = Nothing
