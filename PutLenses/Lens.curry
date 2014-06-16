@@ -95,6 +95,10 @@ idLens s _ = s
 botLens :: Lens a a
 botLens _ _ = error "_|_"
 
+mapLens :: Lens a b -> Lens [a] [b]
+mapLens _ []     []     = []
+mapLens lensF (x:xs) (y:ys) = lensF x y : mapLens lensF xs ys
+
 unhead :: Lens [a] a
 unhead (_:xs) x' = (x':xs)
 unhead []     x' = [x']
