@@ -46,6 +46,15 @@
   * `l.get (l.put v c) = v` (PutGet)
   * `l.put (l.get s) (l.res s) = s` (GetPut)
 
+# Misc
+
+## Notes
+
+* state-based vs. operation-based
+* symmetric vs. asymmetric
+* lens laws and "softer" lens laws
+
+
 # Implementations
 
 ## "Combinator-Lenses"
