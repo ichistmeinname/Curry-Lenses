@@ -11,3 +11,11 @@ cabal.sandbox.config
 cabal.config
 .curry
 *.pdf
+*.aux
+*.log
+*.nav
+*.out
+*.ptb
+*.snm
+*.toc
+*.tex
