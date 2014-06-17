@@ -1,29 +1,40 @@
 module Replace where
 
-import Char ( intToDigit )
+import Char ( intToDigit, isDigit )
 
 data Res a = New a
            | Replaced a
 
 type PReplace a = String -> (a,String) -> Res String
 
+replace :: PReplace a -> String -> (a,String) -> String
+replace pReplace str = unwrap . pReplace str
+
 data Expr = BinOp Op Expr Expr
           | Num Int
-          | Paren Expr
 
-data Op = Plus | Minus | Mult | Divs
+data Op = Plus | Minus | Mult | Div
 
--- expr :: PReplace Expr
--- expr str (BinOp op e1 e2,str') =
---   ((plusMinus <<< whitespace) <> (expr <<< whitespace)
---                            <> expr) str (((op,e1),e2),str')
+expr :: PReplace Expr
+expr str (BinOp op e1 e2,str') =
+  ((expr <<< whitespace) <> (plusMinus <<< whitespace)
+                           <> expr) str (((e1,op),e2),str')
 -- expr str (Paren e,str')
 --   | head str == '(' = "(" ++ expr (tail str) (e,")"++str')
 --   | otherwise = "(" ++ expr str (e,')':str')
--- expr str (Num v,str')   = num str (v,str')
+expr str (Num v,str')   = num str (v,str')
 
 num :: PReplace Int
-num str (d,str') | d <= 9 && d >= 0 = char (intToDigit d) str str'
+num str (d,str') | d <= 9 && d >= 0 = (char' isDigit) str (intToDigit d,str')
+
+-- Choice operator
+(<|>) :: PReplace a -> PReplace a -> PReplace a
+(pA <|> pB) str (expr,str') =
+  case pA str (expr,str') of
+       New val      -> case pB str (expr,str') of
+                            New val'      -> failed
+                            replacedStr   -> replacedStr
+       replacedStr  -> replacedStr
 
 (<>) :: PReplace a -> PReplace b -> PReplace (a,b)
 (pA <> pB) str ((expr1,expr2),str')
@@ -34,26 +45,38 @@ num str (d,str') | d <= 9 && d >= 0 = char (intToDigit d) str str'
   str1, str2 free
 
 (<<<) :: PReplace a -> PReplace () -> PReplace a
-(pA <<< pB) str (expr,str') = (pA <> pB) str ((expr,()),str')
+(pA <<< pB) str (e,str') = (pA <> pB) str ((e,()),str')
 
 (>>>) :: PReplace () -> PReplace b -> PReplace b
-(pA >>> pB) str (expr,str') = (pA <> pB) str (((),expr),str')
+(pA >>> pB) str (e,str') = (pA <> pB) str (((),e),str')
 
 whitespace str ((),str') = charMany ' ' str str'
 
 plusMinus :: PReplace Op
-plusMinus str (op,str') =
-  case op of
-       Plus  -> char '+' str str'
-       Minus -> char '-' str str'
-
+plusMinus str (op,str') = char' (`elem` ['+','-']) str (opStr,str')
+ where
+  opStr = case op of
+               Plus  -> '+'
+               Minus -> '-'
 -- many :: (P
 
+char' :: (Char -> Bool) -> PReplace Char
+char' p input (v,new) =
+  case input of
+       "" -> New (v:new)
+       _  -> char'' input new
+ where
+  char'' str@(c':str') rest
+    | p c' && rest == str'    = Replaced (v:rest)
+    | p c' && null str'       = Replaced (v:rest)
+    | p c' && not (null rest) = New (v:rest)
+    | otherwise               = New (v:rest)
+
 char :: Char -> String -> String -> Res String
-char c str rest =
-  case str of
-       "" -> New (c:rest)
-       _  -> char' c str rest
+char chr input new =
+  case input of
+       "" -> New (chr:new)
+       _  -> char' chr input new
  where
   char' c str@(c':str') rest
     | c == c' && rest == str'    = Replaced str
@@ -62,10 +85,10 @@ char c str rest =
     | otherwise                  = New (c:rest)
 
 charMany :: Char -> String -> String -> Res String
-charMany c str rest =
-  case str of
-       "" -> New (c:rest)
-       _  -> charMany' c str rest
+charMany chr input new =
+  case input of
+       "" -> New (chr:new)
+       _  -> charMany' chr input new
  where
   charMany' c str@(c':str') rest
     | c == c' && rest == str'    = Replaced str
