@@ -68,27 +68,6 @@ type PReplace a = String -> (a,String) -> Res String
 infixl 4 <>, <<<, >>>
 infixl 3 <|>
 
--- parser :: String -> (Maybe Exp, String)
--- parser ""      = Nothing
--- parser "+ 1 2" = Just (Plus 1 2)
-
--- parserExp :: String -> (Exp, String)
--- parserExp = undefined
-
--- p = const Nothing <$> eof <|> Just <$> parserExp
-
-
--- t :: String -> (Maybe a,String) -> Res String
--- t "Nothing" (Just (Mult 1 2), str) = r "" (Mult 1 2)
-
--- whitespace "" ((), str) = " "
-
--- f "7" (Mult 1 2, _) =
-
--- g " " ((), )
-
--- plusMinus "" (Plus, str) = "Plus"
-
 replace :: PReplace a -> String -> (a,String) -> String
 replace pReplace str pair = case pReplace str pair of
                                  Replaced s -> s
@@ -97,6 +76,7 @@ pretty :: PReplace a -> String -> (a,String) -> String
 pretty pReplace str pair = case pReplace str pair of
                            New s -> s
 
+get :: PReplace a -> String -> (a,String)
 get pReplace str | (pretty pReplace ? replace pReplace) str v == str = v
  where v free
 
@@ -129,62 +109,16 @@ plusMinus str (op,str') = charP (`elem` ['+','-']) str (opStr,str')
 --   opening str (e,str') =
 
 strict :: PReplace a -> PReplace a
-strict pReplace str pair@(expr,str') =
+strict pReplace str pair =
   case pReplace str pair of
        New _ -> failed
        res   -> res
 
 -- Choice operator
 (<|>) :: PReplace a -> PReplace a -> PReplace a
-(pA <|> pB) str (expr,str') =
-  case pA str (expr,str') of
-       New val      -> case pB str (expr,str') of
-                            New val'      -> failed
-                            replacedStr   -> replacedStr
-       replacedStr  -> replacedStr
-
--- (<>) :: PReplace a -> PReplace b -> PReplace (a,b)
--- (pA <> pB) str ((expr1,expr2),str')
---   | str == str1 ++ str2 ++ str3 =
---       if null str
---         then res2
---         else if any isNew [newString,res]
---                then failed
---                else res2
---  where
---   newString2 = pB str2 (expr2,str')
---   res2       = pA str1 (expr1, unwrap newString2)
---   newString  = (strict pB) str2 (expr2,str')
---   res        = pA str1 (expr1, unwrap newString)
---   str1, str2, str3 free
-
--- (<>) :: PReplace a -> PReplace b -> PReplace (a,b)
--- (pA <> pB) str ((expr1,expr2),str')
---   | str == str1 ++ str2 ++ str3 =
---       if null str
---         then res
---         else if any isNew [newString,res]
---                then failed
---                else res
---  where
---   newString = pB str2 (expr2,str')
---   res       = pA str1 (expr1, unwrap newString)
---   str1, str2, str3 free
-
--- (<>) :: PReplace a -> PReplace b -> PReplace (a,b)
--- (pA <> pB) str ((expr1,expr2),str')
---   | str == str1 ++ str2 ++ str3 =
---       if null str
---         then res str'
---         else if any null [str1,str2]
---                then failed
---                else if str' == str3
---                       then res str'
---                       else res str3
---  where
---   newString s = pB str2 (expr2,s)
---   res       s = pA str1 (expr1, unwrap (newString s))
---   str1, str2, str3 free
+(pA <|> pB) str (e, str') =
+  case (pA ? pB) str (e,str') of
+       res@(Replaced _) -> res
 
 (<>) :: PReplace a -> PReplace b -> PReplace (a,b)
 (pA <> pB) str ((expr1,expr2),str')
@@ -192,10 +126,7 @@ strict pReplace str pair@(expr,str') =
      if null str
        then pA str1 (expr1, unwrap (pB str2 (expr2,str')))
        else (strict pA) str1 (expr1, unwrap ((strict pB) str2 (expr2,str')))
- where
-  Replaced newString = pB str2 (expr2,str')
-  Replaced res       = pA str1 (expr1, newString)
-  str1, str2 free
+ where str1, str2 free
 
 (<<<) :: PReplace a -> PReplace () -> PReplace a
 (pA <<< pB) str (e,str') = (pA <> pB) str ((e,()),str')
@@ -203,11 +134,17 @@ strict pReplace str pair@(expr,str') =
 (>>>) :: PReplace () -> PReplace b -> PReplace b
 (pA >>> pB) str (e,str') = (pA <> pB) str (((),e),str')
 
+
 empty :: PReplace a
-empty _ (_,_) = failed
+empty _ _ = New ""
+
+-- whitespaces :: PReplace ()
+whitespaces str ((),str') | n > 0 = (many whitespace) str (replicate n (),str')
+ where n free
+-- charMany ' ' str str'
 
 whitespace :: PReplace ()
-whitespace str ((),str') = charMany ' ' str str'
+whitespace str ((),str') = char ' ' str str'
 
 paren :: PReplace a -> PReplace a
 paren pReplace str (e,str') =
@@ -217,13 +154,19 @@ optional :: Char -> PReplace a -> PReplace a
 optional opt pReplace =
  (charP' (== opt) >>> pReplace) <|> pReplace
 
+many :: PReplace a -> PReplace [a]
+many pReplace str (xs,str') =
+  case xs of
+       [y]  -> pReplace str (y,str')
+       y:ys -> (pReplace <> many pReplace) str ((y,ys),str')
+
 charP' :: (Char -> Bool) -> PReplace ()
 charP' p input (_,new) =
   case input of
        "" -> New new
        _  -> char' input new
  where
-  char' str@(c':str') rest
+  char' (c':str') rest
     -- | p c'                    = Replaced (v:rest)
     | p c' && rest == str'    = Replaced rest
     | p c' && null str'       = Replaced rest
@@ -236,7 +179,7 @@ charP p input (v,new) =
        "" -> New (v:new)
        _  -> char' input new
  where
-  char' str@(c':str') rest
+  char' (c':str') rest
     -- | p c'                    = Replaced (v:rest)
     | p c' && rest == str'    = Replaced (v:rest)
     | p c' && null str'       = Replaced (v:rest)
@@ -245,15 +188,19 @@ charP p input (v,new) =
 
 char :: Char -> String -> String -> Res String
 char chr input new = charP (== chr) input (chr,new)
- --  case input of
- --       "" -> New (chr:new)
- --       _  -> char' chr input new
- -- where
- --  char' c str@(c':str') rest
- --    | c == c' && rest == str'    = Replaced str
- --    | c == c' && null str'       = Replaced (c:rest)
- --    | c == c' && not (null rest) = New (c:rest)
- --    | otherwise                  = New (c:rest)
+
+text :: String -> PReplace String
+text txt (str ++ rest) (e,str')
+  | null str && null rest      = New (e ++ str')
+  | txt == str && rest == str' = Replaced (e ++ str')
+  | txt == str && null rest    = Replaced (e ++ str')
+
+textP :: (String -> Bool) -> PReplace String
+textP p (str ++ rest) (e,str')
+  | null str && null rest      = New (e ++ str')
+  | p str && rest == str' = Replaced (e ++ str')
+  | p str && null rest    = Replaced (e ++ str')
+  | p str                 = Replaced (e ++ str')
 
 charMany :: Char -> String -> String -> Res String
 charMany chr input new =
@@ -275,7 +222,7 @@ charManyStrict chr input new =
        "" -> New (chr:new)
        _  -> charMany' chr input new
  where
-  charMany' c str@(c':str') rest
+  charMany' c (c':str') rest
     -- | c == c' && rest == str'    = Replaced str
     | c == c' && null str'       = Replaced (c:rest)
     | c == c' && not (null str') = case charMany' c str' rest of
