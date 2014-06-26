@@ -19,3 +19,7 @@ cabal.config
 *.snm
 *.toc
 *.tex
+*.bbl
+*.blg
+*lof
+*lot
