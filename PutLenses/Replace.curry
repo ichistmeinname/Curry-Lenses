@@ -68,6 +68,7 @@ type PReplace a = String -> (a,String) -> Res String
 infixl 4 <>, <<<, >>>
 infixl 3 <|>
 
+
 replace :: PReplace a -> String -> (a,String) -> String
 replace pReplace str pair = case pReplace str pair of
                                  Replaced s -> s
@@ -76,9 +77,9 @@ pretty :: PReplace a -> String -> (a,String) -> String
 pretty pReplace str pair = case pReplace str pair of
                            New s -> s
 
-get :: PReplace a -> String -> (a,String)
-get pReplace str | (pretty pReplace ? replace pReplace) str v == str = v
- where v free
+-- get :: PReplace a -> String -> (a,String)
+-- get pReplace str | (pretty pReplace ? replace pReplace) str v == str = v
+--  where v free
 
 data Expr = BinOp Op Expr Expr
           | Num Int
@@ -87,7 +88,7 @@ data Op = Plus | Minus | Mult | Div
 
 expr :: PReplace Expr
 expr str (BinOp op e1 e2,str') =
-  ((plusMinus <<< whitespace) <> (expr <<< whitespace)
+  ((plusMinus <<< manyWhitespace) <> (expr <<< manyWhitespace)
                          <> expr) str (((op,e1),e2),str')
 expr str (Num v,str')   = num str (v,str')
 
@@ -142,6 +143,9 @@ empty _ _ = New ""
 whitespaces str ((),str') | n > 0 = (many whitespace) str (replicate n (),str')
  where n free
 -- charMany ' ' str str'
+
+manyWhitespace :: PReplace ()
+manyWhitespace str ((),str') = charMany ' ' str str'
 
 whitespace :: PReplace ()
 whitespace str ((),str') = char ' ' str str'
