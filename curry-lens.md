@@ -46,6 +46,13 @@
   * `l.get (l.put v c) = v` (PutGet)
   * `l.put (l.get s) (l.res s) = s` (GetPut)
 
+## An Algorithm for Layout Preservation in Refactoring Transformations
+
+* laws for correctness and preserveration are based on lens laws
+* presents algorithm that reconstructs source code after refactoring
+  transformations:
+  "CONSTRUCTTEXT(node) takes an abstract syntax term as input and constructs a string representation for this term. Three cases are distinguished; re- construction for nodes (l. 1-5), reconstruction for lists (l. 6-11), and pretty printing in case the origin term is missing, i.e. when a term is newly created in the transformation (l. 12-14). We discuss those cases."
+
 # Misc
 
 ## Notes
