@@ -1,96 +1,115 @@
-module ReplaceParse where
+module ReplaceParse
+  ( char, charP, digit, whitespace, whitespaces, succeeds
+  , many, optional, paren
+  , (<|>), (<<<), (>>>), (<>)
+  , get, put, PReplace, replaceParse
+  ) where
 
 import SetFunctions
 import Char (isDigit, intToDigit)
+import Lens ( Lens, get, put)
 
-type Reparse a = String -> (a,String) -> (String,String,String)
+----- main definitions
 
-data Expr = BinOp Op Expr Expr
-          | Num Int
-data Op = Plus | Minus | Mult | Div
+-- Datatype definition
+type PReplace a = String -> (a,String) -> (String,String,String)
 
--- String -> (Char,String) -> String
-char' :: Char -> Reparse Char
-char' c = char (== c)
+-- Transforms a `PReplace` structure to a lens
+replaceParse :: PReplace a -> Lens String (a,String)
+replaceParse pReplace input pair =
+  case pReplace input pair of
+       (res1,_,str) -> res1 ++ str
 
-char :: (Char -> Bool) -> Reparse Char
-char _ ""     (e,str') = ([e],"",str')
-char p (c:cs) (e,str') | p c  = ([e],cs,str')
 
--- manyChar :: (Char -> Bool) -> Reparse Char
--- manyChar p ""
+----- Primitives for replace operations
 
-digit :: Reparse Int
-digit input (d,str') | d <= 9 && d >= 0 = char isDigit input (intToDigit d,str')
+-- Replaces a given character
+char :: Char -> PReplace Char
+char c = charP (== c)
 
-plusMinus :: Reparse Op
-plusMinus input (e,str') =
- case e of
-      Plus  -> char p input ('+',str')
-      Minus -> char p input ('-',str')
- where
-  p op = op == '+' || op == '-'
+-- Replaces a character if the given predicate holds
+charP :: (Char -> Bool) -> PReplace Char
+charP _ ""     (e,str') = ([e],"",str')
+charP p (c:cs) (e,str') | p c  = ([e],cs,str')
 
-expr :: Reparse Expr
-expr input (BinOp op e1 e2,str') =
-  ((plusMinus <<< whitespaces)
-    <> (expr <<< whitespaces)
-    <> expr) input (((op,e1),e2),str')
-expr input (Num d, str') = digit input (d,str')
+-- Replaces a digit
+digit :: PReplace Int
+digit input (d,str')
+  | d <= 9 && d >= 0 = charP isDigit input (intToDigit d,str')
 
-expr' :: Reparse Expr
-expr' input (BinOp op e1 e2,str') =
-  ((plusMinus <> many whitespace)
-    <> (expr' <> many whitespace)
-    <> expr') input ((((op,m1),(e1,m2)),e2),str')
- where m1,m2 free
-expr' input (Num d, str') = digit input (d,str')
+-- Replaces a whitespace
+whitespace :: PReplace ()
+whitespace input ((),str') = char ' ' input (' ',str')
 
-whitespace :: Reparse ()
-whitespace input ((),str') = char' ' ' input (' ',str')
-
-whitespaces :: Reparse ()
+-- Replaces many whitespaces
+whitespaces :: PReplace ()
 whitespaces input = case input of
   "" -> whitespace ""
-  _   -> ((whitespace >>> whitespaces') <|> succeeds) input
+  _  -> ((whitespace >>> whitespaces')) input
  where
-  whitespaces' :: Reparse ()
-  whitespaces' ""          = succeeds ""
-  whitespaces' input@(_:_) = ((whitespace >>> whitespaces') <|> succeeds) input
+  whitespaces' :: PReplace ()
+  whitespaces' ""           ((),str') = succeeds "" ((),str')
+  whitespaces' input'@(_:_) ((),str') =
+    ((whitespace >>> whitespaces') <|> succeeds) input' ((),str')
 
-many :: Reparse a -> Reparse [a]
-many _       input ([],str') = ("",input,str')
-many reparse input pair      = (reparse <> many reparse) input pair
-
-succeeds :: Reparse a
+-- Always succeeding replace operator
+succeeds :: PReplace a
 succeeds input (_,str') = ("",input,str')
 
-(<|>) :: Reparse a -> Reparse a -> Reparse a
-(pA <|> pB) input (e,str') | noParse   = pB input (e,str')
-                           | otherwise = pA input (e,str')
- where
-  noParse = isEmpty (set2 pA input (e,str'))
 
-(<<<) :: Reparse a -> Reparse () -> Reparse a
-(pA <<< pB) input (e,str') = (pA <*> pB) input ((e,()),str')
+paren :: PReplace a -> PReplace a
+paren pReplace str@"" (e,str') =
+  (charP (== '(') <> pReplace <> charP (== ')')) str ((('(',e),')'),str')
+paren pReplace str@('(' : _ ++ ")"++_) (e,str') =
+  (charP (== '(') <> pReplace <> charP (== ')')) str ((('(',e),')'),str')
 
-(>>>) :: Reparse () -> Reparse a -> Reparse a
-(pA >>> pB) input (e,str') = (pA <*> pB) input (((),e),str')
+ --  | str == ""                 = go str
+ --  | str == "(" ++ str1 ++ ")" = go str1
+ -- where
+ --  str1 free
+ --  go input =
+ --    case pReplace input (e,')':str') of
+ --       (res1,str2,str2') -> ('(' : res1, str2,str2')
+
+many :: PReplace a -> PReplace [a]
+many _       input ([],str')   = ("",input,str')
+many reparse input (x:xs,str') =
+  ((reparse <> many reparse) <|> succeeds) input ((x,xs),str')
+
+optional :: PReplace a -> PReplace a
+optional pReplace = pReplace <|> succeeds
+
+
+(<|>) :: PReplace a -> PReplace a -> PReplace a
+(pA <|> _)  ""          = pA ""
+(pA <|> pB) input@(_:_) = (pA ? pB) input
+-- (pA <|> pB) input@(_:_) (e,str')
+--   | noParse   = pB input (e,str')
+--   | otherwise = pA input (e,str')
+--  where
+--   noParse = isEmpty (set2 pA input (e,str'))
+--   pRes    = pA input (e,str')
+
+(<<<) :: PReplace a -> PReplace () -> PReplace a
+(pA <<< pB) input (e,str') = (pA <> pB) input ((e,()),str')
+
+(>>>) :: PReplace () -> PReplace a -> PReplace a
+(pA >>> pB) input (e,str') = (pA <> pB) input (((),e),str')
 
 -- non-recursive version
-(<>) :: Reparse a -> Reparse b -> Reparse (a,b)
-(pA <> pB) input ((e1,e2),str') = case input of
-  "" -> (res1 ++ res2,str2,str2')
-  _  -> if null str1 && (res2,str',str2') /= succeeds str1 (e2,str1')
-          then failed
-          else (res1 ++ res2,str2,str2')
- where
-  (res1,str1,str1') = pA input (e1,"")
-  (res2,str2,str2') = pB str1 (e2,str')
+-- (<>) :: PReplace a -> PReplace b -> PReplace (a,b)
+-- (pA <> pB) input ((e1,e2),str') = case input of
+--   "" -> (res1 ++ res2,str2,str2')
+--   _  -> if null str1 && (res2,str',str2') /= succeeds str1 (e2,str1')
+--           then failed
+--           else (res1 ++ res2,str2,str2')
+--  where
+--   (res1,str1,str1') = pA input (e1,"")
+--   (res2,str2,str2') = pB str1 (e2,str')
 
 -- recursive version
-(<*>) :: Reparse a -> Reparse b -> Reparse (a,b)
-(pA <*> pB) input pair@((e1,e2),str') = case input of
+(<>) :: PReplace a -> PReplace b -> PReplace (a,b)
+(pA <> pB) input ((e1,e2),str') = case input of
   "" -> (res1,str2,str1' ++ str2')
   _  -> if null str1 && (res2,str',str2') /= succeeds str1 (e2,str1')
           then failed
@@ -98,23 +117,3 @@ succeeds input (_,str') = ("",input,str')
  where
   (res1,str1,str1') = pA input (e1,res2)
   (res2,str2,str2') = pB str1 (e2,str')
-
-
-put :: Reparse a -> String -> (a,String) -> String
-put reparse input pair = case reparse input pair of
-  (res1,str1,str) -> res1 ++ if null str
-                               then ""
-                               else if str == str1
-                                      then str1
-                                      else str ++ str1
-
-put' :: Reparse a -> String -> (a,String) -> String
-put' reparse input pair = res1 ++ str
- where (res1,"",str) = reparse input pair
-
-
-get :: Reparse a -> String -> (a,String)
-get reparse input | put reparse input v == input = v
- where v free
-
-main = return $ (whitespaces <*> digit) " 3" (((),2),"")
