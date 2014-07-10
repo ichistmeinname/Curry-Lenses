@@ -241,7 +241,7 @@ functions only. %
 
 \todo{Examples}
 
-In order to use partial lenses, we need to adjust the lens
+In order to use partial lenses like proposed by \cite{biTProperties}, we need to adjust the lens
 laws by means of partiality. %
 In the following, the expression $|(f x)|\downarrow$ is satisfied, if
 the function $f$ yields a result for the argument $x$. %
@@ -258,15 +258,9 @@ does not need to be checked and the rule trivially holds. %
 \dfrac{|(get s)|\downarrow}{|put s (get s) = s|}
 \end{equation}
 
-\begin{itemize}
-\item weaker laws \cite{biTProperties}
-\end{itemize}
-
 \section{Applications}
 \begin{itemize}
 \item Boomerang \cite{boomerang}
 \item HaXML \cite{haxml}
 \item Model transformation \cite{parsing1}
 \end{itemize}
-
-\chapter{? Introduction to Curry ?}
