@@ -6,7 +6,7 @@
 	headsepline,%         Linie nach Kopfzeile
 	%footsepline,%         Linie vor Fusszeile
 	%pointlessnumbers,%     Nummern ohne abschließenden Punkt
-	11pt,                   Grössere Schrift, besser lesbar am bildschrim
+	10pt
 ]{scrbook}
 %
 % Paket für Übersetzungen ins Deutsche
@@ -14,7 +14,11 @@
 % \usepackage[english,ngerman]{babel}
 
 \usepackage{todonotes}
+% \usepackage{semantic}
 
+\usepackage{cite}
+\usepackage[authoryear]{natbib}
+\usepackage{url}
 %
 % Pakete um Latin1 Zeichnensätze verwenden zu können und die dazu
 % passenden Schriften.
@@ -74,6 +78,7 @@
 %
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{amsthm}
 \usepackage{latexsym}
 
 %
@@ -108,12 +113,11 @@
 %
 % aller Bilder werden im Unterverzeichnis figures gesucht:
 %
-\graphicspath{{figures/}}
+\graphicspath{{../images/}}
 
 %
 % Literaturverzeichnis-Stil
 %
-\bibliographystyle{plain}
 
 %
 % Anführungsstriche mithilfe von \textss{-anzufuehrendes-}
@@ -135,4 +139,4 @@
 %
 \renewcommand{\baselinestretch}{1.25}
 
-%format --> = "\leadsto"
+\bibliographystyle{plainnat}

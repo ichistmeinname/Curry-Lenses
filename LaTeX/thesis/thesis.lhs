@@ -4,6 +4,9 @@
 %include greek.fmt
 \arrayhs
 
+%format parse_a = "parse_a"
+%format print_a = "print_a"
+
 \begin{document}
 
 % Römische Nummerierung für Sonderseiten, wie Verzeichnisse und Anhang
@@ -40,6 +43,7 @@
 
 % Setze Nummerierung wieder auf römisch zurück und setzte von oben fort
 % Wert ist demnach der von 'roemisch'
+
 \newpage
 \pagenumbering{Roman}
 \setcounter{page}{\value{roemisch}}
