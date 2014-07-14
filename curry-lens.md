@@ -53,6 +53,135 @@
   transformations:
   "CONSTRUCTTEXT(node) takes an abstract syntax term as input and constructs a string representation for this term. Three cases are distinguished; re- construction for nodes (l. 1-5), reconstruction for lists (l. 6-11), and pretty printing in case the origin term is missing, i.e. when a term is newly created in the transformation (l. 12-14). We discuss those cases."
 
+## Bidirectional Transformations Based on Automatic Derivation of View
+   Complement Functions
+* general first-order functional language: VDL
+* affine (each variable is used at most once)
+* treeless (no intermediate data structure is used in the definition)
+* view complement functions ca be automatically derived from view
+  functions
+* inference system for validation of changes in the view
+* bidirectional transformation between arbitrary algebraic data
+  structures (like lists and trees)
+* three steps: derivation of complement function, tupling and inverse
+  transformation
+* get function and complement form the tupling, that mus be injective
+* minimal complement
+* injectivity is decidable in VDL
+* algorithm to check for injectivity: sound and complete
+* backward transformation can be derived if the tupled function and
+  its inverse can be derived effectively
+* the inverse transformation is not guaranteed to be deterministic;
+  non-failing equations can overlap on the left-hand sides and, thus,
+  lead to nondeterministic programs, in which case a backtracking
+  search becomes necessary
+
+## Bidirectionalization for free
+
+* semantic approach inspired by relational parametricity, uses free
+  theorems for proving the consistency conditions
+* higher-order function `bff :: forall a. [a] -> [a]) -> (forall
+  a. [a] -> [a] -> [a]` implemented in Haskell that takes a
+  polymorphic get function as argument and yields the appropriate put
+  function, generic on input and output
+* the resulting put function is not a syntatical defintion, but a
+  functional value semantically equivalent to such a function
+* no restrictions on a sublanguage, any Haskell function of
+  appropriate type can be used as argument
+* restriction: any update on the shape of the view (length of the
+  list) leads to failure
+* distiguishes between `bff`, `bff_EQ`, `bff_ORD`
+* considered data structures: shape plus content (Categories of
+  container by Th. Altenkirch et al)
+* GetPut, PutGet laws are proven by free theorems
+* main idea: use assumption that get is polymorphic over its element
+  argument of type |a|, then, its behaviours does not depend on any
+  concrete list elements, but only on positional information
+* every position in the template list `[0..n]` has a mapping in g with its
+  associated values in the original source; apply get to the template source to
+  get an additional mapping h between the template view and the
+  original updated view; combine both mappings to a mapping h' with precedence to h,
+  when an integer template index is found in both mappings; in the
+  end, fill the positions in the template mappin with the associated
+  values according to the combined mapping h'
+* simple approach fails for duplicated elements; solutions: elements
+  of the list must be mapped in a more sophistaced way, equal elements
+  in the origial list map to the same elements in the template
+
+## Semantic Bidirectionalization Revisited
+
+* generalises Voigtlaender's approach for higher order functions that
+  are not expressed by type classes
+* defines one function bff that
+  is parametrized over a so-called observer function, and extends the associations
+  maps to observer tables
+
+## Bedirectionalization for Free with Runtime Recording
+
+* introduces a type class `PackM delta alpha mu` to turn monomorphic
+  into polymorphic transformations; a concrete datatype `delta` is
+  abstracted to a type `alpha` and the observerations made by
+  transformations by values of type `delta` are recorded by a monad `mu`
+* `liftIO` lifts any observer function `[delta] -> beta` on a concrete
+  datatype `delta` to a monadic function `[alpha] -> mu beta` on an
+  abstract datatype `alpha` where `beta` is an instance of `Eq`
+* `Eq b` is needed to check validity of updates by comparing the
+  observation results
+* polymorphism of `a` permits semantic bidirectionalization and
+  polymorphic `mu` guarantees integrity of the observations results
+  recorded in the writer monad
+* consistency check in observation table: the observation results are
+  not allowed to be different to possible update results, if they are
+  different, the update is rejected; key for application of free
+  theorems
+* optional locations for newly created elements that do not have a
+  corresponding location in the original list
+* approach in this paper: same values are not mapped to the same
+  label, that is, same values are not considered to be duplicates 
+* says its harder to find get functions that are suitable for syntactic bidirectionalization than semantic
+
+
+## Combining Syntactic and Semantic Bidirectionalization
+
+* combines syntactic and semantic bdirectionalization
+* divides usage of both approaches by their specialties: semantic for
+  content, syntactic for shape
+* inherits limitations in program coverage from both techniques: only
+  functions written in first-order language, linear, treeless and
+  moreover polymorphic are suitable for this approach
+* _in a meaningful way_/_suitable_: GetPut, PutGet, restricted to a
+  defined `put s v'` for PutGet, and that `put s v` should be
+  preferably defined for all `s` and `v'` of appropriate type
+* improved updatability: shape-changing update that are not applicable
+  for semantic bidirectionalization; superior to syntactic
+  bidirectionalization on its own in many cases
+* syntactic bidirectonalization as black box
+* semnatic bidirectionalization as gass box: look into it and refactor
+  it to enable a plugging in of the syntactic technique
+* syntactic technique on its own is never worse than the semantic
+  technique own its own
+* assumes semantic linearity: for every $n$ `get [0..n]` does not
+  contain any duplicates, which clearly is fulfilled, if `get`'s
+  syntactic definition is lineary: linearity rules out one important
+  cause for a potential failure
+* key idea: abstracting from lists to length of lists, or more
+  generally, from data structures to shapes
+* uses `Nat` instead of `Int`, move from `[a]` to `Nat`: `get`-function gets simpler, no data
+  values have to be kept; can lead to injectivity and, hence, to
+  simpler complement functions
+* explicit bias: bias to applu when reflecting specific updated views
+  back to the source level
+* this bias could be determined on a case-by-case basis, e.g. depending on
+  a _diff_ between updated view and original view
+
+## Enhancing semantic bidirectionalization via shape bidirectionalizer plug-ins
+
+* takes combination one step further: any syntactic
+  bidirectionalization approach can be _plugged in_ to obtain transformations on shapes
+* generalises approach from lists to arbitrary data types
+* enables bootstrapping in which pluggable bidirectionalisation is
+  itself used as a plug-in
+
 # Misc
 
 ## Notes
@@ -65,6 +194,14 @@
 # Implementations
 
 ## "Combinator-Lenses"
+
+## "Get-Lenses"
+
+* non-injective get
+  * some variables on the left-hand side of a rule disappear in the
+    corresponding right-hand side (|fst (x, y) = x|.
+  * The ranges of two right-hand sides of a view function overlap.(|f
+    ( A ) = A; f ( B ) =ˆ A|)
 
 ## "Put-Lenses"
 
