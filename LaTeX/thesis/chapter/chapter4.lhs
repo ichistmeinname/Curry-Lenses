@@ -116,7 +116,7 @@ be affine and treeless. %
 In an affine function defintion, every variable on the left hand side is
 used at most once on the right hand side of the definition; treeless
 characterises function definitions without immediate data structures. %
-Nevertheless, VDL allows function definition using arbitrary algebraic data strucutes, e.g., lists and trees. %
+Nevertheless, VDL allows function definitions using arbitrary algebraic data strucutes, e.g., lists and trees. %
 VDL then automatically derives appropriate put functions for these uni-directional get
 functions. %
 As a first step, VDL derives a complement function, secondly, the get
@@ -138,139 +138,75 @@ needs to be defined. %
 Fortunately, injectivity is decidable in VDL and the propsed algorithm
 is sound and complete. %
 
-
 On the other hand, \cite{biForFree} introduces an approach for
-semantic bidirectionalisation.
+semantic bidirectionalisation using free theorems to prove consistency
+conditions. %
+Voigtl\"ander defines a function |bff :: (forall a. [a] -> [a]) ->
+(forall a. [a] -> [a] -> [a])| in Haskell, which first argument is a polymorphic
+get function and yields the appropriate put function. %
+In contrast to the syntactic approach we studied before, the resulting
+put is a functional value which is semantically equivalent to
+a syntactical derived put function. %
+The advantage is that we have less language restrictions, we can use Haskell as
+our language of choice insteand of a sublanguage; the |bff| function
+take any Haskell function of appropriate type as its argument. %
+Then again, the semantic approach limits the range of function on
+other respects: any get function that changes the shape of its
+elements fails due to non-trackable updates. %
+The defined |bff| function is defined on lists, but the approach is
+also applicable for all data structures, which have shape and content,
+i.e. which apply to the category of containers as defined by
+Th. Altenkirch et al\todo{citiation}. %
+The approach utelises the fact that the get function is polymorhpic
+over its first arguments, i.e. the
+container's element. %
+Therefore, we can assume that it does not
+depend on any concrete element of its container, but only on
+positional information, which are independent of the elements values. %
+The definition of |bff| simulates its first argument, i.e. the get
+function, on an arbitrary contrainer, like for example a list of
+|Integer| if we use |[a]| as container. %
+The container to simulate shares its shape property with the given
+container, which is the second argument of |bff|; in the example of
+lists, the simulation list and the given list need to be of the same
+length. %
+Every value in the simulated container has a corresponding value in
+the given container. %
+As a second step, we get a mapping from the simulated view and the
+originally update view, when we apply the |get| function to the
+simulated and the given container respectively. %
+We combine both mappings with precedences to the second: if we find a
+value im both mappings, we choose the one from the view. %
+In the end, every element in the container we used for simulation are
+replaced by their associated values according to the combined
+mapping. %
+Voigtlaender defines two additional function, |bff_EQ| and |bff_ORD|,
+which use the function of the type classes |Eq| and |Ord|
+respectively. %
+In order to apply this approach for a |get| function that duplicates
+elements, the defined mapping fails because of its simple
+definition. %
+In a more practical mapping, equivalent elements in the original
+container need to map to the same element in the arbitrary container
+that we need for simulation. %
+As stated before, the approach makes heavily use of free theorems to
+prove consistency conditions. %
+The syntactical bidirectionalisation formulates its derivation on the
+ground of the \emph{GetPut} and \emph{PutGet} law, whereas
+Voigtl\"ander proves for each of his function definitions, |bff|,
+|bff_EQ| and |bff_ORD|, with the help of free theorems, that they obey the lens laws. %
 
 \begin{itemize}
 \item cost / difference function, minimal cost / difference is chosen
 \item syntactic derivation via view complement \cite{viewComp}$\checkmark$
 
 \item semantic derivation using relational parametricity
-  \cite{biForFree}
-  \begin{itemize}
-  \item semantic approach inspired by relational parametricity, uses
-    free theorems for proving the consistency conditions
-  \item higher-order function |bff :: forall a. [a] -> [a]) -> (forall
-    a. [a] -> [a] -> [a]| implemented in Haskell that takes a
-    polymorphic get function as argument and yields the appropriate
-    put function, generic on input and output
-  \item the resulting put function is not a syntatical defintion, but
-    a functional value semantically equivalent to such a function
-  \item no restrictions on a sublanguage, any Haskell function of
-    appropriate type can be used as argument
-  \item restriction: any update on the shape of the view (length of
-    the list) leads to failure
-  \item distiguishes between |bff|, |bff_EQ|, |bff_ORD|
-  \item considered data structures: shape plus content (Categories of
-    container by Th. Altenkirch et al)
-  \item GetPut, PutGet laws are proven by free theorems
-  \item main idea: use assumption that get is polymorphic over its
-    element argument of type |a|, then, its behaviours does not depend
-    on any concrete list elements, but only on positional information
-  \item every position in the template list |[0..n]| has a mapping in
-    g with its associated values in the original source; apply get to
-    the template source to get an additional mapping h between the
-    template view and the original updated view; combine both mappings
-    to a mapping h' with precedence to h, when an integer template
-    index is found in both mappings; in the end, fill the positions in
-    the template mappin with the associated values according to the
-    combined mapping h'
-  \item simple approach fails for duplicated elements; solutions:
-    elements of the list must be mapped in a more sophistaced way,
-    equal elements in the origial list map to the same elements in the
-    template
-  \end{itemize}
-\item and additional enhancements
-
-\begin{itemize}
-\item \cite{biForFreeImprove}
-\item introduces a type class |PackM delta alpha mu| to turn monomorphic
-  into polymorphic transformations; a concrete datatype |delta| is
-  abstracted to a type |alpha| and the observerations made by
-  transformations by values of type |delta| are recorded by a monad |mu|
-\item |liftIO| lifts any observer function |[delta] -> beta| on a concrete
-  datatype |delta| to a monadic function |[alpha] -> mu beta| on an
-  abstract datatype |alpha| where |beta| is an instance of |Eq|
-\item |Eq b| is needed to check validity of updates by comparing the
-  observation results
-\item polymorphism of |a| permits semantic bidirectionalisation and
-  polymorphic |mu| guarantees integrity of the observations results
-  recorded in the writer monad
-\item consistency check in observation table: the observation results are
-  not allowed to be different to possible update results, if they are
-  different, the update is rejected; key for application of free
-  theorems
-\item optional locations for newly created elements that do not have a
-  corresponding location in the original list
-\item approach in this paper: same values are not mapped to the same
-  label, that is, same values are not considered to be duplicates 
-\item says its harder to find get functions that are suitable for syntactic bidirectionalisation than semantic
-\end{itemize}
-
-\begin{itemize}
-\item \cite{semRevisited}
-\item generalises Voigtlaender's approach for higher order functions that
-  are not expressed by type classes
-\item defines one function bff that
-  is parametrized over a so-called observer function, and extends the associations
-  maps to observer tables
-\end{itemize}
-
-\begin{itemize}
-\item \cite{enhanceSem}
-\item takes combination one step further: any syntactic
-  bidirectionalisation approach can be \emph{plugged in} to obtain transformations on shapes
-\item generalises approach from lists to arbitrary data types
-\item enables bootstrapping in which pluggable bidirectionalisation is
-  itself used as a plug-in
-\end{itemize}
-\begin{itemize}
-\item generalises Voigtlaender's approach for higher order functions that
-  are not expressed by type classes
-\item defines one function bff that
-  is parametrized over a so-called observer function, and extends the associations
-  maps to observer tables in order to get rid of three seperate
-  functions
-\end{itemize}
+  \cite{biForFree} $\checkmark$
+\item and additional enhancements: \cite{biForFreeImprove} and \cite{semRevisited}
 \item and semantic approach with agda, i.e., dependent types
   \cite{semDependentTypes}
 
 \item combination of both \cite{synSemComb}
-\begin{itemize}
-\item combines syntactic and semantic bdirectionalization
-\item divides usage of both approaches by their specialties: semantic for
-  content, syntactic for shape
-\item inherits limitations in program coverage from both techniques: only
-  functions written in first-order language, linear, treeless and
-  moreover polymorphic are suitable for this approach
-\item \emph{in a meaningful way}/\emph{suitable}: GetPut, PutGet, restricted to a
-  defined |put s v'| for PutGet, and that |put s v| should be
-  preferably defined for all |s| and |v'| of appropriate type
-\item improved updatability: shape-changing update that are not applicable
-  for semantic bidirectionalisation; superior to syntactic
-  bidirectionalisation on its own in many cases
-\item syntactic bidirectonalization as black box
-\item semnatic bidirectionalisation as gass box: look into it and refactor
-  it to enable a plugging in of the syntactic technique
-\item syntactic technique on its own is never worse than the semantic
-  technique own its own
-\item assumes semantic linearity: for every $n$ |get [0..n]| does not
-  contain any duplicates, which clearly is fulfilled, if |get|'s
-  syntactic definition is linear: linearity rules out one important
-  cause for a potential failure, namely potential equality mismatcg in |v'|
-\item key idea: abstracting from lists to length of lists, or more
-  generally, from data structures to shapes
-\item uses |Nat| instead of |Int|, move from |[a]| to |Nat|: |get|-function gets simpler, no data
-  values have to be kept; can lead to injectivity and, hence, to
-  simpler complement functions
-\item explicit bias: bias to apply when reflecting specific updated views
-  back to the source level
-\item this bias could be determined on a case-by-case basis, e.g. depending on
-  a \emph{diff} between updated view and original view
-\item approach does not hold PutPut and undoability law, albeit, the two
-  approach on their owd do satisfy these laws
-\end{itemize}
 \end{itemize}
 
 \subsection{Adapted laws}
