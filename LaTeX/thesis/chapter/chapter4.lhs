@@ -157,6 +157,7 @@ The defined |bff| function is defined on lists, but the approach is
 also applicable for all data structures, which have shape and content,
 i.e. which apply to the category of containers as defined by
 Th. Altenkirch et al\todo{citiation}. %
+
 The approach utelises the fact that the get function is polymorhpic
 over its first arguments, i.e. the container's element. %
 Therefore, we can assume that it does not
@@ -196,7 +197,37 @@ this is where the |Eq| type class comes into play.
 For the function |bff_Ord|, the mapping needs a similiar, but rather complicated and
 more technical, adjustment in order to allow the use of free theorems
 again. %
-In addition, this approach uses free theorems also to prove consistency conditions. %
+
+As an enhancement of the semantic approach, \cite{semRevisited}
+presented a generalisation that extends the range of |get| function to
+higher order functions that are not expressed by type classes, or
+depend on different type classes than |Eq| and |Ord|. %
+Instead of three single functions, like in Voigtl\"anders work, Wang
+and Najd define a |bffBy| function that takes and observer function as
+first argument that gives rise to equivalence properties of the
+elements. %
+The approach uses these observer functions to build the mappings as in the
+original approach. %
+These mappings are called observation tables here, and generalise the
+explicite usage of different functions for different type class
+dependencies. %
+
+As a second enhancement, \cite{biForFreeImprove} introduce a type
+class to extend the range of |get| functions to monomorphic
+transformations. %
+The main idea is to provide a type class |PackM delta alpha mu| to
+convert polymorphic functions into monomorphic ones. %
+\todo{draft rough explanation of implementation}
+The type variable |delta| represents the type of the concrete data structure,
+whereas |alpha| is the type of the abstracted value. %
+The last type variable |mu| is the used monad, which tracks the
+observation made by the transformation on values of the concrete
+strcuture. %
+In contrast to the original approach, equal values in the original
+container are not mapped to the same values in the simulated version,
+that is, the authors consider a more traditional positional mapping. %
+
+In addition, the semantic bedirectionalisation uses free theorems also to prove consistency conditions. %
 We disscused the syntactical bidirectionalisation, which formulates its derivation on the
 ground of the \emph{GetPut} and \emph{PutGet} law, in contrast,
 Voigtl\"ander proves, with the help of free theorems, for each of his function definitions, |bff|,
@@ -210,7 +241,8 @@ are verified by hand. %
 
 \item semantic derivation using relational parametricity
   \cite{biForFree} $\checkmark$
-\item and additional enhancements: \cite{biForFreeImprove} and \cite{semRevisited}
+\item and additional enhancements: \cite{biForFreeImprove} and
+  \cite{semRevisited} $\checkmark$
 \item and semantic approach with agda, i.e., dependent types
   \cite{semDependentTypes}
 
