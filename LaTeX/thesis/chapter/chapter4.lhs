@@ -148,8 +148,8 @@ In contrast to the syntactic approach we studied before, the resulting
 put is a functional value which is semantically equivalent to
 a syntactical derived put function. %
 The advantage is that we have less language restrictions, we can use Haskell as
-our language of choice insteand of a sublanguage; the |bff| function
-take any Haskell function of appropriate type as its argument. %
+our language of choice instead of a sublanguage; the |bff| function
+takes any Haskell function of appropriate type as its argument. %
 Then again, the semantic approach limits the range of function on
 other respects: any get function that changes the shape of its
 elements fails due to non-trackable updates. %
@@ -158,11 +158,13 @@ also applicable for all data structures, which have shape and content,
 i.e. which apply to the category of containers as defined by
 Th. Altenkirch et al\todo{citiation}. %
 The approach utelises the fact that the get function is polymorhpic
-over its first arguments, i.e. the
-container's element. %
+over its first arguments, i.e. the container's element. %
 Therefore, we can assume that it does not
 depend on any concrete element of its container, but only on
-positional information, which are independent of the elements values. %
+positional information, which are independent of the elements
+values. %
+The use of free theorems allows us to inspect the effect of the
+|get| transformation without knowing about the explicit implementation.
 The definition of |bff| simulates its first argument, i.e. the get
 function, on an arbitrary contrainer, like for example a list of
 |Integer| if we use |[a]| as container. %
@@ -180,21 +182,27 @@ value im both mappings, we choose the one from the view. %
 In the end, every element in the container we used for simulation are
 replaced by their associated values according to the combined
 mapping. %
-Voigtlaender defines two additional function, |bff_EQ| and |bff_ORD|,
+Voigtlaender defines two additional functions, |bff_EQ| and |bff_ORD|,
 which use the function of the type classes |Eq| and |Ord|
 respectively. %
-In order to apply this approach for a |get| function that duplicates
+In order to apply his approach for a |get| function that duplicates
 elements, the defined mapping fails because of its simple
 definition. %
 In a more practical mapping, equivalent elements in the original
 container need to map to the same element in the arbitrary container
 that we need for simulation. %
-As stated before, the approach makes heavily use of free theorems to
-prove consistency conditions. %
-The syntactical bidirectionalisation formulates its derivation on the
-ground of the \emph{GetPut} and \emph{PutGet} law, whereas
-Voigtl\"ander proves for each of his function definitions, |bff|,
-|bff_EQ| and |bff_ORD|, with the help of free theorems, that they obey the lens laws. %
+In this case, we need to compare the elements within the container,
+this is where the |Eq| type class comes into play.
+For the function |bff_Ord|, the mapping needs a similiar, but rather complicated and
+more technical, adjustment in order to allow the use of free theorems
+again. %
+In addition, this approach uses free theorems also to prove consistency conditions. %
+We disscused the syntactical bidirectionalisation, which formulates its derivation on the
+ground of the \emph{GetPut} and \emph{PutGet} law, in contrast,
+Voigtl\"ander proves, with the help of free theorems, for each of his function definitions, |bff|,
+|bff_EQ| and |bff_ORD|, that they obey the lens laws. %
+That is, instead of a correctness-by-construction approach, the laws
+are verified by hand. %
 
 \begin{itemize}
 \item cost / difference function, minimal cost / difference is chosen
