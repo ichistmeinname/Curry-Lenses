@@ -8,6 +8,58 @@
   s v \wedge s' \in put s v' \Rightarrow v = v'$
 * _PUTTWICE_: $s' \in put s v \Rightarrow s' = put s' v$
 
+## Combinators for Bi-Directional Tree Transformations
+
+* domain-specific programming language on tree-structures to define
+  bidriectional transformations
+* transformations map a concrete tree into a simplified abstract view,
+  and map a modified abstract view, together with the original
+  concrete tree, to a correspondingly modified concrete tree
+* the design emphasizes robustness and ease of use
+* guarantees well-behavedness and totality properties
+* they state connection with _update translation under a constanc
+  complement_ from databases concerning definedness and continuity
+* definition of a handful of lens combinators, which can be put
+  together to describe transformations on tree
+* combinators include familiar construct from functional programming
+* background: Harmony, generic framework for synchronising
+  tree-structured data, e.g. synchronising boockmark files of
+  different web browsers
+* language provides type declarations that are designed to verify
+  well-behavedness and totality of composite lens expressions
+* first step: indentifyin mathematical space of well-behaved lenses
+  over arbitrary data structures
+* second: define notion of well-behavedness that captures intuition
+  about behavour of get and put
+* third: establish foundation to define lenses by recursion; use
+  standard tools from domain theory to define monotonicty and
+  continuity; this is needed, because the used trees may have
+  arbitrarily deep nested structures
+* fourth: allow lenses to be used to create new conctrete structures
+* well-behaved and very very well-behaved lenses correspond to classes
+  of _update translators_ from database
+* put is injective for $\{(a,c) | (a,c) \in A \times C \vee `get (put
+  (a,c))` \downarrow\}$; for total lenses, put is injective on $a
+  \times C$
+* a lens is _oblivious_: if `put (a,c) = put (a,c')` for all $a,c,c'
+  \in V$, where $V$ is a fixed set of views
+* defined collection of lens combinators: identity, composition,
+  constant
+* collection of lens combinators for trees: hoisting, plunging,
+  forking, pruning, focussing (on a child), renaming, filtering,
+  mapping, copying and merging, conditionals
+* derived lenses for lists: lists are represented as trees (with two
+  edges named head and tail or the empty tree) and a set
+  of combinators is defined (head, tail, map, reverse, grouping,
+  concatenation, filter)
+* extended example concerning bookmark synchronisation designed with
+  XML structures
+* first approach to take totality as primary goal and emphasize types as an
+  organizing design principle
+* problem _multiple reasonable translations for a given update_: allow
+  programmer to described update policy at the same time as the view
+  definition, by enriching the relational primitives with enough
+  annotations to select among a variety of reasonably update policies
 
 ## Validity Checking of _Putback_ Transformation in Bidirectional Programming
 
@@ -27,8 +79,6 @@
 * _PUTSTABILITY_: $\forall s . \exists v . put s v = s$
 * validity - A put function is valid if and only if it satisfies the
   _PUTDETERMINATION_ and _PUTSTABILITY_ properties
-
-## Combining Syntactic and Semantic Bidirectionalization
 
 ## Matching Lenses - Alignment and View Update
 
@@ -58,7 +108,7 @@
 * general first-order functional language: VDL
 * affine (each variable is used at most once)
 * treeless (no intermediate data structure is used in the definition)
-* view complement functions ca be automatically derived from view
+* view complement functions can be automatically derived from view
   functions
 * inference system for validation of changes in the view
 * bidirectional transformation between arbitrary algebraic data
@@ -128,7 +178,7 @@
 * `Eq b` is needed to check validity of updates by comparing the
   observation results
 * polymorphism of `a` permits semantic bidirectionalization and
-  polymorphic `mu` guarantees integrity of the observations results
+  polymorphic `mu` guarantees integrity of the observation results
   recorded in the writer monad
 * consistency check in observation table: the observation results are
   not allowed to be different to possible update results, if they are
@@ -140,6 +190,13 @@
   label, that is, same values are not considered to be duplicates 
 * says its harder to find get functions that are suitable for syntactic bidirectionalization than semantic
 
+## Enhancing semantic bidirectionalization via shape bidirectionalizer plug-ins
+
+* takes combination one step further: any syntactic
+  bidirectionalization approach can be _plugged in_ to obtain transformations on shapes
+* generalises approach from lists to arbitrary data types
+* enables bootstrapping in which pluggable bidirectionalisation is
+  itself used as a plug-in
 
 ## Combining Syntactic and Semantic Bidirectionalization
 
@@ -156,31 +213,48 @@
   for semantic bidirectionalization; superior to syntactic
   bidirectionalization on its own in many cases
 * syntactic bidirectonalization as black box
-* semnatic bidirectionalization as gass box: look into it and refactor
+* semnatic bidirectionalization as glass box: look into it and refactor
   it to enable a plugging in of the syntactic technique
 * syntactic technique on its own is never worse than the semantic
   technique own its own
 * assumes semantic linearity: for every $n$ `get [0..n]` does not
   contain any duplicates, which clearly is fulfilled, if `get`'s
   syntactic definition is lineary: linearity rules out one important
-  cause for a potential failure
+  cause for a potential failure, namely potential equality mismatcg in `v'`
 * key idea: abstracting from lists to length of lists, or more
   generally, from data structures to shapes
 * uses `Nat` instead of `Int`, move from `[a]` to `Nat`: `get`-function gets simpler, no data
   values have to be kept; can lead to injectivity and, hence, to
   simpler complement functions
-* explicit bias: bias to applu when reflecting specific updated views
+* explicit bias: bias to apply when reflecting specific updated views
   back to the source level
 * this bias could be determined on a case-by-case basis, e.g. depending on
   a _diff_ between updated view and original view
+* approach does not hold_PutPut_ and undoability law, albeit, the two
+  approach on their owd do satisfy these laws
 
-## Enhancing semantic bidirectionalization via shape bidirectionalizer plug-ins
+## Boomerang: Resourceful Lenses for String Data
 
-* takes combination one step further: any syntactic
-  bidirectionalization approach can be _plugged in_ to obtain transformations on shapes
-* generalises approach from lists to arbitrary data types
-* enables bootstrapping in which pluggable bidirectionalisation is
-  itself used as a plug-in
+* bidirectional transformations over strings, first to tackle the
+  problem for ordered data types: misaligned data in input and output
+* propose collection of lens combinators for strings (based on regular
+  transducers, i.e., union, concatenation, Kleene-star)
+* type system based on regular expressions
+* design of _dictionary lenses_, which is an enrichement of lenses of
+Foster et al.
+* design of  Boomerang as bidirectional programming language with
+  dictionary lenses at primitive operations
+* defines property of resourcefulness and quasi-oblivious lenses
+* definition of set of string lenses combinators based on typing rules
+  that ensure lens laws
+* tackle problem of previous approaches: mapping by key and not by
+  position
+* quasi-oblivious lenses: let $~$ be an equivalence relation on C, and
+$l$ a lens from $C$ to $A$; $l$ is ~ if its `put` functions ignores
+differences between equivalent concrete arguments
+* domain and codomain types for dictionary lenses are regular
+  languages, so that it allows precise checking
+*
 
 # Misc
 
