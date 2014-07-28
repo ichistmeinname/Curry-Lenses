@@ -5,7 +5,8 @@ where
 
 import FlatCurryRead (readFlatCurryWithImports)
 import FlatCurry ( Prog(..), FuncDecl(..), TypeDecl(..), TypeExpr(..), Expr(..)
-                 , QName, Visibility(..), CombType(..), Rule(..) )
+                 , QName, Visibility(..), CombType(..), Rule(..)
+                 , writeFCY, showQNameInModule )
 import FlatCurryGoodies ( progName, progFuncs
                         , funcType, funcName, funcRule
                         , typeName
@@ -17,11 +18,11 @@ import List (isPrefixOf)
 type ModuleName = String
 type FilePath   = String
 
-writeFileForModule :: ModuleName -> FilePath -> IO ()
-writeFileForModule mName path = do
+writeFileForModule :: ModuleName -> IO ()
+writeFileForModule mName = do
   prog <- readFlatCurryForModule mName
   let newProg = addImport (transformRecords prog)
-  writeFile path (pPrint (ppProg newProg))
+  writeFCY (mName ++ ".fcy") newProg
 
 readFlatCurryForModule :: ModuleName -> IO Prog
 readFlatCurryForModule moduleName = do
