@@ -2,8 +2,8 @@
 
 \todo{rephrase}
 Bidirectional programming is a rising topic in the field of computer
-science, and many different approaches exist to tackle the problem,
-these approaches come from different disciplines of
+science, and many different approaches exist to tackle the problem. %
+These approaches come from different disciplines of
 computer science like databases, graph transformation, programming
 languages and interface design. %
 This section summarises the main two approaches and highlights
@@ -11,46 +11,50 @@ differences as well as some details. %
 
 The main two techniques to work with bidirectional transformations are
 combinatorial languages and bidirectionalisation. %
-Most commonly, a combinatorial language is defined a DSL in a general purpose
+Most commonly, a combinatorial language is defined as a DSL in a general purpose
 programming language or as a new programming language, and provides a
 set of primitives, which can be combined to define complex
 structures. %
 The definitions of these primitives mostly consist of both functions,
 the get and the appropriate put function. %
 In contrast to this approach, the bidirectionalisation technique takes
-an uni-directional function and synthesises this function to
+an uni-directional function and synthesises this function to a
 bidirectional one. %
-In the remainder of the chapter introduces combinatorial and
+
+The remainder of the chapter introduces combinatorial and
 bidirectionalisation approaches for lenses; both approaches have two
-subcategories, because the implementation can either focus on defining a get
-function or a put function. %
+subcategories, because the implementation can either focus on defining a |get|
+function or a |put| function. %
 In this context, we will discuss advantages and disadvantages of
 defining a get function and present a first proposal by
-\cite{putCombinators} to set the focus on the put function. %
+\cite{putCombinators} to set the focus on the |put| function. %
 
 \section{Combinatorial lenses}
-The first combinatorial technique is the pioneer work by \cite{biTCombinators}, who
-designed a domain-specific programming language to define
-bidirectional transformations on tree-structured data. %
-Foster et al formulate fundamental laws
-concerning lenses, combine these laws with the intuitive
-behaviour of lenses, and use fundamental tools from domain theory to also
-define lenses by recursion; they lay the focus of the design of their language on
-robustness and and ease of use. %
-That is, their language guarantees well-behaved lens definitions and the totality
-of the primitive transformations with the integrated type system. %
+The first combinatorial technique is the pioneer work by
+\cite{biTCombinators}, who designed a domain-specific programming
+language to define bidirectional transformations on tree-structured
+data. %
+Foster et al formulate fundamental laws concerning lenses, combine
+these laws with the intuitive behaviour of lenses, and use fundamental
+tools from domain theory to also define lenses by recursion; they lay
+the focus of the design of their language on robustness and and ease
+of use. %
+That is, their language guarantees well-behaved lens definitions and
+the totality of the primitive transformations with the integrated type
+system. %
 The underlying type system, and with that the type safety, is the main
 contribution to the field of bidirectional programming. %
 The authors state close connections with topics from the database
 community: lenses are a well-known abstraction in databases concerning
 tables and queries, and the \emph{update translation under a constant
-  complement}\todo{citation?} tackles problems concerning definedness(precision?)
-and continuity, whereas the property of well-behaved lenses corresponds to
-\emph{update translators}\todo{citation}. %
+  complement}\cite{viewUpdate} tackles problems concerning
+definedness(precision?)  and continuity, whereas the property of
+well-behaved lenses corresponds to \emph{update
+  translators}\todo{citation}. %
 
 In their paper, Foster et al. define a handful of primitive lens
-combinators for trees, and the combination of these primitive lenses results in a powerful
-abstraction to describe transformations. %
+combinators for trees, and the combination of these primitive lenses
+results in a powerful abstraction to describe transformations. %
 The most important primitives are the composition, identity and
 constant lens. %
 These definitions work on arbitrary data structures, whereas all other
@@ -65,36 +69,41 @@ straight-forward fashion, whereas the backward transformation is the
 result of reading the definition from right to left. %
 
 The work of Foster et al origins in the Harmony
-project\footnote{\url{https://alliance.seas.upenn.edu/~harmony/old/}} \citeyearpar{relationalLenses,harmonyOverview,harmonyManual}, a generic framework to synchronise
-tree-structured data; an ongoing example throughout their work is the
-synchronisation of different browser bookmarks, calendar and address book formats. %
+project\footnote{\url{https://alliance.seas.upenn.edu/~harmony/old/}}
+\citeyearpar{relationalLenses,harmonyOverview,harmonyManual}, a
+generic framework to synchronise tree-structured data; an ongoing
+example throughout their work is the synchronisation of different
+browser bookmarks, calendar and address book formats. %
 They continued their work on lenses with a project called
-Boomerang\footnote{\url{https://alliance.seas.upenn.edu/~harmony/}} \citeyearpar{boomerang} focuses on string data instead of
+Boomerang\footnote{\url{https://alliance.seas.upenn.edu/~harmony/}}
+\citeyearpar{boomerang} focuses on string data instead of
 tree-structure data; the developer team of
 \emph{Augeas}\footnote{\url{http://augeas.net}} uses the Boomerang
 language as a framework for their configuration API. %
 As well as in their first work, their language is based on a type
-system to guarantee well-behaved lenses and total lenses and a rich set of
-lens combinators to define powerful transformations on strings. %
+system to guarantee well-behaved lenses and total lenses and a rich
+set of lens combinators to define powerful transformations on
+strings. %
 \todo{check statements about type safety again; does only hold for
-  primitive lenses; user-defined functions are only checked
-  at run time}
+  primitive lenses; user-defined functions are only checked at run
+  time}
 
 Other combinatorial approaches for lenses exist, they all focus on
-specifying a |get| function, and the appropriate |put| function is then
-propagated through the definition of the used |get| combinators. %
-For example, \cite{pointfree} designed a proint-free DSL in Haskell, in
-which the programmer also defines the |get| transformation only. %
-\cite{putCombinators}  are the first to propose to use the |put|
+specifying a |get| function, and the appropriate |put| function is
+then propagated through the definition of the used |get|
+combinators. %
+For example, \cite{pointfree} designed a proint-free DSL in Haskell,
+in which the programmer also defines the |get| transformation only. %
+\cite{putCombinators} are the first to propose to use the |put|
 definition instead. %
 It seems quite obvious that both, the forward and the backward
 function of a bidirectional transformation, can be used for
 bidirectionalisation. %
-Nevertheless, so far, the current techniques follow the path of Foster et
-al. %
-It becomes clear in the work of Fisher et al. that typical problems in
-|get| definitions are the ambiguity of the derived |put|
-functions. %
+Nevertheless, so far, the current techniques follow the path of Foster
+et al. %
+
+It becomes clear in the work of Fisher et al. that typical problems of
+|get| definitions are the ambiguity of the derived |put| functions. %
 That is, in several cases there is more than one appropriate |put|
 function to correspond with the |get| definition. %
 As we discussed before, these problems concerning ambiguity arrive
@@ -108,53 +117,125 @@ They prepare their theorem with some transformations on the
 \emph{PutGet} and \emph{GetPut} laws; instead of the classical
 representation, they formulate their requirements based on the |put|
 definition only. %
+As \cite{putback} state in their technical report, the \emph{PutGet}
+law can be reformulate as injectivity property of the |put|
+function. %
+For that purpose, let us recapitulate the \emph{PutGet} law. %
+As a first step, we can express the equation
 
-As \cite{putback} state in their technical report, the \emph{PutGet} law
-can be reformulate as injectivity property of the |put| function. %
-That is, |put s| is injective for all sources |s|.
+\begin{equation*}
+  |get (put s v) = v|
+\end{equation*}
+
+in a more functional manner. %
+The view |v| occurs on both sides of the equation, here, eta reduction
+comes to the rescue in order to simplify the equation. %
+\begin{equation}\tag{PutGet'}
+  |get . put s = id|
+\end{equation}
+
+The |(.)| operator defines function composition, that is, the equation
+\emph{PutGet'} says that |get| is a left inverse for |put s| for all
+sources |s|. %
+Furthermore, a function |f :: A-> B| is injective if and only if
+there exists a function |g :: B -> A| such that |g . f = (id :: A ->
+A)|. %
+In the \emph{PutGet'} equation above, we have the function |put s :: V
+-> S| that corresponds to |f| and the counterpart |get :: S - > V| as
+the equivalent to |g|. %
+The identity function in the equation above is obviously of type |id
+:: V -> V|, because we eta-reduced the view argument |v :: V| so that
+|V| must be the resulting type as well. %
+
+In the end, we can express the identity property of the first round-
+tripping rule \emph{GetPut} with the use of the |put| function only. %
+Thus, we postulate |put s| to be injective for all sources |s|. %
 
 \begin{equation}\tag{PutInj}
-|s'| \in |put s v| \wedge |s'| \in |put s v'| \Rightarrow |v = v'|
+  |s'| \in |put s v| \wedge |s'| \in |put s v'| \Rightarrow |v = v'|
 \end{equation}
 
-Instead of the \emph{GetPut} law, they lay out idempotence of |`put`
-v| for all views |v| as additional requirement for well-behaved lenses. %
+Similar to the eta reduction for the \emph{GetPut} law, we can rewrite
+the \emph{PutGet} law as well. %
+It is a bit more complicated to rewrite the equation
+
+\begin{equation*}
+  |put s (get s) = s|
+\end{equation*}
+
+because of the two usages of the variable |s|. %
+In order to simplify the equation, we need to use a pair as an
+argument, then we can apply |put| to one argument, which is function
+dependent of |s|. %
+The notion of using tuples instead of multiple arguments is called
+\emph{currying} and \emph{uncurrying} respectively. %
+In this case, we need to apply the function |uncurry :: (a -> b -> c)
+-> (a, b) -> c| to the |put :: S -> V -> S| function in order to get a
+modified function |put' = uncurry put :: (S,V) -> S| that takes a pair
+of |S| and |V| as its argument. %
+With this neat function in hand, we can express a point-free version
+of the \emph{GetPut} law.
+
+\begin{equation*}
+  |put' (\s -> (s, get s)) = id|
+\end{equation*}
+
+For this equation, we can conclude that |put'|, i.e., |uncurry put|,
+has a right inverse. %
+That is, |put'| is surjective for all sources |S|, because a
+surjective function |f :: A -> B| if and only if it exists a function
+|g :: B -> A| such that |f . g = id :: B -> B| holds. %
+
+\begin{equation}\tag{PutSurj}
+% s \in V \Rightarrow \exists v \in V: s \in put s v
+\forall |s| \in |S| ~\exists |s'| \in |S|: |put' (s', get s') = s|
+\end{equation}
+
+Actually, this equation only holds for total |put| function because
+the equation requires to be fulfilled for all values |s| in the result
+type |S|. %
+
+Fisher et al. lay out idempotence of |`put`
+v| for all views |v| as additional requirement for well-behaved
+lenses. %
 
 \begin{equation}\tag{PutTwice}
-|s'| \in |put s v| \Rightarrow |s'| = |put s' v|
+  |s'| \in |put s v| \Rightarrow |s'| = |put s' v|
 \end{equation}
 
-Furthermore, they verified that there is only one |get|
-function for an arbitrary |put| function, which obeys
-\emph{PutInj} and \emph{PutTwice}\footnote{In later work of
-  \cite{validityCheck} these both
-  properties are called \emph{PutDeterminiation} and
+Furthermore, Fisher et al. verified that there is only one |get|
+function for an arbitrary |put| function, which obeys \emph{PutInj}
+and \emph{PutTwice}\footnote{In later work of \cite{validityCheck}
+  these both properties are called \emph{PutDeterminiation} and
   \emph{PutStability} respectively}, and this |get| function can be
 determined with the following equation.
 
-\begin{equation*}\tag{Definition of |get| by means of |put|}
-|get s = v| \Leftrightarrow |s = put s v|
+\begin{equation*}\tag{relation between |get| and |put|}
+  |get s = v| \Leftrightarrow |s = put s v|
 \end{equation*}
 
 % \begin{itemize}
 % \item pioneer work by \cite{biTCombinators} $\checkmark$
 
 % \item put combinators \cite{putCombinators}
-% \begin{itemize}
-% \item get functions in general not injective: many possible corresponding
-%       put functions exist to form a well-behaved lens
-% \item \emph{PUTINJ}: |put s| is injective for any source |s|, i.e., $s' \in |put
-%   s v| \wedge s' \in |put s v'| \Rightarrow v = v'$
-% \item \emph{PUTTWICE}: $s' \in |put s v| \Rightarrow s' = |put s' v|$
-% \end{itemize}
+%   \begin{itemize}
+%   \item get functions in general not injective: many possible
+%     corresponding put functions exist to form a well-behaved lens
+%   \item \emph{PUTINJ}: |put s| is injective for any source |s|,
+%     i.e., $s' \in |put s v| \wedge s' \in |put s v'| \Rightarrow v =
+%     v'$
+%   \item \emph{PUTTWICE}: $s' \in |put s v| \Rightarrow s' = |put s'
+%     v|$
+%   \end{itemize}
 
-% \begin{itemize}
-% \item \emph{PutDeterminiation}: $\forall s,s',v,v' . |put s v = put s'
-%   v'| \rightarrow v = v'$
-% \item \emph{PutStability}: $\forall s . \exists v . |put s v = s|$
-% \item validity - A put function is valid if and only if it satisfies
-%   the \emph{PutDeterminiation} and \emph{PutStability} properties
-% \end{itemize}
+%   \begin{itemize}
+%   \item \emph{PutDeterminiation}: $\forall s,s',v,v' . |put s v =
+%     put s' v'| \rightarrow v = v'$
+%   \item \emph{PutStability}: $\forall s . \exists v . |put s v = s|$
+%   \item validity - A put function is valid if and only if it
+%     satisfies the \emph{PutDeterminiation} and \emph{PutStability}
+%     properties
+%   \end{itemize}
 
 % \end{itemize}
 
@@ -163,7 +244,8 @@ determined with the following equation.
 % \item syntactic restraints (like variable use and nested function
 %   calls) vs polymorphic restraints and no updates to shape
 
-% \item cost / difference function, minimal cost / difference is chosen
+% \item cost / difference function, minimal cost / difference is
+%   chosen
 % \item syntactic derivation via view complement
 %   \cite{viewComp}$\checkmark$
 
@@ -206,19 +288,20 @@ function and the complement form a pair, which must be injective. %
 At last step, an inverse transformation is performed on the pair. %
 In the end, the put function can be derived if the paired function and
 its inverse can be derived effectively. %
+
 There are two details, that we did not examine so far: determinism
 property for the inverse transformation and further requirements for
 the complement function. %
-The inverse transformation is not guaranteed to be deterministic, it is
-possible to generate equations with overlapping left-hand sides. %
+The inverse transformation is not guaranteed to be deterministic, it
+is possible to generate equations with overlapping left-hand sides. %
 In the case of nondeterministic programs, a backtracking search
 becomes necessary, though, the authors state that it would be
 preferable to only obtain deterministic programs\cite{synSemComb}. %
 Furthermore, the complement, which we derive in the first step, must
 be injective and minimal with respect to a collapsing order, which
 needs to be defined. %
-Fortunately, injectivity is decidable in VDL and the proposed algorithm
-is sound and complete. %
+Fortunately, injectivity is decidable in VDL and the proposed
+algorithm is sound and complete. %
 
 On the other hand, \cite{biForFree} introduces an approach for
 semantic bidirectionalisation using free theorems to prove consistency
@@ -238,7 +321,8 @@ other respects: any get function that changes the shape of its
 elements fails due to non-trackable updates. %
 The defined |bff| function is defined on lists, but the approach is
 also applicable for all data structures, which have shape and content,
-i.e. which apply to the category of containers as defined by \cite{containers}. %
+i.e. which apply to the category of containers as defined by
+\cite{containers}. %
 
 The approach utilises the fact that the get function is polymorphic
 over its first arguments, i.e. the container's element. %
@@ -264,8 +348,8 @@ value im both mappings, we choose the one from the view. %
 In the end, every element in the container we used for simulation are
 replaced by their associated values according to the combined
 mapping. %
-Voigtl\"ander defines two additional functions, |bff_EQ| and |bff_ORD|,
-which use the function of the type classes |Eq| and |Ord|
+Voigtl\"ander defines two additional functions, |bff_EQ| and
+|bff_ORD|, which use the function of the type classes |Eq| and |Ord|
 respectively. %
 In order to apply his approach for a |get| function that duplicates
 elements, the defined mapping fails because of its simple
@@ -348,6 +432,12 @@ That is, we can use the more general function |bffBy| in combination
 with specified observer functions for semantic bidirectionalisation
 and turn monomorphic functions into polymorphic ones with the monadic
 extension to gain a wider range of possible |get| functions. %
+In the end, the combined approach performs never worse than one of the
+two approaches by themselves. %
+The semantic bidirectionalisation on its own has difficulties in
+shape-changing update, but are covered with the combined approach,
+whereas the syntactic approach operates on specialised programs now,
+which can lead to better results. %
 
 \section{Get-Lenses vs Put-Lenses}
 % Get
