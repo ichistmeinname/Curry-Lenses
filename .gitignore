@@ -23,3 +23,4 @@ cabal.config
 *.blg
 *lof
 *lot
+Curry_Main_Goal.curry
