@@ -5,14 +5,13 @@ where
 
 import FlatCurryRead (readFlatCurryWithImports)
 import FlatCurry ( Prog(..), FuncDecl(..), TypeDecl(..), TypeExpr(..), Expr(..)
-                 , QName, Visibility(..), CombType(..), Rule(..)
+                 , QName, Visibility(..), CombType(..), Rule(..), ConsDecl(..)
                  , writeFCY, showQNameInModule )
 import FlatCurryGoodies ( progName, progFuncs
                         , funcType, funcName, funcRule
-                        , typeName
-                        , updProgImports, updProgFuncs )
-import FlatCurryPretty (ppProg, pPrint)
-
+                        , typeName, typeConsDecls, typeParams
+                        , consArgs
+                        , updProgImports, updProgFuncs, updProgTypes )
 import List (isPrefixOf)
 
 type ModuleName = String
@@ -35,21 +34,48 @@ addImport :: Prog -> Prog
 addImport = updProgImports ("Lens" :)
 
 transformRecords :: Prog -> Prog
-transformRecords =
-  updProgFuncs (\fs -> foldr (:) fs $ generateLensesForRecords fs)
+transformRecords prog@(Prog _ _ ts fs _) =
+  -- updProgFuncs (\fs -> foldr (:) fs $ generateLensesForRecords fs)
+  let (updFs,selFs) = ( filter isUpdateFunction fs
+                      , filter isSelectFunction fs )
+      newFs = generateLensesForDatatypes ts (updFs,selFs)
+  in updProgFuncs (\fs' -> foldr (:) fs' newFs) prog
 
-generateLensesForRecords :: [FuncDecl] -> [FuncDecl]
-generateLensesForRecords fs =
-  let sel = filter isSelectFunction fs
-      upd = filter isUpdateFunction fs
-      pairs = map (findPair sel) upd
-  in map (uncurry generateLenses) pairs
+generateLensesForDatatypes :: [TypeDecl]
+                           -> ([FuncDecl],[FuncDecl])
+                           -> [FuncDecl]
+generateLensesForDatatypes ts (sel,upd) =
+  let recs       = filter (\t -> typeNameOnly t `elem` (map fst pairs)) ts
+      pairs      = map (findPair sel) upd
+      funcDecls1 = map (generateFuncNamesFromRecord pairs)
+                       recs
+      funcDecls2 = [] -- TODO
+  in concat (funcDecls1 ++ funcDecls2)
  where
   findPair (x:xs) y
-    | strip (funcNameOnly x) == strip (funcNameOnly y) = (x,y)
-    | otherwise                                        = findPair xs y
-  strip :: String -> String
-  strip = tail . dropWhile (/= '@')
+    | strip x == strip y = (stripPrefix x, (x,y))
+    | otherwise          = findPair xs y
+  strip :: FuncDecl -> String
+  strip = tail . dropWhile (/='@') . funcNameOnly
+  stripPrefix :: FuncDecl -> String
+  stripPrefix = takeWhile (/='.') . funcNameOnly
+
+generateFuncNamesFromRecord :: [(String,(FuncDecl,FuncDecl))]
+                            -> TypeDecl
+                            -> [FuncDecl]
+generateFuncNamesFromRecord fdMap (Type name@(mName,tName) _ _ [cDecl]) =
+  map genFromRecord (zip [2..] (consArgs cDecl))
+ where
+  genFromRecord :: (Int,TypeExpr) -> FuncDecl
+  genFromRecord (argNo, tExpr) =
+    let Just (upd,sel) = lookup tName fdMap
+        fName          = tail (dropWhile (/= '.') (funcNameOnly sel))
+    in
+          Func (mName,fName)
+               0
+               Private
+               (lensTypeExpr (typeFromName name) tExpr)
+               (lensRule (funcName upd) (funcName sel))
 
 generateLenses :: FuncDecl -> FuncDecl -> FuncDecl
 generateLenses sel upd =
@@ -62,7 +88,6 @@ generateLenses sel upd =
   fName = tail (dropWhile (/= '.') (funcNameOnly sel))
   mName = fst (funcName sel)
 
-
 lensRule :: QName -> QName -> Rule
 lensRule sel upd =
   Rule []
@@ -70,18 +95,34 @@ lensRule sel upd =
              ("Prelude","(,)")
              [funcPartCall 1 sel [], funcPartCall 2 upd []])
 
+consName :: String -> String
+consName = (++) "#_42"
+
 funcPartCall :: Int -> QName -> [Expr] -> Expr
 funcPartCall = Comb . FuncPartCall
 
 lensTypeExpr :: TypeExpr -> TypeExpr -> TypeExpr
-lensTypeExpr sel upd = TCons ("Prelude","(,)") [sel, upd]
+lensTypeExpr source view = TCons ("Prelude","(,)")
+                                 [ selectionType source view
+                                 , updateType source view ]
 
-isUpdateFunction, isSelectFunction :: FuncDecl -> Bool
+typeFromName :: QName -> TypeExpr
+typeFromName = (flip TCons) []
+
+selectionType :: TypeExpr -> TypeExpr -> TypeExpr
+selectionType source view = FuncType source view
+
+updateType :: TypeExpr -> TypeExpr -> TypeExpr
+updateType source view = FuncType source (FuncType view source)
+
+-- isRecordType :: TypeDecl -> Bool
+-- isRecordType = isPrefixOf "_#Rec:" . snd . typeName
+
+isUpdateFunction :: FuncDecl -> Bool
 isUpdateFunction = isPrefixOf "_#updR@" . funcNameOnly
-isSelectFunction = isPrefixOf "_#selR@" . funcNameOnly
 
-isRecordType :: TypeDecl -> Bool
-isRecordType = isPrefixOf "_#Rec:" . snd . typeName
+isSelectFunction :: FuncDecl -> Bool
+isSelectFunction = isPrefixOf "_#selR@" . funcNameOnly
 
 funcNameOnly :: FuncDecl -> String
 funcNameOnly = snd . funcName
@@ -89,8 +130,17 @@ funcNameOnly = snd . funcName
 typeNameOnly :: TypeDecl -> String
 typeNameOnly = snd . typeName
 
-
 {-
+Func ("Address","_#selR@Person.first")
+     1
+     Public
+     (FuncType (TCons ("Address","Person") [])
+               (TCons ("Prelude","[]") [TCons ("Prelude","Char") []]))
+     (Rule [1]
+           (Case Flex
+                 (Var 1)
+                 [Branch (Pattern ("Address","Person") [2,3]) (Var 2)]))
+
  Func ("Address","personLens")
       0
       Public
@@ -132,30 +182,47 @@ typeNameOnly = snd . typeName
             (Comb FuncCall
                   ("Address","_#updR@Address.person")
                   [Var 1,Var 2]))
--}
 
+Func ("Address","street")
+     0
+     Public
+     (TCons ("Prelude","(,)")
+            [FuncType (TCons ("Address","Address") [])
+                      (TCons ("Prelude","[]") [TCons ("Prelude","Char") []])
+            ,FuncType (TCons ("Address","Address") [])
+                      (FuncType (TCons ("Prelude","[]") [TCons ("Prelude","Char")
+                                                               []])
+                                (TCons ("Address","Address") []))])
+     (Rule []
+           (Comb ConsCall
+                 ("Prelude","(,)")
+                 [Comb (FuncPartCall 1)
+                       ("Address","street._#lambda1")
+                       []
+                 ,Comb (FuncPartCall 2)
+                       ("Address","street._#lambda2") []]))
 
-{-
- Func ("Address","_#selR@Address.street") 1 Public
-  (FuncType (TCons ("Address","Address") [])
-            (TCons ("Prelude","[]") [TCons ("Prelude","Char") []]))
-  (Rule [1] (Case Flex
-                  (Var 1)
-                  [Branch (Pattern ("Address","Address") [2,3]) (Var 3)]
-            )
-  )
--}
+Func ("Address","street._#lambda1")
+     1
+     Private
+     (FuncType (TCons ("Address","Address") [])
+               (TCons ("Prelude","[]") [TCons ("Prelude","Char") []]))
+     (Rule [1]
+           (Case Flex
+                 (Var 1)
+                 [Branch (Pattern ("Address","Address42") [2,3]) (Var 3)]))
 
-{-
- Func ("Address","_#updR@Address.street") 2 Public
-  (FuncType (TCons ("Address","Address") [])
-            (FuncType (TCons ("Prelude","[]")
-                        [TCons ("Prelude","Char") []])
-                      (TCons ("Address","Address") [])
-            ))
-  (Rule [1,2] (Case Flex
-                    (Var 1)
-                    [Branch (Pattern ("Address","Address") [3,4])
-                            (Comb ConsCall ("Address","Address") [Var 3,Var 2])]
-              ))
+Func ("Address","street._#lambda2")
+     2
+     Private
+     (FuncType (TCons ("Address","Address") [])
+               (FuncType (TCons ("Prelude","[]") [TCons ("Prelude","Char") []])
+                         (TCons ("Address","Address") [])))
+     (Rule [1,2]
+           (Case Flex
+                 (Var 1)
+                 [Branch (Pattern ("Address","Address42") [3,4])
+                         (Comb ConsCall
+                               ("Address","Address42")
+                               [Var 3,Var 2])]))
 -}
