@@ -41,96 +41,89 @@ addImport = id -- updProgImports ("Lens" :)
 transformRecords :: Prog ->  Prog
 transformRecords prog@(Prog _ _ ts fs _) =
   -- updProgFuncs (\fs -> foldr (:) fs $ generateLensesForRecords fs)
-  let selAndUpdFs = ( filter isSelectFunction fs
-                      , filter isUpdateFunction fs )
-      newFs = generateLensesForDatatypes ts selAndUpdFs
+  let recFs = filter isSelectFunction fs
+      newFs = generateLensesForDatatypes (filter (not . isRecordType) ts)
+                                         recFs
   in updProgFuncs (\fs' -> foldr (:) fs' newFs) prog
 
 generateLensesForDatatypes :: [TypeDecl]
-                           -> ([FuncDecl],[FuncDecl])
                            -> [FuncDecl]
-generateLensesForDatatypes ts (sel,upd) =
-  let recs       = filter (\t -> typeNameOnly t `elem` (map fst pairs)) ts
-      pairs      = map (findPair sel) upd
-      funcDecls1 = map (generateFuncDeclsFromRecord pairs)
-                       recs
-      funcDecls2 = map generateFuncDeclsFromDatatype ts
+                           -> [FuncDecl]
+generateLensesForDatatypes ts fs =
+  let (recs,datas)  = break (\t -> typeNameOnly t `elem` (map stripPrefix fs))
+                            ts
+      pairs         = map (\func -> qName func) fs
+      namesAndFuncs = map (generateFuncNamesFromRecord pairs) recs
+      funcDecls1    = map (uncurry generateFuncDeclsFromDatatype)
+                          namesAndFuncs
+      funcDecls2    = map (uncurry generateFuncDeclsFromDatatype)
+                          (zip (repeat []) datas)
   in concat (funcDecls1 ++ funcDecls2)
  where
-  findPair (x:xs) y
-    | strip x == strip y = (stripPrefix x, (x,y))
-    | otherwise          = findPair xs y
-  strip :: FuncDecl -> String
-  strip = tail . dropWhile (/='@') . funcNameOnly
+  qName :: FuncDecl -> (String,QName)
+  qName funcDecl = (stripPrefix funcDecl,(fst $ funcName funcDecl,strip '.' funcDecl))
+  strip :: Char -> FuncDecl -> String
+  strip c = tail . dropWhile (/= c) . funcNameOnly
   stripPrefix :: FuncDecl -> String
-  stripPrefix = takeWhile (/='.') . strip
+  stripPrefix = takeWhile (/= '.') . strip '@'
 
-generateFuncDeclsFromRecord :: [(String,(FuncDecl,FuncDecl))]
+generateFuncNamesFromRecord :: [(String,QName)]
                             -> TypeDecl
-                            -> [FuncDecl]
-generateFuncDeclsFromRecord fdMap (Type name@(mName,tName) _ _ [cDecl]) =
-  genFromRecord fdMap (zip [2..] (consArgs cDecl))
+                            -> ([Maybe QName],TypeDecl)
+generateFuncNamesFromRecord fdMap t =
+  let names = lookupAll (typeNameOnly t) fdMap
+  in error $ show $ (names,t)
  where
-  genFromRecord :: [(String,(FuncDecl,FuncDecl))]
-                -> [(Int,TypeExpr)]
-                -> [FuncDecl]
-  genFromRecord _     []                       = []
-  genFromRecord aMap ((_, tExpr) : pairs) =
-    let (Just (sel,upd),newMap) = lookupAndDelete tName aMap
-        fName                   = tail (dropWhile (/= '.') (funcNameOnly sel))
-        func                    =
-          Func (mName,fName)
-               0
-               Public
-               (lensTypeExpr (typeFromName name) tExpr)
-               (lensRule (funcName sel) (funcName upd))
-    in func : genFromRecord newMap pairs
-  lookupAndDelete :: k -> [(k,a)] -> (Maybe a, [(k,a)])
-  lookupAndDelete _   []                      = (Nothing,[])
-  lookupAndDelete key (pair@(key',value):kvs)
-    | key == key' = (Just value, kvs)
-    | otherwise   = case lookupAndDelete key kvs of
-                         (maybeValue, kvs') -> (maybeValue, pair : kvs')
+  lookupAll :: k -> [(k,a)] -> [Maybe a]
+  -- lookupAll key = foldr (\pair@(key',value) vs ->
+  --                          if key == key'
+  --                            then pair : vs
+  --                            else vs)
+  lookupAll _   []               = []
+  lookupAll key ((key',value):kvs)
+    | key == key' = Just value : lookupAll key kvs
+    | otherwise   = lookupAll key kvs
 
-{-
-(Type ("Address","Address") Public []
-[(Cons ("Address","Address") 2 Private
- [(TCons ("Address","Person") []),
-  (TCons ("Prelude","[]") [(TCons ("Prelude","Char") [])])])]
--}
-generateFuncDeclsFromDatatype:: TypeDecl -> [FuncDecl]
-generateFuncDeclsFromDatatype = concatMap genFromDatatype . typeConsDecls
+generateFuncDeclsFromDatatype:: [Maybe QName] -> TypeDecl -> [FuncDecl]
+generateFuncDeclsFromDatatype names =
+  concatMap (genFromDatatype names) . typeConsDecls
 
-genFromDatatype :: ConsDecl -> [FuncDecl]
-genFromDatatype (Cons constrName@(mName,tName) arity _ constrs) =
-  concatMap (uncurry genFromField) (zip [1..] constrs)
+genFromDatatype :: [Maybe QName] -> ConsDecl -> [FuncDecl]
+genFromDatatype names (Cons constrName@(mName,tName) arity _ constrs)
+  | length names == length constrs =
+      concatMap (uncurry genFromField)
+                (zip [1..] (zip names constrs))
+  | null names = concatMap (uncurry genFromField)
+                           (zip [1..] (zip (repeat Nothing) constrs))
+  | otherwise = error $ show $ (length names, length constrs)
  where
-   fName = (((map toLower tName) ++ "Rec") ++) . show
-   genFromField :: Int -> TypeExpr -> [FuncDecl]
-   genFromField no tExpr =
-     let source           = typeFromName constrName
-         getTypeExpr      = getType source tExpr
-         putTypeExpr      = putType source tExpr
-         (getName,getFct) = lambdaFunction no
-                                           1
-                                           getTypeExpr
-                                           (getRule constrName arity no)
-         (putName,putFct) = lambdaFunction no
-                                           2
-                                           putTypeExpr
-                                           (putRule constrName arity no)
-     in [ Func (mName, fName no)
-               0
-               Public
-               (TCons ("Prelude","(,)") [getTypeExpr, putTypeExpr])
-               (lensRule getName putName)
-        , getFct
-        , putFct ]
-   lambdaFunction :: Int -> Int -> TypeExpr -> Rule -> (QName,FuncDecl)
-   lambdaFunction no funArity tExpr rule =
-     let funcName = fName no ++ "_#lambdaLens" ++ show (funArity -1)
-         qName    = (mName, funcName)
-     in (qName,Func qName arity Private tExpr rule)
+  genFromField :: Int -> (Maybe QName,TypeExpr) -> [FuncDecl]
+  genFromField no (maybeName,tExpr) =
+    let source           = typeFromName constrName
+        getTypeExpr      = getType source tExpr
+        putTypeExpr      = putType source tExpr
+        qName = case maybeName of
+                     Just name -> name
+                     Nothing   -> (mName,map toLower tName ++ "Rec" ++ (show no))
+        (getName,getFct) = lambdaFunction (snd qName)
+                                          1
+                                          getTypeExpr
+                                          (getRule constrName arity no)
+        (putName,putFct) = lambdaFunction (snd qName)
+                                          2
+                                          putTypeExpr
+                                          (putRule constrName arity no)
+    in [ Func qName
+              0
+              Public
+              (TCons ("Prelude","(,)") [getTypeExpr, putTypeExpr])
+              (lensRule getName putName)
+       , getFct
+       , putFct ]
+  lambdaFunction :: String -> Int -> TypeExpr -> Rule -> (QName,FuncDecl)
+  lambdaFunction fName funArity tExpr rule =
+    let name = (mName,fName ++ "_#lambdaLens" ++ show (funArity - 1))
+    in (name,Func name arity Private tExpr rule)
                         
 
 getRule :: QName -> Int -> Int -> Rule
@@ -179,8 +172,8 @@ getType source view = FuncType source view
 putType :: TypeExpr -> TypeExpr -> TypeExpr
 putType source view = FuncType source (FuncType view source)
 
--- isRecordType :: TypeDecl -> Bool
--- isRecordType = isPrefixOf "_#Rec:" . snd . typeName
+isRecordType :: TypeDecl -> Bool
+isRecordType = isPrefixOf "_#Rec:" . snd . typeName
 
 isUpdateFunction :: FuncDecl -> Bool
 isUpdateFunction = isPrefixOf "_#updR@" . funcNameOnly
