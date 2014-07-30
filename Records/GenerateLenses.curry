@@ -6,6 +6,7 @@ where
 import FlatCurryRead (readFlatCurryWithImports)
 import FlatCurry ( Prog(..), FuncDecl(..), TypeDecl(..), TypeExpr(..), Expr(..)
                  , QName, Visibility(..), CombType(..), Rule(..), ConsDecl(..)
+                 , BranchExpr(..), Pattern(..), CaseType( Flex )
                  , writeFCY, showQNameInModule )
 import FlatCurryGoodies ( progName, progFuncs
                         , funcType, funcName, funcRule
@@ -13,7 +14,9 @@ import FlatCurryGoodies ( progName, progFuncs
                         , consArgs
                         , updProgImports, updProgFuncs, updProgTypes )
 import FlatCurryPretty ( pPrint, ppProg )
-import List ( isPrefixOf, deleteBy )
+
+import List ( isPrefixOf, deleteBy, replace )
+import Char ( toLower )
 
 type ModuleName = String
 type FilePath   = String
@@ -49,9 +52,9 @@ generateLensesForDatatypes :: [TypeDecl]
 generateLensesForDatatypes ts (sel,upd) =
   let recs       = filter (\t -> typeNameOnly t `elem` (map fst pairs)) ts
       pairs      = map (findPair sel) upd
-      funcDecls1 = map (generateFuncNamesFromRecord pairs)
+      funcDecls1 = map (generateFuncDeclsFromRecord pairs)
                        recs
-      funcDecls2 = [] -- TODO
+      funcDecls2 = map generateFuncDeclsFromDatatype ts
   in concat (funcDecls1 ++ funcDecls2)
  where
   findPair (x:xs) y
@@ -62,10 +65,10 @@ generateLensesForDatatypes ts (sel,upd) =
   stripPrefix :: FuncDecl -> String
   stripPrefix = takeWhile (/='.') . strip
 
-generateFuncNamesFromRecord :: [(String,(FuncDecl,FuncDecl))]
+generateFuncDeclsFromRecord :: [(String,(FuncDecl,FuncDecl))]
                             -> TypeDecl
                             -> [FuncDecl]
-generateFuncNamesFromRecord fdMap (Type name@(mName,tName) _ _ [cDecl]) =
+generateFuncDeclsFromRecord fdMap (Type name@(mName,tName) _ _ [cDecl]) =
   genFromRecord fdMap (zip [2..] (consArgs cDecl))
  where
   genFromRecord :: [(String,(FuncDecl,FuncDecl))]
@@ -78,7 +81,7 @@ generateFuncNamesFromRecord fdMap (Type name@(mName,tName) _ _ [cDecl]) =
         func                    =
           Func (mName,fName)
                0
-               Private
+               Public
                (lensTypeExpr (typeFromName name) tExpr)
                (lensRule (funcName sel) (funcName upd))
     in func : genFromRecord newMap pairs
@@ -89,16 +92,65 @@ generateFuncNamesFromRecord fdMap (Type name@(mName,tName) _ _ [cDecl]) =
     | otherwise   = case lookupAndDelete key kvs of
                          (maybeValue, kvs') -> (maybeValue, pair : kvs')
 
-generateLenses :: FuncDecl -> FuncDecl -> FuncDecl
-generateLenses sel upd =
-  Func (mName, fName)
-       0
-       Public
-       (lensTypeExpr (funcType sel) (funcType upd))
-       (lensRule (funcName sel) (funcName upd))
+{-
+(Type ("Address","Address") Public []
+[(Cons ("Address","Address") 2 Private
+ [(TCons ("Address","Person") []),
+  (TCons ("Prelude","[]") [(TCons ("Prelude","Char") [])])])]
+-}
+generateFuncDeclsFromDatatype:: TypeDecl -> [FuncDecl]
+generateFuncDeclsFromDatatype = concatMap genFromDatatype . typeConsDecls
+
+genFromDatatype :: ConsDecl -> [FuncDecl]
+genFromDatatype (Cons constrName@(mName,tName) arity _ constrs) =
+  concatMap (uncurry genFromField) (zip [1..] constrs)
  where
-  fName = tail (dropWhile (/= '.') (funcNameOnly sel))
-  mName = fst (funcName sel)
+   fName = (((map toLower tName) ++ "Rec") ++) . show
+   genFromField :: Int -> TypeExpr -> [FuncDecl]
+   genFromField no tExpr =
+     let source           = typeFromName constrName
+         getTypeExpr      = getType source tExpr
+         putTypeExpr      = putType source tExpr
+         (getName,getFct) = lambdaFunction no
+                                           1
+                                           getTypeExpr
+                                           (getRule constrName arity no)
+         (putName,putFct) = lambdaFunction no
+                                           2
+                                           putTypeExpr
+                                           (putRule constrName arity no)
+     in [ Func (mName, fName no)
+               0
+               Public
+               (TCons ("Prelude","(,)") [getTypeExpr, putTypeExpr])
+               (lensRule getName putName)
+        , getFct
+        , putFct ]
+   lambdaFunction :: Int -> Int -> TypeExpr -> Rule -> (QName,FuncDecl)
+   lambdaFunction no funArity tExpr rule =
+     let funcName = fName no ++ "_#lambdaLens" ++ show (funArity -1)
+         qName    = (mName, funcName)
+     in (qName,Func qName arity Private tExpr rule)
+                        
+
+getRule :: QName -> Int -> Int -> Rule
+getRule constrName arity no =
+  Rule [1]
+       (Case Flex
+             (Var 1)
+             [Branch (Pattern constrName varInts) (Var (no+1))])
+ where
+  varInts = [2..arity+1]
+
+putRule :: QName -> Int -> Int -> Rule
+putRule constrName arity no =
+  Rule [1,2] (Case Flex
+                   (Var 1)
+                   [Branch (Pattern constrName varInts)
+                           (Comb ConsCall constrName vars)])
+ where
+  varInts = [3..arity+2]
+  vars    = map Var (replace 2 (no-1) varInts)
 
 lensRule :: QName -> QName -> Rule
 lensRule sel upd =
@@ -115,17 +167,17 @@ funcPartCall = Comb . FuncPartCall
 
 lensTypeExpr :: TypeExpr -> TypeExpr -> TypeExpr
 lensTypeExpr source view = TCons ("Prelude","(,)")
-                                 [ selectionType source view
-                                 , updateType source view ]
+                                 [ getType source view
+                                 , putType source view ]
 
 typeFromName :: QName -> TypeExpr
 typeFromName = (flip TCons) []
 
-selectionType :: TypeExpr -> TypeExpr -> TypeExpr
-selectionType source view = FuncType source view
+getType :: TypeExpr -> TypeExpr -> TypeExpr
+getType source view = FuncType source view
 
-updateType :: TypeExpr -> TypeExpr -> TypeExpr
-updateType source view = FuncType source (FuncType view source)
+putType :: TypeExpr -> TypeExpr -> TypeExpr
+putType source view = FuncType source (FuncType view source)
 
 -- isRecordType :: TypeDecl -> Bool
 -- isRecordType = isPrefixOf "_#Rec:" . snd . typeName
