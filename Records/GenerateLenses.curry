@@ -50,7 +50,7 @@ generateLensesForDatatypes :: [TypeDecl]
                            -> [FuncDecl]
                            -> [FuncDecl]
 generateLensesForDatatypes ts fs =
-  let (recs,datas)  = break (\t -> typeNameOnly t `elem` (map stripPrefix fs))
+  let (recs,datas)  = split (\t -> typeNameOnly t `elem` (map stripPrefix fs))
                             ts
       pairs         = map (\func -> qName func) fs
       namesAndFuncs = map (generateFuncNamesFromRecord pairs) recs
@@ -66,13 +66,15 @@ generateLensesForDatatypes ts fs =
   strip c = tail . dropWhile (/= c) . funcNameOnly
   stripPrefix :: FuncDecl -> String
   stripPrefix = takeWhile (/= '.') . strip '@'
+  split :: (a -> Bool) -> [a] -> ([a],[a])
+  split p xs = (filter p xs, filter (not . p) xs)
 
 generateFuncNamesFromRecord :: [(String,QName)]
                             -> TypeDecl
                             -> ([Maybe QName],TypeDecl)
 generateFuncNamesFromRecord fdMap t =
   let names = lookupAll (typeNameOnly t) fdMap
-  in error $ show $ (names,t)
+  in (names,t)
  where
   lookupAll :: k -> [(k,a)] -> [Maybe a]
   -- lookupAll key = foldr (\pair@(key',value) vs ->
