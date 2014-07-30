@@ -12,7 +12,8 @@ import FlatCurryGoodies ( progName, progFuncs
                         , typeName, typeConsDecls, typeParams
                         , consArgs
                         , updProgImports, updProgFuncs, updProgTypes )
-import List (isPrefixOf)
+import FlatCurryPretty ( pPrint, ppProg )
+import List ( isPrefixOf, deleteBy )
 
 type ModuleName = String
 type FilePath   = String
@@ -21,6 +22,7 @@ writeFileForModule :: ModuleName -> IO ()
 writeFileForModule mName = do
   prog <- readFlatCurryForModule mName
   let newProg = addImport (transformRecords prog)
+  putStrLn (pPrint (ppProg newProg))
   writeFCY (mName ++ ".fcy") newProg
 
 readFlatCurryForModule :: ModuleName -> IO Prog
@@ -31,14 +33,14 @@ readFlatCurryForModule moduleName = do
        _   -> error ("Couldn't find module with name " ++ moduleName ++ ".")
 
 addImport :: Prog -> Prog
-addImport = updProgImports ("Lens" :)
+addImport = id -- updProgImports ("Lens" :)
 
-transformRecords :: Prog -> Prog
+transformRecords :: Prog ->  Prog
 transformRecords prog@(Prog _ _ ts fs _) =
   -- updProgFuncs (\fs -> foldr (:) fs $ generateLensesForRecords fs)
-  let (updFs,selFs) = ( filter isUpdateFunction fs
-                      , filter isSelectFunction fs )
-      newFs = generateLensesForDatatypes ts (updFs,selFs)
+  let selAndUpdFs = ( filter isSelectFunction fs
+                      , filter isUpdateFunction fs )
+      newFs = generateLensesForDatatypes ts selAndUpdFs
   in updProgFuncs (\fs' -> foldr (:) fs' newFs) prog
 
 generateLensesForDatatypes :: [TypeDecl]
@@ -58,24 +60,34 @@ generateLensesForDatatypes ts (sel,upd) =
   strip :: FuncDecl -> String
   strip = tail . dropWhile (/='@') . funcNameOnly
   stripPrefix :: FuncDecl -> String
-  stripPrefix = takeWhile (/='.') . funcNameOnly
+  stripPrefix = takeWhile (/='.') . strip
 
 generateFuncNamesFromRecord :: [(String,(FuncDecl,FuncDecl))]
                             -> TypeDecl
                             -> [FuncDecl]
 generateFuncNamesFromRecord fdMap (Type name@(mName,tName) _ _ [cDecl]) =
-  map genFromRecord (zip [2..] (consArgs cDecl))
+  genFromRecord fdMap (zip [2..] (consArgs cDecl))
  where
-  genFromRecord :: (Int,TypeExpr) -> FuncDecl
-  genFromRecord (argNo, tExpr) =
-    let Just (upd,sel) = lookup tName fdMap
-        fName          = tail (dropWhile (/= '.') (funcNameOnly sel))
-    in
+  genFromRecord :: [(String,(FuncDecl,FuncDecl))]
+                -> [(Int,TypeExpr)]
+                -> [FuncDecl]
+  genFromRecord _     []                       = []
+  genFromRecord aMap ((_, tExpr) : pairs) =
+    let (Just (sel,upd),newMap) = lookupAndDelete tName aMap
+        fName                   = tail (dropWhile (/= '.') (funcNameOnly sel))
+        func                    =
           Func (mName,fName)
                0
                Private
                (lensTypeExpr (typeFromName name) tExpr)
-               (lensRule (funcName upd) (funcName sel))
+               (lensRule (funcName sel) (funcName upd))
+    in func : genFromRecord newMap pairs
+  lookupAndDelete :: k -> [(k,a)] -> (Maybe a, [(k,a)])
+  lookupAndDelete _   []                      = (Nothing,[])
+  lookupAndDelete key (pair@(key',value):kvs)
+    | key == key' = (Just value, kvs)
+    | otherwise   = case lookupAndDelete key kvs of
+                         (maybeValue, kvs') -> (maybeValue, pair : kvs')
 
 generateLenses :: FuncDecl -> FuncDecl -> FuncDecl
 generateLenses sel upd =
