@@ -36,11 +36,10 @@ readFlatCurryForModule moduleName = do
        _   -> error ("Couldn't find module with name " ++ moduleName ++ ".")
 
 addImport :: Prog -> Prog
-addImport = id -- updProgImports ("Lens" :)
+addImport = updProgImports ("Lens" :)
 
 transformRecords :: Prog ->  Prog
 transformRecords prog@(Prog _ _ ts fs _) =
-  -- updProgFuncs (\fs -> foldr (:) fs $ generateLensesForRecords fs)
   let recFs = filter isSelectFunction fs
       newFs = generateLensesForDatatypes (filter (not . isRecordType) ts)
                                          recFs
@@ -52,16 +51,15 @@ generateLensesForDatatypes :: [TypeDecl]
 generateLensesForDatatypes ts fs =
   let (recs,datas)  = split (\t -> typeNameOnly t `elem` (map stripPrefix fs))
                             ts
-      pairs         = map (\func -> qName func) fs
-      namesAndFuncs = map (generateFuncNamesFromRecord pairs) recs
-      funcDecls1    = map (uncurry generateFuncDeclsFromDatatype)
-                          namesAndFuncs
-      funcDecls2    = map (uncurry generateFuncDeclsFromDatatype)
-                          (zip (repeat []) datas)
-  in concat (funcDecls1 ++ funcDecls2)
+      pairs         = map (\func -> lexRecordLabel func) fs
+      namesAndFuncs = map (generateFuncNamesFromRecord pairs) ts
+      funcDecls     = concatMap (uncurry generateFuncDeclsFromDatatype)
+                                namesAndFuncs
+  in funcDecls
  where
-  qName :: FuncDecl -> (String,QName)
-  qName funcDecl = (stripPrefix funcDecl,(fst $ funcName funcDecl,strip '.' funcDecl))
+  lexRecordLabel :: FuncDecl -> (String,QName)
+  lexRecordLabel funcDecl =
+    (stripPrefix funcDecl,(fst $ funcName funcDecl,strip '.' funcDecl))
   strip :: Char -> FuncDecl -> String
   strip c = tail . dropWhile (/= c) . funcNameOnly
   stripPrefix :: FuncDecl -> String
@@ -87,31 +85,33 @@ generateFuncNamesFromRecord fdMap t =
     | otherwise   = lookupAll key kvs
 
 generateFuncDeclsFromDatatype:: [Maybe QName] -> TypeDecl -> [FuncDecl]
-generateFuncDeclsFromDatatype names =
-  concatMap (genFromDatatype names) . typeConsDecls
+generateFuncDeclsFromDatatype names typeDecl =
+  concatMap (genFromDatatype names (typeName typeDecl)) $ typeConsDecls typeDecl
 
-genFromDatatype :: [Maybe QName] -> ConsDecl -> [FuncDecl]
-genFromDatatype names (Cons constrName@(mName,tName) arity _ constrs)
+genFromDatatype :: [Maybe QName] -> QName -> ConsDecl -> [FuncDecl]
+genFromDatatype names tName (Cons constrName@(mName,cName) arity _ constrs)
   | length names == length constrs =
       concatMap (uncurry genFromField)
                 (zip [1..] (zip names constrs))
   | null names = concatMap (uncurry genFromField)
                            (zip [1..] (zip (repeat Nothing) constrs))
-  | otherwise = error $ show $ (length names, length constrs)
+  | otherwise = error "This shouldn't happen"
  where
   genFromField :: Int -> (Maybe QName,TypeExpr) -> [FuncDecl]
   genFromField no (maybeName,tExpr) =
-    let source           = typeFromName constrName
+    let source           = typeFromName tName
         getTypeExpr      = getType source tExpr
         putTypeExpr      = putType source tExpr
         qName = case maybeName of
                      Just name -> name
-                     Nothing   -> (mName,map toLower tName ++ "Rec" ++ (show no))
-        (getName,getFct) = lambdaFunction (snd qName)
+                     Nothing   -> ( mName
+                                  , map toLower cName ++ "Acc" ++ (show no)
+                                  )
+        (getName,getFct) = lambdaFunction qName
                                           1
                                           getTypeExpr
                                           (getRule constrName arity no)
-        (putName,putFct) = lambdaFunction (snd qName)
+        (putName,putFct) = lambdaFunction qName
                                           2
                                           putTypeExpr
                                           (putRule constrName arity no)
@@ -122,11 +122,12 @@ genFromDatatype names (Cons constrName@(mName,tName) arity _ constrs)
               (lensRule getName putName)
        , getFct
        , putFct ]
-  lambdaFunction :: String -> Int -> TypeExpr -> Rule -> (QName,FuncDecl)
-  lambdaFunction fName funArity tExpr rule =
-    let name = (mName,fName ++ "_#lambdaLens" ++ show (funArity - 1))
-    in (name,Func name arity Private tExpr rule)
-                        
+
+lambdaFunction :: QName -> Int -> TypeExpr -> Rule -> (QName,FuncDecl)
+lambdaFunction (mName,fName) funArity tExpr rule =
+  (name,Func name funArity Private tExpr rule)
+ where
+  name = (mName,fName ++ "_#lambda" ++ show funArity)
 
 getRule :: QName -> Int -> Int -> Rule
 getRule constrName arity no =
@@ -190,98 +191,162 @@ typeNameOnly :: TypeDecl -> String
 typeNameOnly = snd . typeName
 
 {-
-Func ("Address","_#selR@Person.first")
-     1
+
+### REC-Version
+
+Type ("Address","Person")
      Public
-     (FuncType (TCons ("Address","Person") [])
-               (TCons ("Prelude","[]") [TCons ("Prelude","Char") []]))
-     (Rule [1]
-           (Case Flex
-                 (Var 1)
-                 [Branch (Pattern ("Address","Person") [2,3]) (Var 2)]))
+     []
+     [Cons ("Address","Person")
+           2
+           Private
+           [ TCons ("Prelude","[]") [TCons ("Prelude","Char") []]
+           , TCons ("Prelude","[]") [TCons ("Prelude","Char") []]
+           ]
+     ]
 
- Func ("Address","personLens")
-      0
-      Public
-      (TCons ("Prelude","(,)")
-             [FuncType (TCons ("Address","Address") [])
-                       (TCons ("Address","Person") [])
-             ,FuncType (TCons ("Address","Address") [])
-                       (FuncType (TCons ("Address","Person") [])
-                                 (TCons ("Address","Address") []))
-             ])
-      (Rule []
-            (Comb ConsCall
-                  ("Prelude","(,)")
-                  [Comb (FuncPartCall 1)
-                        ("Address","personLens._#lambda1")
-                        []
-                  ,Comb (FuncPartCall 2)
-                        ("Address","personLens._#lambda2")
-                        []
-                  ]))
+### type Person = { _person :: String, _street :: String }
 
- Func ("Address","personLens._#lambda1")
-      1
-      Private
-      (FuncType (TCons ("Address","Address") [])
-                (TCons ("Address","Person") []))
-      (Rule [1]
-            (Comb FuncCall
-                  ("Address","_#selR@Address.person")
-                  [Var 1]))
+Generate (with labels)
+========>
 
- Func ("Address","personLens._#lambda2")
-      2
-      Private
-      (FuncType (TCons ("Address","Address") [])
-                (FuncType (TCons ("Address","Person") [])
-                          (TCons ("Address","Address") [])))
-      (Rule [1,2]
-            (Comb FuncCall
-                  ("Address","_#updR@Address.person")
-                  [Var 1,Var 2]))
-
-Func ("Address","street")
+Func ("Address","person")
      0
      Public
      (TCons ("Prelude","(,)")
-            [FuncType (TCons ("Address","Address") [])
-                      (TCons ("Prelude","[]") [TCons ("Prelude","Char") []])
-            ,FuncType (TCons ("Address","Address") [])
-                      (FuncType (TCons ("Prelude","[]") [TCons ("Prelude","Char")
-                                                               []])
-                                (TCons ("Address","Address") []))])
+            [ FuncType (TCons ("Address","Address") [])
+                      (TCons ("Address","Person") [])
+            , FuncType (TCons ("Address","Address") [])
+                       (FuncType (TCons ("Address","Person") [])
+                                 (TCons ("Address","Address") []))
+            ])
      (Rule []
            (Comb ConsCall
                  ("Prelude","(,)")
-                 [Comb (FuncPartCall 1)
-                       ("Address","street._#lambda1")
-                       []
-                 ,Comb (FuncPartCall 2)
-                       ("Address","street._#lambda2") []]))
+                 [ Comb (FuncPartCall 1)
+                        ("Address","person_#lambda1")
+                        []
+                 , Comb (FuncPartCall 2)
+                        ("Address","person_#lambda2")
+                        []
+                 ]))
 
-Func ("Address","street._#lambda1")
+### person :: (Address -> Person, Address -> Person -> Address)
+### person = (person_#lambda1,person_#lambda2)
+
+Func ("Address","person_#lambda1")
      1
      Private
      (FuncType (TCons ("Address","Address") [])
-               (TCons ("Prelude","[]") [TCons ("Prelude","Char") []]))
+               (TCons ("Address","Person") []))
      (Rule [1]
-           (Case Flex
-                 (Var 1)
-                 [Branch (Pattern ("Address","Address42") [2,3]) (Var 3)]))
+           (Case Flex (Var 1)
+                 [Branch (Pattern ("Address","Address") [2,3])
+                          (Var 2)]))
 
-Func ("Address","street._#lambda2")
+### person_#lambda2 :: Address -> Person
+### person_#lambda2 addr = case addr of
+                                Address p s -> p
+
+
+Func ("Address","person_#lambda2")
      2
      Private
      (FuncType (TCons ("Address","Address") [])
-               (FuncType (TCons ("Prelude","[]") [TCons ("Prelude","Char") []])
+               (FuncType (TCons ("Address","Person") [])
                          (TCons ("Address","Address") [])))
      (Rule [1,2]
            (Case Flex
                  (Var 1)
-                 [Branch (Pattern ("Address","Address42") [3,4])
+                 [Branch (Pattern ("Address","Address") [3,4])
                          (Comb ConsCall
-                               ("Address","Address42")
-                               [Var 3,Var 2])]))
+                               ("Address","Address")
+                               [Var 2,Var 4])]))
+
+### person_#lambda2 :: Address -> Person -> Address
+### person_#lambda2 addr new = case addr of
+                                    Address p s -> Address n s
+
+(same for `street`)
+
+
+### NonREC-Version
+
+Type ("Address","Test")
+     Public
+     []
+     [Cons ("Address","Test123")
+           2
+           Public
+           [ TCons ("Prelude","Int")
+                  []
+           , TCons ("Prelude","[]")
+                   [TCons ("Prelude","Char") []]
+           ]
+     ]
+
+### data Test = Test123 Int String
+
+
+Generate
+=========>
+
+Func ("Address","test123Acc1")
+     0
+     Public
+     (TCons ("Prelude","(,)")
+            [ FuncType (TCons ("Address","Test") [])
+                      (TCons ("Prelude","Int") [])
+            , FuncType (TCons ("Address","Test") [])
+                       (FuncType (TCons ("Prelude","Int") [])
+                                 (TCons ("Address","Test") []))
+            ])
+     (Rule []
+           (Comb ConsCall
+                 ("Prelude","(,)")
+                 [ Comb (FuncPartCall 1)
+                        ("Address","test123Acc1_#lambda1")
+                        []
+                 , Comb (FuncPartCall 2)
+                        ("Address","test123Acc1_#lambda2")
+                        []
+                 ]))
+
+### test123Acc1 :: (Test -> Int, Test -> Int -> Test)
+### test123Acc1 = (test123Acc1_#lambda1,test123Acc1_#lambda2)
+
+
+Func ("Address","test123Acc1_#lambda1")
+     1
+     Private
+     (FuncType (TCons ("Address","Test") [])
+               (TCons ("Prelude","Int") []))
+     (Rule [1]
+           (Case Flex
+                 (Var 1)
+                 [Branch (Pattern ("Address","Test123") [2,3])
+                         (Var 2)]))
+
+### test123Acc1_#lambda1 :: Test -> Int
+### test123Acc1_#lambda1 test = case test of
+                                     Test123 i s -> s
+
+
+Func ("Address","test123Acc1_#lambda2")
+     2
+     Private
+     (FuncType (TCons ("Address","Test") [])
+               (FuncType (TCons ("Prelude","Int") [])
+                         (TCons ("Address","Test") [])))
+     (Rule [1,2]
+           (Case Flex
+                 (Var 1)
+                 [Branch (Pattern ("Address","Test123") [3,4])
+                         (Comb ConsCall
+                               ("Address","Test123")
+                               [Var 2,Var 4])]))
+
+### test123Acc1_#lambda2 :: Test -> Int -> Test
+### test123Acc1_#lambda2 test new = case test of
+                                         Test123 i s -> Test123 new s
 -}
