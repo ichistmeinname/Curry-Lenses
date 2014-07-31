@@ -1,15 +1,13 @@
 module Address where
 
--- import Lens
-
--- data P = Person
-
--- data Address = Address42 Person String
--- type Address = { person :: Person, street :: String }
 type Person = { first, last :: String }
 
-sandra = { first := "Sandra", last := "Dylus" }
--- myAddress = { person := sandra, street := "Olshausenstrasse" }
+bobDylan = { first := "Bob", last := "Dylan" }
+aPerson = { first := "Sandra", last := "Dylus" }
 
--- street :: Lens Address String
--- street = (\(Address42 _ s) -> s,\(Address42 p _) n -> Address42 p n)
+anAddress = { person := aPerson, street := "Olshausenstrasse" }
+
+data Test = Test123 Int String
+
+test :: Test
+test = Test123 123 "Test"
