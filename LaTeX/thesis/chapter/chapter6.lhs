@@ -132,8 +132,8 @@ data structure that two fields, a first and a last name, and both are fields rep
 as |String|s. %
 
 \begin{code}
-  type Person = { first :: String, last :: String } type Contact = {
-    person :: Person, street :: String }
+type Person = { first :: String, last :: String }
+type Contact = { person :: Person, street :: String }
 \end{code}
 
 At first, the compiler desugars record declarations to data type definitions
@@ -154,16 +154,39 @@ where |:=| is used to assign a field to a value within record construction and
 |:>| is an accessor that we can use to get a value out of a
 record. %
 
-\begin{code}
+\begin{spec}
 aPerson :: Person
-aPerson = { first := ``Bob'', last := ``Dylan'' }
+aPerson = { first := "Bob", last := "Dylan" }
 
-bob :: String bob = aPerson :> first
+> aPerson :> first
+"Bob"
 
-dylan :: String dylan = aPerson :> last
+> aPerson :> last
+"Dylan"
+\end{spec}
+
+Record updates are also possible; in order to update a given record
+value |rec| with fields |aLabel1| and |aLabel2|, we use another
+special syntax operator, |{ _ := _ || _ }|, within (record) brackets to annotate
+which fields of which record value we want to change. %
+
+\begin{code}
+type Rec = { aLabel1 :: (), aLabel2 :: Int }
+
+incLabel2 :: Rec -> Rec
+incLabel2 rec = { aLabel2 := val + 1 | rec }
+ where val = rec :> aLabel2
 \end{code}
 
-The usage of records can be very neat, but has its downsides as
+The construction without the pipe operator looks like a normal record
+definition, in combination with the pipe, we can update a record value
+that is given to the right of the operator. %
+In the the example, we have a record value with two fields, but only
+one field is explicitely set to the left of the pipe operator. %
+Record updates allow the programmer to only write down the field to be
+updated for a given record, all other fields remain unchanged. % 
+
+The usage of records can be very helpful and elegant, but has its downsides as
 well. %
 In contrast to Haskell, the fields |first| and |last| of the |Person|
 type are not functions, but syntactical constructs called labels. %
@@ -223,8 +246,23 @@ person within that contact. %
 \begin{code}
 setFirstForContact :: Contact -> String -> Contact
 setFirstForContact contact name =
-  { person := { first := name | addr :> person} | contact}
+  { person := { first := name | contact :> person } | contact }
 \end{code}
+
+For this function definition, we need to update two record values: the
+person within the given contact and the first name of that person. %
+Therefore, we need to access the value of the field |person| of the
+given contact, i.e., |contact :> person|, in order to modify the
+|first| field. %
+The resulting modified value of type |Person| is the new value of the
+|person| field for the given contact. %
+As the record gets more and more nested, the more complex is the update
+mechanism. %
+Similiar as for the selection function, we take a try to simplify the
+update function as well. %
+First, we define two auxiliary functions |first'| and |person'| that
+update the field corresponding to their names for a given value of
+type |Person| and |Contact|, respectively. %
 
 \begin{code}
 first' :: Person -> String -> Person
@@ -232,15 +270,81 @@ first' p new = { first := new | p }
 
 person' :: Contact -> Person -> Contact
 person' c new = { person := new | c }
+\end{code}
 
+With the help of the selection functions |person| and |first| to access
+the person within a contact and the first name of a person,
+respectively, we can redefine the setter function above.  %
+
+\begin{code}
 setFirstForContact' :: Contact -> String -> Contact
 setFirstForContact' c new = person' (person c) (first' (first person) new)
 \end{code}
 
-% For further examples, we use the following definition of type
-% |Contact|. %
+The new version of the nested setter functions looks a little bit less
+complicated, but it seems time-consuming to define all these auxiliary
+functions for all record types that we define in a program. %
+Thus, as a next step, we try to generalise the defined get and set function to work for all record types. %
+That is, we define a function |get :: (rec -> recField) -> rec -> recField|, where |rec| is
+a record type and |recField| is the type of a field of that record. %
 
-% \begin{code}
-%   aContact :: Contact aContact = { person := aPerson, street :=
-%     ``Folkstreet 1969'' }
-% \end{code}
+\begin{code}
+type Get a b = a -> b
+
+get :: Get a b -> a -> b
+get getF val = getF val
+\end{code}
+
+As we have seen above, it is easy to compose getters for nested record
+values; with the new defined |get| function, we can access a field of a
+record value as follows\footnote{As we stated before, KICS2 translated
+  a record type into a data type declaration, that is, the REPL
+  uses this translated data type when printing a record value}. %
+
+\begin{spec}
+personGet :: Get Contact Person
+personGet c = c :> person
+firstGet :: Get Person -> String
+firstGet p = p :> first
+
+aContact :: Contact a
+Contact = { person := aPerson, street := "Folkstreet 1969" }
+
+get personGet aContact
+> Person "Bob" "Dylan"
+get (firstGet . personGet) aContact
+> "Bob"
+\end{spec}
+
+For a generalised setter function, we define |set :: (rec -> recField -> rec) -> rec -> recField
+-> rec| and we use the type variables, again, as descriptive names. %
+
+\begin{code}
+type Set a b = a -> b -> a
+
+set :: Set a b -> a -> b -> a
+set setF val new = setF val new
+\end{code}
+
+When revising the setter function for the nested record value, we come
+to the conclusion that we cannot compose two setters in the same
+smooth way as the getters. %
+Instead, we have to dig a little deeper into the record definition. %
+Let us try anyway to define a combinator |(<.>) :: Set a b -> Set b c
+-> Set a c|, which takes two setter functions and yields a new,
+combined setter. %
+
+\begin{spec}
+(<.>) :: Set a b -> Set b c -> Set a c
+(fAB <.> fBC) valA valC =  let  newB  = fBC valB valC
+                                valB  = ?
+                           in fAB valA newB
+\end{spec} 
+
+The first setter function yields the same type that the second setter
+functions takes as its first argument, that is, we can combine the
+result of the first setter with the second one and the value of type
+|c| that we get as argument. %
+The first setter function takes a value of type |a| and one of type
+|b| as its arguments, we have |valA :: a| as an argument, so the only
+missing piece is a value of type |b|. %
