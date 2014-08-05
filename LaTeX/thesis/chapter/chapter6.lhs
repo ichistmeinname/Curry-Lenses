@@ -122,6 +122,9 @@ left-recursion in the definitions. %
 
 \section{Case Study III - Lenses for Records}
 
+Lorem ipsum ... introduction.
+
+\subsection{Record Syntax in Curry}
 In the current KICS2 implementation\footnote{cite anything}, we can
 define types similiar to data type declarations as records in
 Haskell. %
@@ -203,11 +206,16 @@ person :: Contact -> Person
 person c = c :> person
 \end{code}
 
+\subsection{Step by Step: From Records to Lenses}
+
 In order to examine records a little bit further, let us define more
 complex record field accessors for nested record definitions. %
-For example, the record type |Address| contains a field |person| of
+For example, the record type |Contact| contains a field |person| of
 type |Person|, which, again, is a record type itself with fields
-|first| and |last|. %
+|first| and |last|, both of type |String|. %
+
+\subsubsection{Getting there is half the fun}
+
 We can define a function |getFirstForAddress| that takes a value of
 type |Contact| as argument and yields a |String| as result. %
 The result |String| is the first name of the person of the given
@@ -236,6 +244,8 @@ getFirstForContact' = first . person
 
 In Curry, we cannot apply well-known simplification mechanism, e.g.,
 eta-reduction or point-free style, for record accessors. %
+
+\subsubsection{Set your record straight}
 
 In a second step, we define a function to change the value of a field
 in a given record. %
@@ -284,8 +294,11 @@ setFirstForContact' c new = person' (person c) (first' (first person) new)
 The new version of the nested setter functions looks a little bit less
 complicated, but it seems time-consuming to define all these auxiliary
 functions for all record types that we define in a program. %
-Thus, as a next step, we try to generalise the defined get and set function to work for all record types. %
-That is, we define a function |get :: (rec -> recField) -> rec -> recField|, where |rec| is
+Thus, as a next step, we try to generalise the defined get and set
+function to work for all record types. %
+
+\subsubsection{Make you a lens for a greater good}
+We define a function |get :: (rec -> recField) -> rec -> recField|, where |rec| is
 a record type and |recField| is the type of a field of that record. %
 
 \begin{code}
@@ -310,10 +323,10 @@ firstGet p = p :> first
 aContact :: Contact a
 Contact = { person := aPerson, street := "Folkstreet 1969" }
 
-get personGet aContact
-> Person "Bob" "Dylan"
-get (firstGet . personGet) aContact
-> "Bob"
+> get personGet aContact
+Person "Bob" "Dylan"
+> get (firstGet . personGet) aContact
+"Bob"
 \end{spec}
 
 For a generalised setter function, we define |set :: (rec -> recField -> rec) -> rec -> recField
@@ -329,22 +342,104 @@ set setF val new = setF val new
 When revising the setter function for the nested record value, we come
 to the conclusion that we cannot compose two setters in the same
 smooth way as the getters. %
-Instead, we have to dig a little deeper into the record definition. %
-Let us try anyway to define a combinator |(<.>) :: Set a b -> Set b c
--> Set a c|, which takes two setter functions and yields a new,
+Let us try to define a combinator |(<.>) :: Set a b -> Set b c
+-> Set a c| anyway, which takes two setter functions and yields a new,
 combined setter. %
 
 \begin{spec}
 (<.>) :: Set a b -> Set b c -> Set a c
 (fAB <.> fBC) valA valC =  let  newB  = fBC valB valC
-                                valB  = ?
+                                valB  = undefined
                            in fAB valA newB
 \end{spec} 
 
-The first setter function yields the same type that the second setter
-functions takes as its first argument, that is, we can combine the
-result of the first setter with the second one and the value of type
-|c| that we get as argument. %
-The first setter function takes a value of type |a| and one of type
-|b| as its arguments, we have |valA :: a| as an argument, so the only
+The secod setter function |fBC :: b -> c -> b| yields a value of type
+|b|, which is the same type the first setter
+function |fAB :: a -> b -> a| takes as its second argument, that is,
+we can combine the given value |valA :: a| and the result of the first
+setter to get a new value |newB :: b|. %
+The setter function |fBC|  takes a value of type |b| and one of type
+|c| as its arguments, we have |valC :: c| as an argument, so the only
 missing piece is a value of type |b|. %
+The two setter function alone cannot be combined in a meaningful way;
+we need the corresponding getter function |getAB :: a -> b| to fill
+the missing piece. %
+Thus, we add another argument to the combinator |(<.>)| in order to
+complete the definition. %
+
+\begin{spec}
+(<.>) :: (Get a b,Set a b) -> Set b c -> Set a c
+((getAB,setAB) <.> setBC) valA valC =  let  newB  = setBC valB valC
+                                valB  = getAB valA
+                           in setAB valA newB
+\end{spec}
+
+With the new definition of the combinator |(<.>)|, we change the first
+name of a contact as before, but in addition, we gain a general mechanism to
+change any field of a record. %
+
+\begin{spec}
+personSet :: Set Contact Person
+personSet c newP = { person := newP | c }
+
+firstSet :: Set Person String
+firstSet p newF = { first := newF | p }
+
+> set ((personGet,personSet) <.> firstSet) aContact "Bobby"
+Contact (Person "Bobby" "Dylan") "Folkstreet 1969"
+\end{spec}
+
+In the last step, we change the second argument to match the type of
+the first, i.e., we take two pairs, where the first component is a getter
+and the second component is a setter function. %
+This change leads to pair as resulting type as well, that is, we can
+define both, compositions of getter and setter functions, in one
+combinator. %
+In the end, we get the following definition of |(<.>)|. %
+
+\begin{code}
+(<.>) :: (Get a b, Set a b) -> (Get b c, Set b c) -> (Get a c, Set a c)
+((getAB, setAB) <.> (getBC,setBC)) = (getAC, setAC)
+ where
+  getAC = getBC . getAB
+  setAC valA = setAB valA . setBC (getAB valA)
+\end{code}
+
+The attentive reader may recognise the structure: it looks exactly
+like our primitve lens definitions from Section \todo{which
+  section?}. %
+This observation leads to the idea of a new transformation of record
+declartions in Curry, which we discuss in the next subsection. %
+
+\subsection{Record Transformation}
+Instead of introducing special syntactical constructs like |rec :> recField| and |{ recField := newValue || rec
+}| to select and update a record field for a given record, we use
+lenses as a general mechanism. %
+As a bonus, nested records updates gain a general combinator to change
+a deep nested record field more easily. %
+In order to round up this idea, we first give the generated
+counterpart for the record definition of the beginning of the
+section. %
+
+\begin{code}
+type Contact = { person :: Person, street :: String }
+type Person = { first :: String, last :: String }
+
+-- generated code
+data Contact = Contact Person String
+data Person = String String
+
+-- type Lens a b = (Get a b, Set a b)
+
+person :: (Contact -> Person, Contact -> Person -> Contact)
+person = (personGet,personSet)
+ where
+  personGet (Contact p _)      = p
+  personSet (Contact p s) newP = Address newP s
+
+first :: Lens Person String
+first = (firstGet,firstSet)
+ where
+  firstGet (Person f _)      = f
+  firstSet (Person f l) newF = Person newF l 
+\end{code}
