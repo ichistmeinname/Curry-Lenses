@@ -6,9 +6,8 @@
 
 %format parse_a = "parse_a"
 %format print_a = "print_a"
-%format tau_1   = "~\tau_1"
-%format tau_k   = "~\tau_k"
-%format ...     = "\dots"
+%format tau i   = "~\tau_" i "~"
+%format ...     = "~\dots~"
 
 \begin{document}
 
@@ -25,14 +24,14 @@
 %include extras/tables.lhs
 
 % neue Umgebungen
-\newtheoremstyle{break}
-  {\topsep}{\topsep}%
-  {\itshape}{}%
-  {\bfseries}{}%
-  {\newline}{}%
-\theoremstyle{break}
-\newtheorem*{tf}{Transformation}
-\newtheorem*{ex}{Example}
+% \newtheoremstyle{break}
+%   {7pt}{10pt}%
+%   {\itshape}{}%
+%   {\bfseries}{}%
+%   {0pt}{}%
+% \theoremstyle{break}
+\newtheorem{tf}{Transformation}
+\newtheorem{ex}{Example}
 
 % Merke mir die römische Seitenzahl in 'roemisch' und setzte Nummeriernung 
 % auf arabisch für die eigentlichen Kapitel

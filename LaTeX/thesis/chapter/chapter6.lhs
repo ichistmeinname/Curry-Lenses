@@ -177,7 +177,7 @@ want to change. %
 \begin{code}
 appendToFirst :: Person -> Person
 appendToFirst person = { aLabel2 := val + 1 | person }
- where val = person :> first
+  where val = person :> first
 \end{code}
 
 The construction without the pipe operator looks like a normal record
@@ -347,9 +347,10 @@ combined setter. %
 
 \begin{spec}
 (<.>) :: Set a b -> Set b c -> Set a c
-(fAB <.> fBC) valA valC =  let  newB  = fBC valB valC
-                                valB  = undefined
-                           in fAB valA newB
+(fAB <.> fBC) valA valC =
+   let  newB = fBC valB valC
+        valB = undefined
+   in fAB valA newB
 \end{spec} 
 
 The secod setter function |fBC :: b -> c -> b| yields a value of type
@@ -368,9 +369,10 @@ complete the definition. %
 
 \begin{spec}
 (<.>) :: (Get a b,Set a b) -> Set b c -> Set a c
-((getAB,setAB) <.> setBC) valA valC =  let  newB  = setBC valB valC
-                                valB  = getAB valA
-                           in setAB valA newB
+((getAB,setAB) <.> setBC) valA valC =
+   let  newB = setBC valB valC
+        valB = getAB valA
+   in setAB valA newB
 \end{spec}
 
 With the new definition of the combinator |(<.>)|, we change the first
@@ -399,9 +401,9 @@ In the end, we get the following definition of |(<.>)|. %
 \begin{code}
 (<.>) :: (Get a b, Set a b) -> (Get b c, Set b c) -> (Get a c, Set a c)
 ((getAB, setAB) <.> (getBC,setBC)) = (getAC, setAC)
- where
-  getAC = getBC . getAB
-  setAC valA = setAB valA . setBC (getAB valA)
+  where
+   getAC = getBC . getAB
+   setAC valA = setAB valA . setBC (getAB valA)
 \end{code}
 
 The attentive reader may recognise the structure: it looks exactly
@@ -426,19 +428,19 @@ type Person = { first :: String, last :: String }
 
 -- generated code
 data Contact = Contact Person String
-data Person = String String
+data Person = Person sString String
 
 person :: (Contact -> Person, Contact -> Person -> Contact)
 person = (personGet,personSet)
- where
-  personGet (Contact p _)      = p
-  personSet (Contact p s) newP = Address newP s
+  where
+   personGet (Contact p _)      = p
+   personSet (Contact p s) newP = Address newP s
 
 first :: (Person -> String, Person -> String -> Person)
 first = (firstGet,firstSet)
- where
-  firstGet (Person f _)      = f
-  firstSet (Person f l) newF = Person newF l 
+  where
+   firstGet (Person f _)      = f
+   firstSet (Person f l) newF = Person newF l 
 \end{code}
 
 As a first observation, we can rewrite the type signature of |person|
@@ -454,13 +456,10 @@ person :: Lens Contact Person
 type Lens a b = (Get a b, Set a b)
 \end{spec}
 
-%format label_11 = "\lambda_{1_1}"
-%format label_1n = "\lambda_{1_n}"
-%format label_k1 = "\lambda_{k_1}"
-%format label_km = "\lambda_{k_m}"
-%format label_1_1n = "\lambda_{1_{1 \dots n}}"
-%format label_k_1m = "\lambda_{k_{1 \dots m}}"
-%format Rec = "\Gamma"
+%format label2 a b = "\lambda_{" a "_" b "}"
+%format label3 a b c = "\lambda_{" a "_{" b "\dots" c "}}"
+%format label_tau a b c = "\lambda_{" a "_{" b "\dots" c "}}^{\tau_" a "}"
+%format Rec = "~\Gamma~"
 
 Next, we examine the generated code a bit more. %
 As in the current transformation of record types, we generate a data
@@ -469,33 +468,105 @@ constructor with the same name as the record type and each field is of
 the record type is an argument of the value constructor. %
 The arrangement of arguments are adopted from the record
 declaration. %
-That is, for a record declaration |type Rec = { label_11, ... , label_1n :: tau_1, ... , label_k1, ... ,
-  label_km :: tau_k }|\footnote{In the following, we shorten a
-  sequence like |label_11, ... , label_1n| to |label_1_1n| for abbreviation purposes.}
+That is, for a record declaration |type Rec = { label2 1 1, ... ,
+  label2 1 n :: tau 1, ... , label2 k 1, ... ,
+  label2 k m :: tau k }|\footnote{In the following, we shorten a
+  sequence like |label2 1 1, ... , label2 1 n| to |label3 1 1 n| and an
+  optional type is superscripted, e.g., |label3 1 1 n :: tau_1|
+  becomes |label_tau 1 1 n|, for abbreviation purposes.}
  we get the following transformation rule. %
 
+\todo{Introduce abbreviation for records}
+
 \begin{tf}
-\AXC{|tau_1 ... tau_k| $\in \Theta$, |Rec| $\not \in \Theta$, |label_1_1n, ... , label_k_1m| $\not \in \Phi$,
-  |Rec| $\not \in \Psi$}
-\UIC{$(\Theta,\Psi,\Phi)$: 
-|type Rec = { label_1_1n :: tau_1, ... , label_k_1m :: tau_k }| $\rightsquigarrow$ |data Rec = Rec|
+\leavevmode
+\begin{center}
+\AXC{|tau 1 ... tau k| $\in \Theta$}
+\AXC{|Rec| $\not \in \Theta$}
+\AXC{|Rec| $\not \in \Psi$}
+\TIC{$(\Theta,\Psi)$: 
+|type Rec = { label_tau 1 1 n, ... , label_tau k 1 m }| $\rightsquigarrow$ |data Rec = Rec|
 $\underbrace{\tau_1 \cdots \tau_1}_\text{n-times} \cdots \underbrace{\tau_k \cdots
   \tau_k}_\text{m-times}$}
 \DP
+\end{center}
 \end{tf}
 
 As a precondition for this transformation rule, we demand that the
 types, which we use in the record defintion, are known types of
 the given environment. %
 We denote the set of known types as $\Theta$.
-Furthermore, all names of the new defined record fields must be unique
+Furthermore, since the name of the defined record type is used
+as the name for the generated data type and constructor, the name has
+to be unique it the given environment as well. %
+That is, |Rec| is neither allowed to be an element of the set of types
+$\Theta$, nor an element of the set of constructors $\Psi$. %
+
+The next step is to generate the corresponing lens function for every
+field of the given record. %
+
+%format LensType a b = "Lens_{~" a "\rightarrow" b "~}"
+\begin{tf}
+\leavevmode
+\begin{center}
+\AXC{|label3 1 1 n, ... , label3 k 1 m| $\not \in \Phi$}
+\AXC{|type LensType a b = (a -> b, a -> b -> a)|}
+\BIC{$\Phi$: 
+|type Rec = { label_tau 1 1 n, ... , label_tau k 1 m }|
+$\rightsquigarrow$ |label3 1 1 n :: LensType Rec tau_1, ... , label3 k 1 m ::
+LensType Rec tau_k|}
+\DP
+\end{center}
+\end{tf}
+
+We demand all names of the new defined record fields to be unique
 in the given environment, that is, functions with the same name are
 not allowed.\footnote{This requirement is also mentioned in the KICS2
   Manual \citeyearpar[p. 22]{kics2Manual}, but a missing feature in the current implementation.} %
 Therefor, we introduce $\Phi$ as the set of all function
-names. %
-Last but not least, since the name of the defined record type is used
-as the name for the generated data type and constructor, the name has
-to be unique it the given environment as well. %
-That is, |Rec| is neither allowed to be an element of the set of types
-$\Theta$, nor an element of the set of constructors $\Psi$.
+names and if any record field is an element of that set, the
+preconditition is fulfilled, thus, the transformation cannot be
+pursued and fails. %
+In order to make the derivation rule more readable, we introduce a
+type synonym for lenses |type LensType a b = (a -> b, a -> b -> a)| for
+further usage, but we do not generate the lens type synonym in our
+record transformation for simplicity reasons only. %
+
+The third and last transformation is a bit more complex than the first
+two transformations, where complex does not mean more complicated, but
+more acutal generated code. %
+In the previous step, we generated functions and their type signatures
+corresponding to the record's fields. %
+These functions still need a proper function body to become proper
+lens defintions. %
+For every generated function in the previous step, we generate a
+function body. %
+
+%format val i = v "_i"
+%format v3 a b c = "val_{" a "_{" b "\dots" c "}}"
+%format label3 a b c = "\lambda_{" a "_{" b "\dots" c "}}"
+
+%format tau i = "\tau_" i
+%format label = "\lambda"
+%format label1 i = "\lambda_" i
+%format -.- = "~\cdots~"
+
+\begin{tf}
+\leavevmode
+\begin{center}
+\AXC{|type Rec = { label_tau 1 1 n, ... , label1 i :: tau i, ... ,
+    label_tau k 1 m }|}
+\AXC{(1)}
+\AXC{(2)}
+\TIC{|label :: LensType Rec tau| $\rightsquigarrow$ |label = (label1
+  get,label1 set)|}
+\DP
+\end{center}
+\begin{equation}\tag{1}
+|label1 get (Rec _ -.- val i -.- _) = val i|
+\end{equation}
+\begin{equation}\tag{2}
+|label1 set ((Rec) v3 1 1 n -.- v3 k 1 m) val i = Rec v3 1 1 n
+-.- _ -.- v3 k 1 m|
+\end{equation}
+\end{tf}

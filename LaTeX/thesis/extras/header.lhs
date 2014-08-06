@@ -15,7 +15,7 @@
 
 \usepackage{todonotes}
 
-% Paket fuer INFERENZSYSYEME
+% Paket fuer Inferenzsysteme
 \usepackage{bussproofs}
 \EnableBpAbbreviations
 
