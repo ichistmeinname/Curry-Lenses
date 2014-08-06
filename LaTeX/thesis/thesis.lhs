@@ -6,6 +6,9 @@
 
 %format parse_a = "parse_a"
 %format print_a = "print_a"
+%format tau_1   = "~\tau_1"
+%format tau_k   = "~\tau_k"
+%format ...     = "\dots"
 
 \begin{document}
 
@@ -21,6 +24,10 @@
 \ihead{\leftmark}
 \ohead{}
 %include extras/tables.lhs
+
+% neue Umgebungen
+\newtheorem*{tf}{Transformation}
+\newtheorem*{ex}{Example}
 
 % Merke mir die römische Seitenzahl in 'roemisch' und setzte Nummeriernung 
 % auf arabisch für die eigentlichen Kapitel

@@ -14,7 +14,8 @@
 % \usepackage[english,ngerman]{babel}
 
 \usepackage{todonotes}
-% \usepackage{semantic}
+\usepackage{bussproofs}
+\EnableBpAbbreviations
 
 \usepackage{cite}
 \usepackage[authoryear]{natbib}
