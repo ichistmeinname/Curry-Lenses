@@ -17,7 +17,6 @@
 
 % Titelblatt
 %include extras/frontpage.lhs
-
 % Table of Contents, Figures, etc
 % Kopfzeile links Kapitel, rechts leer
 \renewcommand{\chaptermark}[1]{\markboth{\thechapter\ #1}{}}
@@ -26,6 +25,12 @@
 %include extras/tables.lhs
 
 % neue Umgebungen
+\newtheoremstyle{break}
+  {\topsep}{\topsep}%
+  {\itshape}{}%
+  {\bfseries}{}%
+  {\newline}{}%
+\theoremstyle{break}
 \newtheorem*{tf}{Transformation}
 \newtheorem*{ex}{Example}
 

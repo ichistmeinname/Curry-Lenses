@@ -14,6 +14,8 @@
 % \usepackage[english,ngerman]{babel}
 
 \usepackage{todonotes}
+
+% Paket fuer INFERENZSYSYEME
 \usepackage{bussproofs}
 \EnableBpAbbreviations
 
