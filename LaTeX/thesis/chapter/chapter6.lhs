@@ -169,16 +169,15 @@ aPerson = { first := "Bob", last := "Dylan" }
 \end{spec}
 
 Record updates are also possible; in order to update a given record
-value |rec| with fields |aLabel1| and |aLabel2|, we use another
-special syntax operator, |{ _ := _ || _ }|, within (record) brackets to annotate
-which fields of which record value we want to change. %
+type |Person| with fields |first| and |last|, we use another
+special syntax operator, |{ _ := _ || _ }|, to annotate which record
+value and which record fields of that record we
+want to change. %
 
 \begin{code}
-type Rec = { aLabel1 :: (), aLabel2 :: Int }
-
-incLabel2 :: Rec -> Rec
-incLabel2 rec = { aLabel2 := val + 1 | rec }
- where val = rec :> aLabel2
+appendToFirst :: Person -> Person
+appendToFirst person = { aLabel2 := val + 1 | person }
+ where val = person :> first
 \end{code}
 
 The construction without the pipe operator looks like a normal record
@@ -186,7 +185,7 @@ definition, in combination with the pipe, we can update a record value
 that is given to the right of the operator. %
 In the the example, we have a record value with two fields, but only
 one field is explicitely set to the left of the pipe operator. %
-Record updates allow the programmer to only write down the field to be
+Record updates allow the programmer to only write down the fields to be
 updated for a given record, all other fields remain unchanged. % 
 
 The usage of records can be very helpful and elegant, but has its downsides as
@@ -417,9 +416,9 @@ Instead of introducing special syntactical constructs like |rec :> recField| and
 lenses as a general mechanism. %
 As a bonus, nested records updates gain a general combinator to change
 a deep nested record field more easily. %
-In order to round up this idea, we first give the generated
+In order to give a better insight about this idea, we first give the generated
 counterpart for the record definition of the beginning of the
-section. %
+section as Curry code.  %
 
 \begin{code}
 type Contact = { person :: Person, street :: String }
@@ -429,17 +428,74 @@ type Person = { first :: String, last :: String }
 data Contact = Contact Person String
 data Person = String String
 
--- type Lens a b = (Get a b, Set a b)
-
 person :: (Contact -> Person, Contact -> Person -> Contact)
 person = (personGet,personSet)
  where
   personGet (Contact p _)      = p
   personSet (Contact p s) newP = Address newP s
 
-first :: Lens Person String
+first :: (Person -> String, Person -> String -> Person)
 first = (firstGet,firstSet)
  where
   firstGet (Person f _)      = f
   firstSet (Person f l) newF = Person newF l 
 \end{code}
+
+As a first observation, we can rewrite the type signature of |person|
+to highlight the similiarity to the definitions above; we generalise
+this type signature again and define a type synonym |Lens a b| for a
+less verbose type signature in future code examples. %
+
+\begin{spec}
+-- person :: (Contact -> Person, Contact -> Person -> Contact)
+-- person :: (Get Contact Person, Set Contact Person)
+person :: Lens Contact Person
+
+type Lens a b = (Get a b, Set a b)
+\end{spec}
+
+%format label_11 = "\lambda_{1_1}"
+%format label_1n = "\lambda_{1_n}"
+%format label_k1 = "\lambda_{k_1}"
+%format label_km = "\lambda_{k_m}"
+%format label_1_1n = "\lambda_{1_{1 \dots n}}"
+%format label_k_1m = "\lambda_{k_{1 \dots m}}"
+%format Rec = "\Gamma"
+
+Next, we examine the generated code a bit more. %
+As in the current transformation of record types, we generate a data
+type declaration corresponding to the record type: one value
+constructor with the same name as the record type and each field is of
+the record type is an argument of the value constructor. %
+The arrangement of arguments are adopted from the record
+declaration. %
+That is, for a record declaration |type Rec = { label_11, ... , label_1n :: tau_1, ... , label_k1, ... ,
+  label_km :: tau_k }|\footnote{In the following, we shorten a
+  sequence like |label_11, ... , label_1n| to |label_1_1n| for abbreviation purposes.}
+ we get the following transformation rule. %
+
+\begin{tf}
+\AXC{|tau_1 ... tau_k| $\in \Theta$, |Rec| $\not \in \Theta$, |label_1_1n, ... , label_k_1m| $\not \in \Phi$,
+  |Rec| $\not \in \Psi$}
+\UIC{$(\Theta,\Psi,\Phi)$: 
+|type Rec = { label_1_1n :: tau_1, ... , label_k_1m :: tau_k }| $\rightsquigarrow$ |data Rec = Rec|
+$\underbrace{\tau_1 \cdots \tau_1}_\text{n-times} \cdots \underbrace{\tau_k \cdots
+  \tau_k}_\text{m-times}$}
+\DP
+\end{tf}
+
+As a precondition for this transformation rule, we demand that the
+types, which we use in the record defintion, are known types of
+the given environment. %
+We denote the set of known types as $\Theta$.
+Furthermore, all names of the new defined record fields must be unique
+in the given environment, that is, functions with the same name are
+not allowed.\footnote{This requirement is also mentioned in the KICS2
+  Manual \citeyearpar[p. 22]{kics2Manual}, but a missing feature in the current implementation.} %
+Therefor, we introduce $\Phi$ as the set of all function
+names. %
+Last but not least, since the name of the defined record type is used
+as the name for the generated data type and constructor, the name has
+to be unique it the given environment as well. %
+That is, |Rec| is neither allowed to be an element of the set of types
+$\Theta$, nor an element of the set of constructors $\Psi$.
