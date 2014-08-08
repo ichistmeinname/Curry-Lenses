@@ -456,10 +456,10 @@ person :: Lens Contact Person
 type Lens a b = (Get a b, Set a b)
 \end{spec}
 
-%format label2 a b = "\lambda_{" a "_" b "}"
-%format label3 a b c = "\lambda_{" a "_{" b "\dots" c "}}"
-%format label_tau a b c = "\lambda_{" a "_{" b "\dots" c "}}^{\tau_" a "}"
-%format Rec = "~\Gamma~"
+%format label2 a b = "f_{" a "_" b "}"
+%format label3 a b c = "f_{" a "_{" b "\dots" c "}}"
+%format label_tau a b c = "f_{" a "_{" b "\dots" c "}}^{\tau_" a "}"
+%format Rec = "R"
 
 Next, we examine the generated code a bit more. %
 As in the current transformation of record types, we generate a data
@@ -472,7 +472,7 @@ That is, for a record declaration |type Rec = { label2 1 1, ... ,
   label2 1 n :: tau 1, ... , label2 k 1, ... ,
   label2 k m :: tau k }|\footnote{In the following, we shorten a
   sequence like |label2 1 1, ... , label2 1 n| to |label3 1 1 n| and an
-  optional type is superscripted, e.g., |label3 1 1 n :: tau_1|
+  optional type is superscripted, e.g., |label3 1 1 n :: tau 1|
   becomes |label_tau 1 1 n|, for abbreviation purposes.}
  we get the following transformation rule. %
 
@@ -484,8 +484,14 @@ That is, for a record declaration |type Rec = { label2 1 1, ... ,
 \AXC{|tau 1 ... tau k| $\in \Theta$}
 \AXC{|Rec| $\not \in \Theta$}
 \AXC{|Rec| $\not \in \Psi$}
-\TIC{$(\Theta,\Psi)$: 
-|type Rec = { label_tau 1 1 n, ... , label_tau k 1 m }| $\rightsquigarrow$ |data Rec = Rec|
+\TIC{$(\Theta,\Psi): 
+|type Rec =| \left\{
+   \begin{array}{l l}
+     ~~|label_tau 1 1 n|\\
+     , ~\dots\\
+     , ~|label_tau k 1 m|
+\end{array}\right\}$
+$\rightsquigarrow$ |data Rec = Rec|
 $\underbrace{\tau_1 \cdots \tau_1}_\text{n-times} \cdots \underbrace{\tau_k \cdots
   \tau_k}_\text{m-times}$}
 \DP
@@ -505,16 +511,35 @@ $\Theta$, nor an element of the set of constructors $\Psi$. %
 The next step is to generate the corresponing lens function for every
 field of the given record. %
 
-%format LensType a b = "Lens_{~" a "\rightarrow" b "~}"
+%format (label1 i) = "f_{" i "}"
+%format LensType a b = "Lens_{" a "\rightarrow" b "}"
+%format (get_ a) = "get_" a
+%format (set_ a) = "set_" a
 \begin{tf}
 \leavevmode
 \begin{center}
 \AXC{|label3 1 1 n, ... , label3 k 1 m| $\not \in \Phi$}
 \AXC{|type LensType a b = (a -> b, a -> b -> a)|}
-\BIC{$\Phi$: 
-|type Rec = { label_tau 1 1 n, ... , label_tau k 1 m }|
-$\rightsquigarrow$ |label3 1 1 n :: LensType Rec tau_1, ... , label3 k 1 m ::
-LensType Rec tau_k|}
+\AXC{\eqref{f_lens}}
+\TIC{$\Phi:
+|type Rec =| \left\{
+   \begin{array}{l l}
+     ~~|label_tau 1 1 n|\\
+     , ~\dots\\
+     , ~|label_tau k 1 m|
+\end{array}\right\}$
+$\rightsquigarrow$
+$\begin{array}{l l}
+|label3 1 1 n :: LensType Rec (tau 1)|\\
+|(label1 1) = (label1 (get_ 1),label1 (set_ 1))|
+\end{array}
+,~\dots~,
+\begin{array}{l l}
+|label3 k 1 m :: LensType Rec (tau k)|\\
+|label1 k = (label1 (get_ k),label1 (set_ k))|
+\end{array}
+$
+}
 \DP
 \end{center}
 \end{tf}
@@ -525,48 +550,34 @@ not allowed.\footnote{This requirement is also mentioned in the KICS2
   Manual \citeyearpar[p. 22]{kics2Manual}, but a missing feature in the current implementation.} %
 Therefor, we introduce $\Phi$ as the set of all function
 names and if any record field is an element of that set, the
-preconditition is fulfilled, thus, the transformation cannot be
+preconditition is not fulfilled, thus, the transformation cannot be
 pursued and fails. %
 In order to make the derivation rule more readable, we introduce a
 type synonym for lenses |type LensType a b = (a -> b, a -> b -> a)| for
 further usage, but we do not generate the lens type synonym in our
 record transformation for simplicity reasons only. %
-
-The third and last transformation is a bit more complex than the first
-two transformations, where complex does not mean more complicated, but
-more acutal generated code. %
-In the previous step, we generated functions and their type signatures
-corresponding to the record's fields. %
-These functions still need a proper function body to become proper
-lens defintions. %
+There is still one piece missing in this transformation, the generated
+functions still need a proper function body. %
 For every generated function in the previous step, we generate a
-function body. %
+function body with helper functions |label1 get| and |label1 set|. %
 
-%format val i = v "_i"
-%format v3 a b c = "val_{" a "_{" b "\dots" c "}}"
-%format label3 a b c = "\lambda_{" a "_{" b "\dots" c "}}"
+%format (val i) =  "val_"i
+%format (v3 a b c) = "val_{" a "_{" b "\dots" c "}}"
+%format label3 a b c = "f_{" a "_{" b "\dots" c "}}"
 
-%format tau i = "\tau_" i
-%format label = "\lambda"
-%format label1 i = "\lambda_" i
+%format label = "f"
 %format -.- = "~\cdots~"
 
-\begin{tf}
-\leavevmode
-\begin{center}
-\AXC{|type Rec = { label_tau 1 1 n, ... , label1 i :: tau i, ... ,
-    label_tau k 1 m }|}
-\AXC{(1)}
-\AXC{(2)}
-\TIC{|label :: LensType Rec tau| $\rightsquigarrow$ |label = (label1
-  get,label1 set)|}
-\DP
-\end{center}
-\begin{equation}\tag{1}
-|label1 get (Rec _ -.- val i -.- _) = val i|
-\end{equation}
-\begin{equation}\tag{2}
-|label1 set ((Rec) v3 1 1 n -.- v3 k 1 m) val i = Rec v3 1 1 n
--.- _ -.- v3 k 1 m|
-\end{equation}
-\end{tf}
+\begin{code}
+label1 i = (label1 get,label1 set)
+  where
+   label1 get (Rec _ -.- val i -.- _)                = val i
+   label1 set (Rec (v3 1 1 n) -.- v3 k 1 m) (val i)  = Rec (v3 1 1 n) -.- val i -.- v3 k 1 m
+\end{code}
+
+This transformation generates the corresponding lens function for each
+field of a record type, where |label1 i| is the current generated
+field. %
+We generate the lens function in two steps: first, we define 
+two local functions |label1 get| and |label1 set| and combine them to
+a pair of getter and setter function, i.e. a lens, in a second step. %
