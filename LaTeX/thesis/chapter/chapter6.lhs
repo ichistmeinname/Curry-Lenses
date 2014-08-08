@@ -122,21 +122,37 @@ left-recursion in the definitions. %
 
 \section{Case Study III - Lenses for Records}
 
-Lorem ipsum ... introduction.
+This section gives an overview about record syntax in Curry and a
+draft proposal for a possible improvement. %
+First, we discuss the current implementation of records in KICS2,
+which covers the general idea and some insights of the transformations
+that take place during compilation. %
+As a second step, we take a closer look at these transformations and
+the usage of records. %
+The similiarity of the challenges connected to records and the
+use-cases for lenses provide leads to the idea to translate record
+fields into lenses. %
+In the last subsection, we sketch the transformations from record type
+declarations into corresponding lens definitions. %
+Additionally, we give an implementation that transforms a given Curry
+module on the basis of FlatCurry as a proof of concept. %
+Furthermore, we discuss a possible implementation for the current
+KICS2 compiler. %
 
 \subsection{Record Syntax in Curry}
-In the current KICS2 implementation\footnote{cite anything}, we can
+In the current KICS2 implementation\citeyearpar{kics2Manual}, we can
 define types similiar to data type declarations as records in
 Haskell. %
 In the remainder of this section, we call these defintions record
 types. %
 As an examplatory definition of a record types, we define |Person|, a
-data structure that two fields, a first and a last name, and both are fields represented
-as |String|s. %
+data structure that two fields, a first and a last name, and both are
+fields represented as |String|s. %
+Fields of the same type can be grouped like in the following example.
 
 \begin{code}
-type Person = { first :: String, last :: String }
-type Contact = { person :: Person, street :: String }
+  type Person = { first, last :: String }
+  type Contact = { person :: Person, street ::  String }
 \end{code}
 
 At first, the compiler desugars record declarations to data type definitions
@@ -418,13 +434,16 @@ Instead of introducing special syntactical constructs like |rec :> recField| and
 lenses as a general mechanism. %
 As a bonus, nested records updates gain a general combinator to change
 a deep nested record field more easily. %
+
+\subsubsection{Formal Definition}
+
 In order to give a better insight about this idea, we first give the generated
 counterpart for the record definition of the beginning of the
 section as Curry code.  %
 
 \begin{code}
 type Contact = { person :: Person, street :: String }
-type Person = { first :: String, last :: String }
+type Person = { first, last :: String }
 
 -- generated code
 data Contact = Contact Person String
@@ -456,10 +475,17 @@ person :: Lens Contact Person
 type Lens a b = (Get a b, Set a b)
 \end{spec}
 
-%format label2 a b = "f_{" a "_" b "}"
-%format label3 a b c = "f_{" a "_{" b "\dots" c "}}"
-%format label_tau a b c = "f_{" a "_{" b "\dots" c "}}^{\tau_" a "}"
 %format Rec = "R"
+%format (label1 i) = "f_{" i "}"
+%format LensType a b = "Lens_{" a "\rightarrow" b "}"
+%format (get_ a) = "get_{" a "}"
+%format (set_ a) = "set_{" a "}"
+%format (sub t i) = t "_{" i "}"
+%format (val i) =  "val_{"i "}"
+%format (v3 a b c) = "val_{" a "_{" b "\dots" c "}}"
+%format label3 a b c = "f_{" a "_{" b "\dots" c "}}"
+%format label = "f"
+%format -.- = "~\cdots~"
 
 Next, we examine the generated code a bit more. %
 As in the current transformation of record types, we generate a data
@@ -467,17 +493,14 @@ type declaration corresponding to the record type: one value
 constructor with the same name as the record type and each field is of
 the record type is an argument of the value constructor. %
 The arrangement of arguments are adopted from the record
-declaration. %
-That is, for a record declaration |type Rec = { label2 1 1, ... ,
-  label2 1 n :: tau 1, ... , label2 k 1, ... ,
-  label2 k m :: tau k }|\footnote{In the following, we shorten a
-  sequence like |label2 1 1, ... , label2 1 n| to |label3 1 1 n| and an
-  optional type is superscripted, e.g., |label3 1 1 n :: tau 1|
-  becomes |label_tau 1 1 n|, for abbreviation purposes.}
- we get the following transformation rule. %
+declaration; in the process, we desugar grouped fields and write every
+pair of fields and type declaration consecutively. %
+That is, for a record declaration |type Rec = { label1 (sub 1 1), ... ,
+  label1 (sub 1 n) :: tau 1, ... , label1 (sub k 1), ... ,
+  label1 (sub k m) :: tau k }| we get the following transformation rule. %
 
-\todo{Introduce abbreviation for records}
-
+\todo{get rid of double subscript, use only distinct types in
+  following examples}
 \begin{tf}
 \leavevmode
 \begin{center}
@@ -487,13 +510,14 @@ That is, for a record declaration |type Rec = { label2 1 1, ... ,
 \TIC{$(\Theta,\Psi): 
 |type Rec =| \left\{
    \begin{array}{l l}
-     ~~|label_tau 1 1 n|\\
-     , ~\dots\\
-     , ~|label_tau k 1 m|
+     ~~|label1 1 :: tau 1|\\
+    , ~\dots\\
+    , |label1 n :: tau 1|\\
+    , ~\dots\\ 
+    , ~|label1 k :: tau m|
 \end{array}\right\}$
-$\rightsquigarrow$ |data Rec = Rec|
-$\underbrace{\tau_1 \cdots \tau_1}_\text{n-times} \cdots \underbrace{\tau_k \cdots
-  \tau_k}_\text{m-times}$}
+$\rightsquigarrow$ |data Rec = Rec (tau 1)| $\cdots$ |(tau k)|
+}
 \DP
 \end{center}
 \end{tf}
@@ -508,19 +532,15 @@ to be unique it the given environment as well. %
 That is, |Rec| is neither allowed to be an element of the set of types
 $\Theta$, nor an element of the set of constructors $\Psi$. %
 
-The next step is to generate the corresponing lens function for every
-field of the given record. %
+The second transformation generates the corresponing lens function for every
+field of a given record. %
 
-%format (label1 i) = "f_{" i "}"
-%format LensType a b = "Lens_{" a "\rightarrow" b "}"
-%format (get_ a) = "get_" a
-%format (set_ a) = "set_" a
 \begin{tf}
 \leavevmode
 \begin{center}
 \AXC{|label3 1 1 n, ... , label3 k 1 m| $\not \in \Phi$}
 \AXC{|type LensType a b = (a -> b, a -> b -> a)|}
-\AXC{\eqref{f_lens}}
+\AXC{\eqref{lens_get} + \eqref{lens_set}}
 \TIC{$\Phi:
 |type Rec =| \left\{
    \begin{array}{l l}
@@ -529,51 +549,56 @@ field of the given record. %
      , ~|label_tau k 1 m|
 \end{array}\right\}$
 $\rightsquigarrow$
-$\begin{array}{l l}
+$\begin{array}{l}
 |label3 1 1 n :: LensType Rec (tau 1)|\\
-|(label1 1) = (label1 (get_ 1),label1 (set_ 1))|
+|(label1 (sub 1 1)) = (label1 (get_ (sub 1 1)),label1 (set_ (sub 1
+1)))|\\
+\hfill{\vdots} \hfill{}\\
+|(label1 (sub 1 n)) = (label1 (get_ (sub 1 n)),label1 (set_ (sub 1 n)))|
 \end{array}
-,~\dots~,
-\begin{array}{l l}
+~\dots~
+\begin{array}{l}
 |label3 k 1 m :: LensType Rec (tau k)|\\
-|label1 k = (label1 (get_ k),label1 (set_ k))|
+|label1 (sub k 1) = (label1 (get_ (sub k 1)),label1 (set_ (sub k
+1)))|\\
+\hfill{\vdots}\hfill{}\\
+|label1 (sub k m) = (label1 (get_ (sub k m)),label1 (set_ (sub k
+m)))|\\
 \end{array}
 $
 }
 \DP
 \end{center}
+
+\begin{code}
+label1 (sub get (sub i j)) (Rec _ -.- _ val (sub i j) _ -.- _) = val (sub i j)
+label1 (sub set (sub i j)) (Rec (val (sub 1 1)) -.- (val (sub k m))) (val (sub i j)) = Rec (val (sub 1 1 )) -.- val (sub i j) -.- val (sub k m)
+\end{code}
+
 \end{tf}
 
-We demand all names of the new defined record fields to be unique
+We demand all record field names to be unique
 in the given environment, that is, functions with the same name are
 not allowed.\footnote{This requirement is also mentioned in the KICS2
   Manual \citeyearpar[p. 22]{kics2Manual}, but a missing feature in the current implementation.} %
 Therefor, we introduce $\Phi$ as the set of all function
 names and if any record field is an element of that set, the
-preconditition is not fulfilled, thus, the transformation cannot be
+precondition is not fulfilled, thus, the transformation cannot be
 pursued and fails. %
 In order to make the derivation rule more readable, we introduce a
 type synonym for lenses |type LensType a b = (a -> b, a -> b -> a)| for
 further usage, but we do not generate the lens type synonym in our
-record transformation for simplicity reasons only. %
-There is still one piece missing in this transformation, the generated
-functions still need a proper function body. %
-For every generated function in the previous step, we generate a
+record transformation without any loss of functionality but for simplicity reasons only. %
+There is still one piece missing in this transformation; in our example, the generated
+lens definitions use local functions that we have not defined yet. %
+For every generated function |label1 (sub i j)|
 function body with helper functions |label1 get| and |label1 set|. %
 
-%format (val i) =  "val_"i
-%format (v3 a b c) = "val_{" a "_{" b "\dots" c "}}"
-%format label3 a b c = "f_{" a "_{" b "\dots" c "}}"
-
-%format label = "f"
-%format -.- = "~\cdots~"
-
-\begin{code}
-label1 i = (label1 get,label1 set)
-  where
-   label1 get (Rec _ -.- val i -.- _)                = val i
-   label1 set (Rec (v3 1 1 n) -.- v3 k 1 m) (val i)  = Rec (v3 1 1 n) -.- val i -.- v3 k 1 m
-\end{code}
+\begin{align}
+&|label1 get (Rec _ -.- val i -.- _)                |& =& ~|val i| \tag{1}\label{lens_get}\\
+&|label1 set (Rec (v3 1 1 n) -.- v3 k 1 m) (val i)|& =& ~|Rec (v3 1 1
+n) -.- val i -.- v3 k 1 m| \tag{2}\label{lens_set}
+\end{align}
 
 This transformation generates the corresponding lens function for each
 field of a record type, where |label1 i| is the current generated
@@ -581,3 +606,5 @@ field. %
 We generate the lens function in two steps: first, we define 
 two local functions |label1 get| and |label1 set| and combine them to
 a pair of getter and setter function, i.e. a lens, in a second step. %
+
+\subsubsection{FlatCurry Transformation}
