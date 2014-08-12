@@ -6,7 +6,7 @@
 
 %format parse_a = "parse_a"
 %format print_a = "print_a"
-%format tau i   = "~\tau_" i "~"
+%format (tau i)  = "\tau_" i
 %format ...     = "~\dots~"
 
 \begin{document}
