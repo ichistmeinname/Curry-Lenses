@@ -48,7 +48,7 @@ The authors state close connections with topics from the database
 community: lenses are a well-known abstraction in databases concerning
 tables and queries, and the \emph{update translation under a constant
   complement} introduced by \cite{viewUpdate} tackles problems concerning
-definedness(precision?)  and continuity, whereas the property of
+definedness\todo{precision?}  and continuity, whereas the property of
 well-behaved lenses corresponds to \emph{update
   translators}\todo{citation}. %
 
@@ -69,7 +69,7 @@ In the DSL, the user defines the forward transformation in a
 straight-forward fashion, whereas the backward transformation is the
 result of reading the definition from right to left. %
 
-The following expressionshows a tree with two labels, |fst| and |snd|, representing
+The following expression shows a tree with two labels, |fst| and |snd|, representing
 a pair, which corresponds to a pair |(42,"Hello World")| in Haskell. %
 
 \begin{align*}
@@ -307,7 +307,7 @@ The put-based language is built upon a handfull of combinators, which
 are inspired by the combinators of Foster et al., e.g., identity and
 constant lens as well as lenses for filter, composition, products, sums and
 conditionals. %
-The language assures well-behavedness by construction, that is, all
+The language assures well-behavedness\todo{This is not an existing word.} by construction, that is, all
 combinators, including composition, form well-behaved lenses and,
 thus, the composition of predefined combinators form well-behaved lenses as
 well. %
@@ -336,7 +336,7 @@ label fst GetPut :: LensPG_ m (sub s 1,v) v
 label fst GetPut = addfst (\s v -> maybe (fail "Undefined") (\ (sub s 1,_) -> return . fst) s)
 \end{spec}
 
-If there is no source available, we cannot do anything meaningful without losing generality, thus, we just throw an error.\footnote{The function |fail| is part of the Monad type class, that is, we can implement a mechanism to catch such errors.} %
+If there is no source available, we cannot do anything meaningful without losing generality, thus, we just throw an error.\footnote{The function |fail| is part of the Monad type class, thus, we can implement a mechanism to catch such errors.} %
 Otherwise, we use |fst| to select the first component of the given pair. %
 
 \begin{spec}
@@ -346,7 +346,7 @@ Otherwise, we use |fst| to select the first component of the given pair. %
 (13,"Hello World")
 \end{spec}
 
-We will discuss the actual implementation in Section \ref{sec:ImplComb} in more detail, because the Haskell library \emph{putlenses}\footnote{}, which implements the ideas of the presented paper by \cite{putCombinators}, forms the basis of an implementation in Curry that we review later.
+We will discuss the actual implementation in Section \ref{sec:ImplComb} in more detail, because the Haskell library \emph{putlenses}\footnote{\url{http://hackage.haskell.org/package/putlenses}}, which implements the ideas of the presented paper by \cite{putCombinators}, forms the basis of an implementation in Curry that we review later.
 
 % \begin{itemize}
 % \item pioneer work by \cite{biTCombinators} $\checkmark$
@@ -483,8 +483,8 @@ value im both mappings, we choose the one from the view. %
 In the end, every element in the container we used for simulation are
 replaced by their associated values according to the combined
 mapping. %
-Voigtl\"ander defines two additional functions, |bff_EQ| and
-|bff_ORD|, which use the function of the type classes |Eq| and |Ord|
+Voigtl\"ander defines two additional functions, |sub bff EQ| and
+|sub bff ORD|, which use the function of the type classes |Eq| and |Ord|
 respectively. %
 In order to apply his approach for a |get| function that duplicates
 elements, the defined mapping fails because of its simple
@@ -494,7 +494,7 @@ container need to map to the same element in the arbitrary container
 that we need for simulation. %
 In this case, we need to compare the elements within the container,
 this is where the |Eq| type class comes into play.  For the function
-|bff_Ord|, the mapping needs a similar, but rather complicated and
+|sub bff Ord|, the mapping needs a similar, but rather complicated and
 more technical, adjustment in order to allow the use of free theorems
 again. \\
 
@@ -535,12 +535,12 @@ to prove consistency conditions. %
 We discussed the syntactical bidirectionalisation, which formulates
 its derivation on the ground of the \emph{GetPut} and \emph{PutGet}
 law, in contrast, Voigtl\"ander proves, with the help of free
-theorems, for each of his function definitions, |bff|, |bff_EQ| and
-|bff_ORD|, that they obey the lens laws. %
+theorems, for each of his function definitions, |bff|, |sub bff EQ| and
+|sub bff ORD|, that they obey the lens laws. %
 That is, instead of a correctness-by-construction approach, the laws
-are verified by hand. %
+are verified by hand. \\
 
-It becomes clear that both approaches have their pros and cons,
+It becomes apparent that both approaches have their pros and cons,
 naturally, \cite{synSemComb} proposed a combination that uses the
 semantic as well as the syntactic bidirectionalisation. %
 The combined approach uses each technique for their area of expertise:

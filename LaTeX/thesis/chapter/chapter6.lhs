@@ -129,7 +129,7 @@ which covers the general idea and some insights of the transformations
 that take place during compilation. %
 As a second step, we take a closer look at these transformations and
 the usage of records. %
-The similiarity of the challenges connected to records and the
+The similarity of the challenges connected to records and the
 use-cases for lenses leads to the idea to translate record
 fields into lenses. %
 In the last subsection, we sketch the transformations from record type
@@ -141,11 +141,11 @@ KICS2 compiler. %
 
 \subsection{Record Syntax in Curry}
 In the current KICS2 implementation\citeyearpar{kics2Manual}, we can
-define types similiar to data type declarations as records in
+define types similar to data type declarations as records in
 Haskell. %
-In the remainder of this section, we call these defintions record
+In the remainder of this section, we call these definitions record
 types. %
-As an examplatory definition of a record types, we define |Person|, a
+As an explanatory definition of a record types, we define |Person|, a
 data structure that two fields, a first and a last name, and both are
 fields represented as |String|s. %
 Fields of the same type can be grouped like in the following example.
@@ -200,7 +200,7 @@ The construction without the pipe operator looks like a normal record
 definition, in combination with the pipe, we can update a record value
 that is given to the right of the operator. %
 In the example, we have a record value with two fields, but only
-one field is explicitely set to the left of the pipe operator. %
+one field is explicitly set to the left of the pipe operator. %
 Record updates allow the programmer to only write down the fields to be
 updated for a given record, all other fields remain unchanged. % 
 
@@ -283,7 +283,7 @@ The resulting modified value of type |Person| is the new value of the
 |person| field for the given contact. %
 As the record gets more and more nested, the more complex is the update
 mechanism. %
-Similiar as for the selection function, we take a try to simplify the
+Similar as for the selection function, we take a try to simplify the
 update function as well. %
 First, we define two auxiliary functions |first'| and |person'| that
 update the field corresponding to their names for a given value of
@@ -369,7 +369,7 @@ combined setter. %
    in fAB valA newB
 \end{spec} 
 
-The secod setter function |fBC :: b -> c -> b| yields a value of type
+The second setter function |fBC :: b -> c -> b| yields a value of type
 |b|, which is the same type the first setter
 function |fAB :: a -> b -> a| takes as its second argument, that is,
 we can combine the given value |valA :: a| and the result of the first
@@ -423,10 +423,10 @@ In the end, we get the following definition of |(<.>)|. %
 \end{code}
 
 The attentive reader may recognise the structure: it looks exactly
-like our primitve lens definitions from Section \todo{which
+like our primitive lens definitions from Section \todo{which
   section?}. %
 This observation leads to the idea of a new transformation of record
-declartions in Curry, which we discuss in the next subsection. %
+declarations in Curry, which we discuss in the next subsection. %
 
 \subsection{Record Transformation}
 Instead of introducing special syntactical constructs like |rec :> recField| and |{ recField := newValue || rec
@@ -463,7 +463,7 @@ first = (firstGet,firstSet)
 \end{code}
 
 As a first observation, we can rewrite the type signature of |person|
-to highlight the similiarity to the definitions above; we generalise
+to highlight the similarity to the definitions above; we generalise
 this type signature again and define a type synonym |Lens a b| for a
 less verbose type signature in future code examples. %
 
@@ -530,7 +530,7 @@ $\rightsquigarrow$ |data Rec = Rec (tau 1)| $\cdots$ |(tau k)|
 \end{tf}
 
 As a precondition for this transformation rule, we demand that the
-types, which we use in the record defintion, are known types of the
+types, which we use in the record definition, are known types of the
 given environment. %
 We denote the set of known types as $\Theta$.  Furthermore, since the
 name of the defined record type is used as the name for the generated
@@ -539,7 +539,7 @@ environment as well. %
 That is, |Rec| is neither allowed to be an element of the set of types
 $\Theta$, nor an element of the set of constructors $\Psi$. %
 
-The second transformation generates the corresponing lens function for
+The second transformation generates the corresponding lens function for
 every field of a given record. %
 
 \begin{tf}
