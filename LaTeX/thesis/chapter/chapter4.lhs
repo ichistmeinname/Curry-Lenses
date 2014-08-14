@@ -47,7 +47,7 @@ contribution to the field of bidirectional programming. %
 The authors state close connections with topics from the database
 community: lenses are a well-known abstraction in databases concerning
 tables and queries, and the \emph{update translation under a constant
-  complement}\cite{viewUpdate} tackles problems concerning
+  complement} introduced by \cite{viewUpdate} tackles problems concerning
 definedness(precision?)  and continuity, whereas the property of
 well-behaved lenses corresponds to \emph{update
   translators}\todo{citation}. %
@@ -64,9 +64,54 @@ from databases: a transformations maps a concrete structure into an
 abstract view, and maps a possibly modified abstract view together
 with the original concrete structure back to a modified concrete
 structure. %
+
 In the DSL, the user defines the forward transformation in a
 straight-forward fashion, whereas the backward transformation is the
 result of reading the definition from right to left. %
+
+The following example shows a tree with two labels, |comp1| and |comp2|, representing
+a pair, which corresponds to a pair |(42,''Hello World'')| in Haskell. %
+
+\begin{align*}
+aPair =
+\left\{ \begin{array}{l}
+  ~~\text{comp1} \rightarrow 42\\
+  ,~\text{comp2} \rightarrow  \text{"Hello World"}
+\end{array}
+\right\}
+\end{align*}
+
+As an example, we want a lens to yield the first component of the pair
+defined above. %
+We can use the predefined tree combinator |filter p d| to keep
+particular children of the tree, where |p| describes the set of names
+that we want to keep in the tree, and |d| is used for the |put|
+direction as a default value for missing information. %
+In order to choose a better-suited label name, we can use |rename m n|
+to change a label |m| to |n|. %
+As a last step, the combinator for composition, |lens1; lens2|, can be used to
+run |lens1| and |lens2| consecutively. %
+In the end, we get the following expression to extract the first
+component of a given pair.\footnote{We represent the empty
+  tree as ${}$ and the empty set as $\emptyset$ in order to
+  distinguish these two values.} %
+\begin{align*}
+& ~|get (filter {comp1} {}; rename comp1 value) aPair| \\
+=& ~|get (filter {comp1} {}; rename comp1 value)| \left\{ \begin{array}{l}
+  ~~\text{comp1} \rightarrow 42\\
+  ,~\text{comp2} \rightarrow  \text{"Hello World"}
+\end{array}
+\right\}\\
+=& ~|get (rename comp1
+value)| \left\{ \begin{array}{l}
+\text{comp1} \rightarrow 42\\
+\end{array}
+\right\}\\
+=& ~\left\{ \begin{array}{l}
+\text{value} \rightarrow 42\\
+\end{array}
+\right\}
+\end{align*}
 
 The work of Foster et al origins in the Harmony
 project\footnote{\url{https://alliance.seas.upenn.edu/~harmony/old/}}
@@ -86,7 +131,7 @@ set of lens combinators to define powerful transformations on
 strings. %
 \todo{check statements about type safety again; does only hold for
   primitive lenses; user-defined functions are only checked at run
-  time}
+  time} \\
 
 Other combinatorial approaches for lenses exist, they all focus on
 specifying a |get| function, and the appropriate |put| function is
@@ -94,42 +139,43 @@ then propagated through the definition of the used |get|
 combinators. %
 For example, \cite{pointfree} designed a proint-free DSL in Haskell,
 in which the programmer also defines the |get| transformation only. %
-\cite{putCombinators} are the first to propose to use the |put|
+\cite{putback} are the first to propose to use the |put|
 definition instead. %
 It seems quite obvious that both, the forward and the backward
 function of a bidirectional transformation, can be used for
 bidirectionalisation. %
-Nevertheless, so far, the current techniques follow the path of Foster
+Nevertheless, so far, the current techniques pursue the idea of Foster
 et al. %
 
-It becomes clear in the work of Fisher et al. that typical problems of
+In the work of Fisher et al., it becomes apparent that typical problems of
 |get| definitions are the ambiguity of the derived |put| functions. %
-That is, in several cases there is more than one appropriate |put|
+That is, in several cases it exists more than one appropriate |put|
 function to correspond with the |get| definition. %
 As we discussed before, these problems concerning ambiguity arrive
 when the defined |get| function is not injective. %
 This ambiguity can be eliminated when we define the |put| direction
 instead. %
-Fisher et al. show in their work that the appropriate |get| function
+Fisher et al. show in their work that the corresponding |get| function
 for a defined |put| function is unique if certain requirements apply
 to the |put| function. %
 They prepare their theorem with some transformations on the
 \emph{PutGet} and \emph{GetPut} laws; instead of the classical
-representation, they formulate their requirements based on the |put|
+representation, they express their requirements based on the |put|
 definition only. %
 As \cite{putback} state in their technical report, the \emph{PutGet}
-law can be reformulate as injectivity property of the |put|
+law can be reformulated as injectivity property of the |put|
 function. %
 For that purpose, let us recapitulate the \emph{PutGet} law. %
-As a first step, we can express the equation
+As a first step, we can express the equation in a more functional
+manner. %
 
 \begin{equation*}
   |get (put s v) = v|
 \end{equation*}
 
-in a more functional manner. %
 The view |v| occurs on both sides of the equation, here, eta reduction
 comes to the rescue in order to simplify the equation. %
+
 \begin{equation}\tag{PutGet'}
   |get . put s = id|
 \end{equation}
@@ -144,7 +190,7 @@ In the \emph{PutGet'} equation above, we have the function |put s :: V
 -> S| that corresponds to |f| and the counterpart |get :: S - > V| as
 the equivalent to |g|. %
 The identity function in the equation above is obviously of type |id
-:: V -> V|, because we eta-reduced the view argument |v :: V| so that
+:: V -> V|, because we eta-reduced the view argument |v :: V|, thus,
 |V| must be the resulting type as well. %
 
 In the end, we can express the identity property of the first round-
@@ -155,8 +201,8 @@ Thus, we postulate |put s| to be injective for all sources |s|. %
   |s'| \in |put s v| \wedge |s'| \in |put s v'| \Rightarrow |v = v'|
 \end{equation}
 
-Similar to the eta reduction for the \emph{GetPut} law, we can rewrite
-the \emph{PutGet} law as well. %
+Similar to the eta reduction for the \emph{PutGet} law, we can rewrite
+the \emph{GetPut} law as well. %
 It is a bit more complicated to rewrite the equation
 
 \begin{equation*}
@@ -164,9 +210,9 @@ It is a bit more complicated to rewrite the equation
 \end{equation*}
 
 because of the two usages of the variable |s|. %
-In order to simplify the equation, we need to use a pair as an
-argument, then we can apply |put| to one argument, which is function
-dependent of |s|. %
+In order to simplify the equation, we need to use a pair as
+argument, then we can apply |put| to this argument. %
+The resulting argument is a function depending on |s|. %
 The notion of using tuples instead of multiple arguments is called
 \emph{currying} and \emph{uncurrying} respectively. %
 In this case, we need to apply the function |uncurry :: (a -> b -> c)
@@ -187,14 +233,12 @@ surjective function |f :: A -> B| if and only if it exists a function
 |g :: B -> A| such that |f . g = id :: B -> B| holds. %
 
 \begin{equation}\tag{PutSurj}
-% s \in V \Rightarrow \exists v \in V: s \in put s v
 \forall |s| \in |S| ~\exists |s'| \in |S|: |put' (s', get s') = s|
 \end{equation}
 
-Actually, this equation only holds for total |put| function because
-the equation requires to be fulfilled for all values |s| in the result
+Actually, this equation only holds for total |put| function, because
+the equation requires to be fulfilled for all values |s| of the resulting
 type |S|. %
-
 Fisher et al. lay out idempotence of |`put`
 v| for all views |v| as additional requirement for well-behaved
 lenses. %
@@ -206,13 +250,60 @@ lenses. %
 Furthermore, Fisher et al. verified that there is only one |get|
 function for an arbitrary |put| function, which obeys \emph{PutInj}
 and \emph{PutTwice}\footnote{In later work of \cite{validityCheck}
-  these both properties are called \emph{PutDeterminiation} and
+  these both properties are called \emph{PutDetermination} and
   \emph{PutStability} respectively}, and this |get| function can be
 determined with the following equation.
 
 \begin{equation*}\tag{relation between |get| and |put|}
   |get s = v| \Leftrightarrow |s = put s v|
 \end{equation*}
+
+%format LensType s v  = "Lens_{" s "~\rightarrow~" v "}"
+%format LensType_ m s v  = "Lens^{" m "}_{" s "~\rightarrow~" v "}"
+
+
+As a next step, \cite{putCombinators} developed a put-based language
+in their subsequent work. %
+In this work, they present a general design of put-based language as well as an
+implementation of an embedded DSL for Haskell. %
+The main idea of the  put-based language is to provide a handfull of
+combinators, which allows two define the |put| function of a lens. %
+The |put| function of a lens defines the synchronisation strategy
+between a modified view and a given source. %
+In order to provide a wide scope of such strategies, the put-based
+language is based on functions with monadic effects. %
+A lens is represented as |type LensType_ m s v = Maybe s -> v -> m
+s|, where |m| denotes a monadic constraint. %
+Depending on the given instance of the monad, the programmer can
+influence the synchronisation behaviour. %
+For example, we can program with traditional lenses without monadic
+effects by using the |Identity| monad.
+
+\begin{code}
+data Identity a = Identity { runIdentity :: a }
+
+instance Monad Identity where
+  return valA            = Identity valA
+  (Identity valA) >>= f  = Identity (f valA)
+
+type LensType s v = LensType_ Identity s v
+\end{code}
+
+The put-based language is built upon a handfull of combinators, which
+are inspired by the combinators of Foster et al., e.g., identity and
+constant lens as well as lenses for filter, composition, products, sums and
+conditionals. %
+The language assures well-behavedness by construction, that is, all
+combinators, including composition, form well-behaved lenses and,
+thus, the composition of predefined combinators form well-behaved lenses as
+well. %
+Additionally, the Haskell library provides functions to define custom lenses. %
+Due to the lack of statical checks concerning well-behavedness, the
+user can use the function |checkGetPut| and |checkPutGet|\footnote{In
+  the associated paper, Fisher et al. use the name |enforceGetPut| instead.} to check
+for the corresponding lens laws at runtime. %
+
+
 
 % \begin{itemize}
 % \item pioneer work by \cite{biTCombinators} $\checkmark$
@@ -466,7 +557,15 @@ which can lead to better results. %
 % \end{itemize}
 
 \section{Implementation in Curry}
+
+
 \subsection{Combinatorial Lens Library}
+
+
 \subsubsection{Examples}
+
+
 \subsection{Put-Lenses Library}
+
+
 \subsubsection{Examples}

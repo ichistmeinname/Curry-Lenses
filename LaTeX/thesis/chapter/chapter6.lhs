@@ -477,7 +477,6 @@ type Lens a b = (Get a b, Set a b)
 
 %format Rec = "Rec"
 %format (label1 i) = "f_{" i "}"
-%format LensType a b = "Lens_{" a "~\rightarrow~" b "}"
 %format (get_ a) = "get_{" a "}"
 %format (set_ a) = "set_{" a "}"
 %format (sub t i) = t "_{" i "}"
