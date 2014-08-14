@@ -1,4 +1,4 @@
-\chapter{Different implementation approaches}
+\chapter{Different Implementation Approaches}\label{ch:Impl}
 
 \todo{rephrase}
 Bidirectional programming is a rising topic in the field of computer
@@ -29,7 +29,7 @@ In this context, we will discuss advantages and disadvantages of
 defining a get function and present a first proposal by
 \cite{putCombinators} to set the focus on the |put| function. %
 
-\section{Combinatorial lenses}
+\section{Combinatorial lenses}\label{sec:Comb}
 The first combinatorial technique is the pioneer work by
 \cite{biTCombinators}, who designed a domain-specific programming
 language to define bidirectional transformations on tree-structured
@@ -69,46 +69,59 @@ In the DSL, the user defines the forward transformation in a
 straight-forward fashion, whereas the backward transformation is the
 result of reading the definition from right to left. %
 
-The following example shows a tree with two labels, |comp1| and |comp2|, representing
-a pair, which corresponds to a pair |(42,''Hello World'')| in Haskell. %
+The following expressionshows a tree with two labels, |fst| and |snd|, representing
+a pair, which corresponds to a pair |(42,"Hello World")| in Haskell. %
 
 \begin{align*}
 aPair =
 \left\{ \begin{array}{l}
-  ~~\text{comp1} \rightarrow 42\\
-  ,~\text{comp2} \rightarrow  \text{"Hello World"}
+  ~~\text{fst} \rightarrow 42\\
+  ,~\text{snd} \rightarrow  \text{"Hello World"}
 \end{array}
 \right\}
 \end{align*}
 
-As an example, we want a lens to yield the first component of the pair
-defined above. %
+As an example, we define a lens that yields the first component of a
+pair, like the one we defined above. %
+Foster et al. use $\nearrow: S \Leftrightarrow V \times S \rightarrow
+V$ and $\searrow:~ S \Leftrightarrow V \times (S,B) \rightarrow S$ as
+representation for |get| and |put| functions, respectively, where $S
+\Leftrightarrow V$ is a lens with a source of type $S$ and a view of
+type $V$.\footnote{Foster et al. use $C$ and $V$ as representative
+  for the concrete and abstract value, respectively.} %
 We can use the predefined tree combinator |filter p d| to keep
 particular children of the tree, where |p| describes the set of names
 that we want to keep in the tree, and |d| is used for the |put|
 direction as a default value for missing information. %
-In order to choose a better-suited label name, we can use |rename m n|
-to change a label |m| to |n|. %
-As a last step, the combinator for composition, |lens1; lens2|, can be used to
-run |lens1| and |lens2| consecutively. %
 In the end, we get the following expression to extract the first
 component of a given pair.\footnote{We represent the empty
-  tree as ${}$ and the empty set as $\emptyset$ in order to
-  distinguish these two values.} %
+  tree as |{}| and the empty set as $\emptyset$ in order to
+  distinguish between these two values.} %
 \begin{align*}
-& ~|get (filter {comp1} {}; rename comp1 value) aPair| \\
-=& ~|get (filter {comp1} {}; rename comp1 value)| \left\{ \begin{array}{l}
-  ~~\text{comp1} \rightarrow 42\\
-  ,~\text{comp2} \rightarrow  \text{"Hello World"}
-\end{array}
-\right\}\\
-=& ~|get (rename comp1
-value)| \left\{ \begin{array}{l}
-\text{comp1} \rightarrow 42\\
+& ~|(filter {fst} {})| \nearrow |aPair| \\
+=& ~|(filter {fst} {})| \nearrow \left\{ \begin{array}{l}
+  ~~\text{fst} \rightarrow 42\\
+  ,~\text{second} \rightarrow  \text{"Hello World"}
 \end{array}
 \right\}\\
 =& ~\left\{ \begin{array}{l}
-\text{value} \rightarrow 42\\
+\text{fst} \rightarrow 42\\
+\end{array}
+\right\}
+\end{align*}
+
+As a second example, we use the same lens to change the first
+component of our pair to |13|, i.e., apply the |put| function. %
+\begin{align*}
+& ~|(filter {fst} {})| \searrow |(13,aPair)| \\
+=& ~|(filter {fst} {})| \searrow \left(|13|,~ \left\{ \begin{array}{l}
+  ~~\text{fst} \rightarrow 42\\
+  ,~\text{snd} \rightarrow  \text{"Hello World"}
+\end{array}
+\right\}\right)\\
+=& ~\left\{ \begin{array}{l}
+  ~~\text{fst} \rightarrow 13\\
+  ,~\text{snd} \rightarrow  \text{"Hello World"}
 \end{array}
 \right\}
 \end{align*}
@@ -131,7 +144,7 @@ set of lens combinators to define powerful transformations on
 strings. %
 \todo{check statements about type safety again; does only hold for
   primitive lenses; user-defined functions are only checked at run
-  time} \\
+  time}\\
 
 Other combinatorial approaches for lenses exist, they all focus on
 specifying a |get| function, and the appropriate |put| function is
@@ -260,7 +273,8 @@ determined with the following equation.
 
 %format LensType s v  = "Lens_{" s "~\rightarrow~" v "}"
 %format LensType_ m s v  = "Lens^{" m "}_{" s "~\rightarrow~" v "}"
-
+%format LensPG s v = s "~\Leftarrow~" v
+%format LensPG_ m s v = s "~\Leftarrow_{" m "}~" v
 
 As a next step, \cite{putCombinators} developed a put-based language
 in their subsequent work. %
@@ -272,22 +286,22 @@ The |put| function of a lens defines the synchronisation strategy
 between a modified view and a given source. %
 In order to provide a wide scope of such strategies, the put-based
 language is based on functions with monadic effects. %
-A lens is represented as |type LensType_ m s v = Maybe s -> v -> m
+A lens is represented as |type LensPG_ m s v = Maybe s -> v -> m
 s|, where |m| denotes a monadic constraint. %
 Depending on the given instance of the monad, the programmer can
 influence the synchronisation behaviour. %
 For example, we can program with traditional lenses without monadic
 effects by using the |Identity| monad.
 
-\begin{code}
+\begin{spec}
 data Identity a = Identity { runIdentity :: a }
 
 instance Monad Identity where
   return valA            = Identity valA
   (Identity valA) >>= f  = Identity (f valA)
 
-type LensType s v = LensType_ Identity s v
-\end{code}
+type LensPG s v = LensPG_ Identity s v
+\end{spec}
 
 The put-based language is built upon a handfull of combinators, which
 are inspired by the combinators of Foster et al., e.g., identity and
@@ -303,7 +317,36 @@ user can use the function |checkGetPut| and |checkPutGet|\footnote{In
   the associated paper, Fisher et al. use the name |enforceGetPut| instead.} to check
 for the corresponding lens laws at runtime. %
 
+We can rebuild the example given above in terms of the put-based
+language. %
+The language provides a combinator |addfst| to add a left element to
+the current source in order to create a pair. %
+\begin{spec}
+addfst :: (Maybe (sub s 1, v) -> v -> m (sub s 1)) -> LensPG_ m (sub s 1,v) v
+addfst f = enforceGetPut put'
+  where
+   put' s v = f s v >>= \(sub s 1) -> return (sub s 1,v)
+\end{spec}
 
+The first argument of |addfst| is a function to create the second component of the pair from the given source and view. %
+We can use this combinator to define a lens |label fst GetPut| that projects a
+pair to its first component. %
+\begin{spec}
+label fst GetPut :: LensPG_ m (sub s 1,v) v
+label fst GetPut = addfst (\s v -> maybe (fail "Undefined") (\ (sub s 1,_) -> return . fst) s)
+\end{spec}
+
+If there is no source available, we cannot do anything meaningful without losing generality, thus, we just throw an error.\footnote{The function |fail| is part of the Monad type class, that is, we can implement a mechanism to catch such errors.} %
+Otherwise, we use |fst| to select the first component of the given pair. %
+
+\begin{spec}
+> get (label fst GetPut) (42,"Hello World")
+42
+> put (label fst GetPut) (42,"Hello World") 13
+(13,"Hello World")
+\end{spec}
+
+We will discuss the actual implementation in Section \ref{sec:ImplComb} in more detail, because the Haskell library \emph{putlenses}\footnote{}, which implements the ideas of the presented paper by \cite{putCombinators}, forms the basis of an implementation in Curry that we review later.
 
 % \begin{itemize}
 % \item pioneer work by \cite{biTCombinators} $\checkmark$
@@ -330,7 +373,7 @@ for the corresponding lens laws at runtime. %
 
 % \end{itemize}
 
-\section{Bidirectionalisation}
+\section{Bidirectionalisation}\label{sec:bi}
 % \begin{itemize}
 % \item syntactic restraints (like variable use and nested function
 %   calls) vs polymorphic restraints and no updates to shape
@@ -421,8 +464,9 @@ Therefore, we can assume that it does not depend on any concrete
 element of its container, but only on positional information, which
 are independent of the elements values. %
 The use of free theorems allows us to inspect the effect of the |get|
-transformation without knowing about the explicit implementation.  The
-definition of |bff| simulates its first argument, i.e. the get
+transformation without knowing about the explicit implementation. %
+
+The definition of |bff| simulates its first argument, i.e. the get
 function, on an arbitrary container, like for example a list of
 |Integer| if we use |[a]| as container. %
 The container to simulate shares its shape property with the given
@@ -452,7 +496,7 @@ In this case, we need to compare the elements within the container,
 this is where the |Eq| type class comes into play.  For the function
 |bff_Ord|, the mapping needs a similar, but rather complicated and
 more technical, adjustment in order to allow the use of free theorems
-again. %
+again. \\
 
 As an enhancement of the semantic approach, \cite{semRevisited}
 presented a generalisation that extends the range of |get| function to
@@ -466,7 +510,7 @@ The approach uses these observer functions to build the mappings as in
 the original approach. %
 These mappings are called observation tables here, and generalise the
 explicite usage of different functions for different type class
-dependencies. %
+dependencies. \\
 
 As a second enhancement, \cite{biForFreeImprove} introduce a type
 class to extend the range of |get| functions to monomorphic
@@ -530,7 +574,7 @@ shape-changing update, but are covered with the combined approach,
 whereas the syntactic approach operates on specialised programs now,
 which can lead to better results. %
 
-\section{Get-Lenses vs Put-Lenses}
+\section{Get-Lenses vs Put-Lenses}\label{sec:GetVsPut}
 % Get
 % \begin{itemize}
 % \item get is intuitive
@@ -556,16 +600,16 @@ which can lead to better results. %
 % \item better suited for implementation with Curry
 % \end{itemize}
 
-\section{Implementation in Curry}
+\section{Implementation in Curry}\label{sec:Impl}
 
 
-\subsection{Combinatorial Lens Library}
+\subsection{Combinatorial Lens Library}\label{sec:ImplComb}
 
 
-\subsubsection{Examples}
+\subsubsection{Examples}\label{sec:ImplCombEx}
 
 
-\subsection{Put-Lenses Library}
+\subsection{Put-Lenses Library}\label{sec:ImplPut}
 
 
-\subsubsection{Examples}
+\subsubsection{Examples}\label{sec:ImplPutEx}

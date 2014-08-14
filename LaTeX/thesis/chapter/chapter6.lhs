@@ -475,17 +475,6 @@ person :: Lens Contact Person
 type Lens a b = (Get a b, Set a b)
 \end{spec}
 
-%format Rec = "Rec"
-%format (label1 i) = "f_{" i "}"
-%format (get_ a) = "get_{" a "}"
-%format (set_ a) = "set_{" a "}"
-%format (sub t i) = t "_{" i "}"
-%format (val (i)) =  "val_{"i "}"
-%format (v3 a b c) = "val_{" a "_{" b "\dots" c "}}"
-%format label3 a b c = "f_{" a "_{" b "\dots" c "}}"
-%format label = "f"
-%format -.- = "~\cdots~"
-
 Next, we examine the generated code a bit more. %
 As in the current transformation of record types, we generate a data
 type declaration corresponding to the record type: one value
