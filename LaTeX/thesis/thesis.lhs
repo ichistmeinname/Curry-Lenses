@@ -2,6 +2,7 @@
 %include extras/header.lhs
 %include polycode.fmt
 %include greek.fmt
+%include forall.fmt
 \arrayhs
 
 %format parse_a = "parse_a"
