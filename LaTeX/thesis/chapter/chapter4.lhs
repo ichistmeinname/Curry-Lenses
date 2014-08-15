@@ -49,7 +49,7 @@ The authors state close connections with topics from the database
 community: lenses are a well-known abstraction in databases concerning
 tables and queries, and the \emph{update translation under a constant
   complement} introduced by \cite{viewUpdate} tackles problems
-concerning definedness\todo{precision?}  and continuity, whereas the
+concerning definedness \todo{precision?} and continuity, whereas the
 property of well-behaved lenses corresponds to \emph{update
   translators}\todo{citation}. %
 
@@ -402,7 +402,7 @@ syntactically derives a put function for a given get function, whereas
 the second approach takes a more semantic approach to generate an
 appropriate put function at runtime. %
 Both techniques have their advantages and disadvantages, so that the
-authors also worked out a combined approach, which is at least as good
+authors also worked out a combined approach, which yields results at least as good
 as the better one of the two techniques. %
 
 Matsuda et al. introduce a general first-order functional language
@@ -416,32 +416,35 @@ treeless characterises function definitions without immediate data
 structures. %
 Nevertheless, VDL allows function definitions using arbitrary
 algebraic data structures, e.g., lists and trees. %
-VDL then automatically derives appropriate put functions for these
-uni-directional get functions. %
-As a first step, VDL derives a \emph{view complement function} $g: S
+The user defined uni-directional get funcions, and VDL automatically
+derives appropriate put functions. %
+The presented derivation algorithm
+is based on a similiar approach in the field of databases, but follows
+a syntactical approach, whereas the original idea is a rather semantic process. %
+As a first step, VDL derives a \emph{view complement function} $f^c: S
 \rightarrow V'$ for a get\footnote{Matsuda et. al call |get| functions
   view functions instead.} function $f: S \rightarrow V$. %
-Matsuda et. al require the view complement function $g$ to be
+Matsuda et. al require the view complement function $f^c$ to be
 injective when tupled with the view function $f$, i.e., $(f \triangle
-g)$ is injective for a get function $f$ and its complement $g$. %
+f^c)$ is injective for a get function $f$ and its complement $f^c$. %
 
 \begin{align*}
   f:&~ S \rightarrow V \tag{get function}\\
-  g:&~ S \rightarrow V' \tag{view complement function}\\
-  f ~\triangle~ g:&~ S \rightarrow (V \times V'), \tag{tupled function}\\
-  (f ~\triangle~ g)&~ |valS| = |(f valS,g valS)|
+  f^c:&~ S \rightarrow V' \tag{view complement function}\\
+  f ~\triangle~ f^c:&~ S \rightarrow (V \times V'), \tag{tupled function}\\
+  (f ~\triangle~ f^c)&~ |valS| = |(f valS,g valS)|
 \end{align*}
 As last step, an inverse transformation is performed on the pair to
 obtain the put function. %
-\[
-  |sub put (<f,g>) (s,v) = | (f ~\triangle~g)^{-1} |(v,g s)|
+\[\tag{derived put function}
+  put_{<f,f^c>} (s,v) =  (f ~\triangle~ f^c)^{-1} (v,f^c s)
 \]
 
 In the end, the put function can be derived if the paired function and
 its inverse can be derived effectively. %
 
-The authors give an algorithm to automatically derive a view complement
-function for a given get function. %
+The authors give an algorithm to automatically derive a view
+complement function for a given get function. %
 The algorithm uses so-called \emph{context notation}. %
 A context is a tree of the form $K \square_1 \cdots \square_n$, and
 such a context can be filled with expressions $e_!,\dots,e_n$, which
@@ -479,17 +482,100 @@ $y$. %
 fst^c_{get} (x,y) = B_1(y)
 \]
 
-The variable $y$ is introduced on the
-left-hand side of $fst_{get}$, but missing on the right-hand side,
-thus, the complement function remembers the missing piece, the second
-component $y$, in order to reproduce a valid pair in the put
-direction. %
+The variable $y$ is introduced on the left-hand side of $fst_{get}$,
+but missing on the right-hand side, thus, the complement function
+"remembers" the missing piece, the second component $y$, in order to
+reproduce a valid pair in the put direction. %
 As a bonus, the authors also present an improvement in order to derive
 a minimal complement function, which we do not discuss here. %
 
-\todo{Algorithm and examples for inverse transformation}
+The next step is to form a pair of the get function and its
+counterpart. %
+We can easily define this pair in an extension of VDL that allows
+tuples and local function definitions, i.e., where-clauses, but we
+have to keep the restrictions concerning treeless and affine functions
+definions in mind. %
+Let $r_i$ be a rule of a get function $f$ and its complement $r^c_i$
+of the following form. %
+\[
+f(p_1,\dots,p_n) \equiv
+K[f_1(y_{1_1},\dots,y_{1_l}),\dots,f_n(y_{n_1},\dots,y_{n_k}),
+x_1,\dots,x_m]
+\]
+\[
+f^c(p_1,\dots,p_n) \equiv
+K'[f^c_1(y_{1_1},\dots,y_{1_l}),\dots,f^c_n(y_{n_1},\dots,y_{n_k}),
+x_1,\dots,x_m]
+\]
 
-There are two details that we did not examine so far: determinism
+The algorithm constructs a rule $r^{\triangle}_i$ with fresh
+variables $t_i,t'_i$ for $i \in \{1,\dots,n\}$ used in a where-clause
+to obey the requirement concerning treelessness.
+\todo{fix latex for alignment}
+\begin{align*}
+  f^{\triangle}(p_1,\dots,p_n&) \equiv
+  (K[t_1,\dots,t_n,x_1,\dots,x_m],K'[t'_1,\dots,t'_n,x_1,\dots, x_m])\\
+  \text{\textbf{where }}\quad\quad&\\
+  (t_1,t'_1) \equiv&~
+  f^{\triangle}_1(y_{1_1},\dots,y_{1_j})\\
+  \vdots\quad\quad&\quad\quad\quad\quad\vdots\\
+  (t_n,t'_n) \equiv&~
+  f^{\triangle}_n(y_{n_1},\dots,y_{n_j'})
+\end{align*}
+
+In order to gain the complete definition for $f^{\triangle} = f
+\triangle f^c$, all rule pairs for the get function and its
+complement, respectively, have to be considered. %
+For our example get function |sub fst get|, we do not need to
+introduce local function definitions, because the rules are clear of
+function calls, and just use variables. %
+\[
+fst_{get}^{\triangle}(x,y) = fst_{get} ~\triangle~ fst_{get}^c(x,y) = (x,B_1(y))
+\]
+
+As the last step of the complement derivation, we calculate an inverse
+for the resulting pair of the previous step, i.e., $(f^{\triangle})^{-1}$. %
+Fortunately, we exactly know how a rule of $(f^{\triangle})^{-1}$
+looks like, thus, we can assume that the given rule $r^{\triangle}_i$ has the following
+form. %
+\begin{align*}
+  f^{\triangle}(p_1,\dots,p_n&) \equiv (e_1,e_2)\\
+  \text{\textbf{where }}\quad\quad&\\
+  (t_1,t'_1) \equiv&~
+  f^{\triangle}_1(y_{1_1},\dots,y_{1_j})\\
+  \vdots\quad\quad&\quad\quad\quad\quad\vdots\\
+  (t_n,t'_n) \equiv&~
+  f^{\triangle}_n(y_{n_1},\dots,y_{n_j'})
+\end{align*}
+
+In order to inverse the given rule, we swap the left-hand and the
+right-hand side of that rule and every function call needs to be
+inversed as well. %
+The inversion leads to the rule $(r^{\triangle}_i)^{-1}$, where we
+apply the inversion for every function $(f_i)^{-1}$
+recursively. %
+\begin{align*}
+  (f^{\triangle})^{-1}(e1,e2) \equiv (p_1,&\dots,p_n)\\
+  \text{\textbf{where }}\quad\quad \quad\quad \quad&\\
+  (y_{1_1},\dots,y_{1_j}) \equiv&~
+  (f^{\triangle}_1)^{-1} (t_1,t'_1)\\
+  \vdots\quad\quad&\quad\quad\quad\quad\vdots\\
+  (y_{n_1},\dots,y_{n_j}) \equiv&~
+  (f^{\triangle}_n)^{-1} (t_n,t'_n)\\
+\end{align*}
+
+When we apply this transformation to our example function
+$fst_{get}^{\triangle}$, we can finally derive the appropriate put
+function with the definition given above. %
+\begin{align*}
+(fst_{get}^{\triangle})^{-1}(x,B_1(y)) =&~ (x,y)\\
+put_{<fst_{get},fst^c_{get}>} ((x,y),v)
+=&~ (fst_{get} ~\triangle~ fst_{get}^c)^{-1} (v,fst_{get}^c (x,y))\\
+=&~ (fst_{get} ~\triangle~ fst_{get}^c)^{-1} (v,B_1(y))\\
+=&~ (v,y)
+\end{align*}
+
+There are two details that we did not examine so far: a determinism
 property for the inverse transformation and further requirements for
 the complement function. %
 The inverse transformation is not guaranteed to be deterministic, it
@@ -501,7 +587,7 @@ Furthermore, the complement, which we derive in the first step, must
 be injective and minimal with respect to a collapsing order, which
 needs to be defined. %
 Fortunately, injectivity is decidable in VDL and the proposed
-algorithm is sound and complete. %
+algorithm is sound and complete. \\
 
 On the other hand, \cite{biForFree} introduces an approach for
 semantic bidirectionalisation using free theorems to prove consistency
