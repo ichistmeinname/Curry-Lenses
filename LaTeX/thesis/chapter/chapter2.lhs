@@ -1,5 +1,7 @@
 \chapter[About Bidirectional Transformations]{About Lenses and Other Bidirectional Shenanigans}
 
+\todo{Intro}
+
 \section{Bidirectional Programming}
 Typical problems that are based on bidirectional transformations are
 handled with two separate functions. %
