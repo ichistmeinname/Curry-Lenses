@@ -534,10 +534,11 @@ fst_{get}^{\triangle}(x,y) = fst_{get} ~\triangle~ fst_{get}^c(x,y) = (x,B_1(y))
 \]
 
 As the last step of the complement derivation, we calculate an inverse
-for the resulting pair of the previous step, i.e., $(f^{\triangle})^{-1}$. %
+for the resulting pair of the previous step, i.e.,
+$(f^{\triangle})^{-1}$. %
 Fortunately, we exactly know how a rule of $(f^{\triangle})^{-1}$
-looks like, thus, we can assume that the given rule $r^{\triangle}_i$ has the following
-form. %
+looks like, thus, we can assume that the given rule $r^{\triangle}_i$
+has the following form. %
 \begin{align*}
   f^{\triangle}(p_1,\dots,p_n&) \equiv (e_1,e_2)\\
   \text{\textbf{where }}\quad\quad&\\
@@ -614,27 +615,87 @@ The approach utilises the fact that the get function is polymorphic
 over its first arguments, i.e. the container's element. %
 Therefore, we can assume that it does not depend on any concrete
 element of its container, but only on positional information, which
-are independent of the elements values. %
+are independent of the element's values. %
 The use of free theorems allows us to inspect the effect of the |get|
 transformation without knowing about the explicit implementation. %
 
 The definition of |bff| simulates its first argument, i.e. the get
 function, on an arbitrary container, like for example a list of
-|Integer| if we use |[a]| as container. %
+|Integer| if we use a polymorphic list, |[a]|, as container. %
 The container to simulate shares its shape property with the given
 container, which is the second argument of |bff|; in the example of
 lists, the simulation list and the given list need to be of the same
 length. %
 Every value in the simulated container has a corresponding value in
 the given container. %
+As an example, we take a look at a get function that selects the first
+element of a list and yields an element with just that element. %
+%
+\begin{spec}
+sub get fst :: [a] -> [a]
+(sub get fst) (x:_) = [x]
+\end{spec}%
+%
+We want to update the source |list = [Left 10, Left 12, Right True, Left 13] ::
+[Either Int Bool]| with the view |[Right False] :: [Either Int
+Bool]|. %
+
+\begin{spec}
+bff (sub get fst) [Left 10, Left 12, Right True, Left 13] [Right False]
+\end{spec}%
+%
+The |bff| function constructs a mapping for every element of the given
+list, each index position of the list is mapped to its element. %
+the given list. %
+\begin{spec}
+mapping :: [a] -> [(Int,a)]
+mapping = zip [0..]
+     -- = zip [0..] [Left 10, Left 12, Right True, Left 13]
+     -- = [(0,Left 10),(1,Left 12),(2,Right True), (3,Left 13)]
+\end{spec}%
+%
 As a second step, we get a mapping from the simulated view and the
-originally update view, when we apply the |get| function to the
-simulated and the given container respectively. %
+originally updated view, when we apply the |get| function to the
+simulated list and map the result to the given view. %
+
+\begin{spec}
+mapping2 :: ([a] -> [a]) -> [Int] -> [a] -> [(Int,a)]
+mapping2 getF = zip . getF 
+      -- = zip ((sub get fst) [0,1,2,3]) [Right False]
+      -- = zip [0] [Right False]
+      -- = (0,Right False)
+\end{spec}
+
 We combine both mappings with precedences to the second: if we find a
 value im both mappings, we choose the one from the view. %
-In the end, every element in the container we used for simulation are
-replaced by their associated values according to the combined
-mapping. %
+
+\begin{spec}
+mapping3 :: [(Int,a)] -> [(Int,a)] -> [(Int,a)] 
+mapping3 m1 m2 = zip' m1 m2
+            -- = [(0,Right False),(1, Left 12), (2, Right True), (3, Left 13)]
+
+zip' :: [a] -> [b] -> [(a,b)]
+zip'  []      []      = []
+zip'  (x:xs)  (y:ys)  | x `notElem` zs  = (x,y) : zs
+                      | otherwise       = zs
+  where
+   zs = assoc xs ys
+\end{spec}
+
+In the end, every element in the container we used for simulation is
+replaced by its associated value according to the combined mapping. %
+We can define the |bff| function given in the paper, when we glue
+together the previous steps. %
+
+\begin{spec}
+bff :: (forall a. [a] -> [a]) -> (forall a. [a] -> [a] -> [a])
+bff (sub get f) s v = map fst (mapping3 m1 m2)
+                    -- = [Right False, Left 12, Right True, Left 13]
+  where
+   m1 = mapping s
+   m2 = mapping2 (sub get f) (map fst m1) v
+\end{spec}
+
 Voigtl\"ander defines two additional functions, |sub bff EQ| and |sub
 bff ORD|, which use the function of the type classes |Eq| and |Ord|
 respectively. %
@@ -645,17 +706,20 @@ In a more practical mapping, equivalent elements in the original
 container need to map to the same element in the arbitrary container
 that we need for simulation. %
 In this case, we need to compare the elements within the container,
-this is where the |Eq| type class comes into play.  For the function
+this is where the |Eq| type class comes into play.%
+For the function
 |sub bff Ord|, the mapping needs a similar, but rather complicated and
 more technical, adjustment in order to allow the use of free theorems
 again. \\
+
+\todo{Add examples}
 
 As an enhancement of the semantic approach, \cite{semRevisited}
 presented a generalisation that extends the range of |get| function to
 higher order functions that are not expressed by type classes, or
 depend on different type classes than |Eq| and |Ord|. %
 Instead of three single functions, like in Voigtl\"ander's work, Wang
-and Najd define a |bffBy| function that takes and observer function as
+and Najd define a |bffBy| function that takes an observer function as
 first argument that gives rise to equivalence properties of the
 elements. %
 The approach uses these observer functions to build the mappings as in
