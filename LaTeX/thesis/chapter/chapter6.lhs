@@ -134,10 +134,6 @@ use-cases for lenses leads to the idea to translate record
 fields into lenses. %
 In the last subsection, we sketch the transformations from record type
 declarations into corresponding lens definitions. %
-Additionally, we give an implementation that transforms a given Curry
-module on the basis of FlatCurry as a proof of concept. %
-Furthermore, we discuss a possible implementation for the current
-KICS2 compiler. %
 
 \subsection{Record Syntax in Curry}
 In the current KICS2 implementation\citeyearpar{kics2Manual}, we can
@@ -435,8 +431,6 @@ lenses as a general mechanism. %
 As a bonus, nested records updates gain a general combinator to change
 a deep nested record field more easily. %
 
-\subsubsection{Formal Definition}
-
 In order to give a better insight about this idea, we first give the generated
 counterpart for the record definition of the beginning of the
 section as Curry code.  %
@@ -594,5 +588,3 @@ For every record field |label1 i|, we generate a lens function |label1
 i| in two steps: first, we define two local functions |label1 (get_
 u)| and |label1 (set_ i)| and combine them to a pair of getter and
 setter function, i.e. a lens, in a second step. %
-
-\subsubsection{FlatCurry Transformation}
