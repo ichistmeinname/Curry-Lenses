@@ -282,6 +282,7 @@ influence the synchronisation behaviour. %
 For example, we can program with traditional lenses without monadic
 effects by using the |Identity| monad.
 
+\label{IdentityMonad}%
 \begin{spec}
 data Identity a = Identity { runIdentity :: a }
 
@@ -682,18 +683,17 @@ zip'  (x:xs)  (y:ys)  | x `notElem` zs  = (x,y) : zs
    zs = assoc xs ys
 \end{spec}
 
-In the end, every element in the container we used for simulation is
+As last step, every element in the container we used for simulation is
 replaced by its associated value according to the combined mapping. %
-We can define the |bff| function given in the paper, when we glue
-together the previous steps. %
+With all the ground prepared, we can define the |bff| function given in the paper. %
 
 \begin{spec}
 bff :: (forall a. [a] -> [a]) -> (forall a. [a] -> [a] -> [a])
-bff (sub get f) s v = map fst (mapping3 m1 m2)
+bff (sub get f) s v = map (fromJust .flip lookup (mapping3 m1 m2)) m1
                     -- = [Right False, Left 12, Right True, Left 13]
   where
    m1 = mapping s
-   m2 = mapping2 (sub get f) (map fst m1) v
+   m2 = mapping2 (sub get f) (map snd m1) v
 \end{spec}
 
 Voigtl\"ander defines two additional functions, |sub bff EQ| and |sub
@@ -707,9 +707,9 @@ container need to map to the same element in the arbitrary container
 that we need for simulation. %
 In this case, we need to compare the elements within the container,
 this is where the |Eq| type class comes into play.%
-For the function
-|sub bff Ord|, the mapping needs a similar, but rather complicated and
-more technical, adjustment in order to allow the use of free theorems
+For the function |sub bff Ord|, the mapping needs a similar, but
+rather complicated and more technical, adjustment in order to allow
+the use of free theorems
 again. \\
 
 \todo{Add examples}
@@ -728,24 +728,142 @@ These mappings are called observation tables here, and generalise the
 explicite usage of different functions for different type class
 dependencies. \\
 
+\todo{rephrase}
 As a second enhancement, \cite{biForFreeImprove} introduce a type
 class to extend the range of |get| functions to monomorphic
 transformations. %
 The main idea is to provide a type class |PackM delta alpha mu| to
 convert polymorphic functions into monomorphic ones. %
+
+\begin{spec}
+class (Pack delta alpha, Monad mu) => PackM delta alpha mu where
+  liftIO :: Eq beta => ([delta] -> beta) -> [alpha] -> mu beta
+class Pack delta alpha | alpha -> delta where
+  new :: delta -> alpha
+\end{spec}
+
 The type variable |delta| represents the type of the concrete data
 structure, whereas |alpha| is the type of the abstracted value. %
 The last type variable |mu| is the used monad, which tracks the
 observation made by the transformation on values of the concrete
 structure. %
+The additional type class |Pack delta alpha| constructs labels to
+track information regarding the location of values within the concrete
+structure. %
 In short, the approach replaces monomorphic values in the definition
 of the |get| function with polymorphic values. %
 These polymorphic values are constructed from the original monomorphic
 values. %
-In contrast to the original approach, equal values in the original
-container are not mapped to the same values in the simulated version,
-that is, the authors consider a more traditional positional mapping. %
+In order to execute a function in its get direction, the following
+function is given, which is specialised for lists but any other
+polymorphic data type is possible as well. %
 
+\begin{spec}
+instance Pack delta (Identity delta) where
+  new = Identity
+
+instance PackM delta (Identity delta) Identity where
+  liftIO p x = Identity (p (map runIdentity x))
+
+fwd :: (forall alpha. forall mu . PackM delta alpha mu => [alpha] -> mu [alpha]) -> [delta] -> [delta]
+fwd h s =  let Identity v = h (fmap Identity s)
+           in fmap runIdentity v
+\end{spec}
+
+In the get direction, we do not want to track any information about
+the mapping of abstract and concrete values, thus, the underlying
+monad is instantiated to the Identity monad\footnote{See Section
+  \ref{IdentityMonad} for the definition of the Identity monad.}. %
+
+In order to derive the put direction for a given function, the
+approach tracks information about the location of the source values
+when applying the get function, these information are stored in so
+called observation history. %
+Together with an updated view, we construct an update, which must be
+consistent with the observation history. %
+The following data type is given to track the location. %
+
+\begin{spec}
+data Loc alpha = { body :: alpha, location :: Maybe Int }
+\end{spec}
+
+If a put function inserts a new value during the update, there is no
+location information for this value in the source; therefore, we model the assigned
+location to be optional within the view structure, i.e. |Maybe Int|. %
+The observation history is also modelled as a data structure; the
+structure depends on an observation function, a list of arguments and a
+resulting value. %
+
+\begin{spec}
+data Result alpha = forall beta . Eq beta => Result ([alpha] -> beta) -> [alpha] -> beta
+\end{spec}
+
+Additionally, the authors use a writer monad to actually track the
+observation history. %
+In order to lift a function and its list of arguments
+into the |PackM| monad, the writer monad keeps track of this
+observation function and its arguments, and yields the application of
+the function and the list as result. %
+
+\begin{spec}
+data Writer eta beta = Writer { runWriter :: (beta, Result [eta]) }
+
+instance Monad (Writer alpha) where
+  return x = Writer (x, [])
+  Writer (x,h1) >>= f = let Writer (y,sub h 2) = f x
+                   in Writer (y,sub h 1 ++ sub h 2)
+
+instance PackM delta (Loc delta) (Writer (Loc delta)) where
+  liftIO p x = Writer (p' x, [Result p' x])
+    where p' = p . map body
+\end{spec}
+
+Last but not least, the actual update function needs to be defined. %
+Similar to the original apporach, we have a mapping between the
+original list and their index position in that list. %
+In addition, we deal with location information for a given element. %
+Thus, we lookup the given position in the mapping and change the
+element for the location information, if we do find a match; otherwise
+we do not change the given information. %
+
+\begin{spec}
+update :: [(Int,delta)] -> Loc delta -> Loc delta
+update upd (Loc x Nothing)   = Loc x Nothing
+update upd (Loc x (Just i))  = maybe  (Loc x (Just i))
+                                      (flip Loc (Just i))
+                                      (lookup i upd)
+\end{spec}
+
+We construct the mapping with a list of location information and the given source list. %
+The implementation requires both lists to be of the same size,
+otherwise the function fails because of a shape mismatch. %
+If the two lists have the same size, we create a mapping between the
+elements of the source list and its index in corresponding location
+information. %
+The mapping needs to be consistent, if the same element occurs
+repeatedly, each occurs needs to map to the same location as before;
+otherwise the construction fails because of inconsistency. %
+
+\begin{spec}
+matchViews :: Eq delta => [Loc delta] -> [delta] -> [(Int,delta)]
+matchViews locVs vs
+  | length locVs vs  = makeUpd (zip locVs vs)
+  | otherwise        = error "Shape mismatch"
+
+makeUpd =
+  foldr  (\(Loc x i, y) u ->
+            maybe  ((i,y) : u)
+            (\y' -> if y == y' then u else error "Inconsistent Update")
+            (lookup i u))
+         []
+\end{spec}
+
+\todo{Add round up and example}
+
+\todo{Check implementation regarding usage of writer monad and liftIO implementation}
+
+
+\todo{Add examples}\\
 In addition, the semantic bidirectionalisation uses free theorems also
 to prove consistency conditions. %
 We discussed the syntactical bidirectionalisation, which formulates
