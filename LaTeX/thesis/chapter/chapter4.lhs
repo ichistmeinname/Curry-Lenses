@@ -96,6 +96,7 @@ In the end, we get the following expression to extract the first
 component of a given pair.\footnote{We represent the empty tree as
   |{}| and the empty set as $\emptyset$ in order to distinguish
   between these two values.} %
+\label{filter:fstGet}
 \begin{align*}
   & ~|(filter {fst} {})| \nearrow |aPair| \\
   =& ~|(filter {fst} {})| \nearrow \left\{ \begin{array}{l}
@@ -111,6 +112,7 @@ component of a given pair.\footnote{We represent the empty tree as
 
 As a second example, we use the same lens to change the first
 component of our pair to |13|, i.e., apply the |put| function. %
+\label{filter:fstPut}
 \begin{align*}
   & ~|(filter {fst} {})| \searrow |(13,aPair)| \\
   =& ~|(filter {fst} {})| \searrow \left(|13|,~
@@ -288,7 +290,7 @@ data Identity a = Identity { runIdentity :: a }
 
 instance Monad Identity where
   return valA          = Identity valA
-  Identity valA >>= f  = Identity (f valA)
+  Identity valA >>= f  = f valA
 
 type LensPG s v = LensPG_ Identity s v
 \end{spec}
@@ -728,139 +730,233 @@ These mappings are called observation tables here, and generalise the
 explicite usage of different functions for different type class
 dependencies. \\
 
-\todo{rephrase}
 As a second enhancement, \cite{biForFreeImprove} introduce a type
 class to extend the range of |get| functions to monomorphic
 transformations. %
 The main idea is to provide a type class |PackM delta alpha mu| to
-convert polymorphic functions into monomorphic ones. %
-
+convert monomorphic functions into polymorphic ones.\footnote{The following code needs several langue extension to run accordingly: Rank2Types, MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, ExistentialQuantification, FlexibleContexts.} %
+%
 \begin{spec}
 class (Pack delta alpha, Monad mu) => PackM delta alpha mu where
-  liftIO :: Eq beta => ([delta] -> beta) -> [alpha] -> mu beta
+  liftO :: Eq beta => ([delta] -> beta) -> [alpha] -> mu beta
 class Pack delta alpha | alpha -> delta where
   new :: delta -> alpha
-\end{spec}
-
+\end{spec}%
+%
 The type variable |delta| represents the type of the concrete data
 structure, whereas |alpha| is the type of the abstracted value. %
-The last type variable |mu| is the used monad, which tracks the
-observation made by the transformation on values of the concrete
-structure. %
+The last type variable |mu| is the used monad, which tracks the transformation on values of the concrete
+structure called; this tracking data is called observation history. %
 The additional type class |Pack delta alpha| constructs labels to
 track information regarding the location of values within the concrete
 structure. %
 In short, the approach replaces monomorphic values in the definition
-of the |get| function with polymorphic values. %
-These polymorphic values are constructed from the original monomorphic
-values. %
-In order to execute a function in its get direction, the following
-function is given, which is specialised for lists but any other
+of the |get| function, which are, for example, used for comparisons,
+with polymorphic values. %
+The following function is quite similar to Example \ref{filter:fstGet}, but it is defined on lists instead of trees; it selects the first element
+with a label named |"fst"| from the given list. %
+%
+\begin{spec}
+(sub get fst) :: [String] -> [String]
+(sub get fst) (v:vs)
+  | v == "fst"  = [v]
+  | otherwise   = (sub get fst) vs
+\end{spec}%
+%
+In order to execute such a function in its get direction, the authors define a special
+function with |PackM| context. %
+The following definition works on lists but any other
 polymorphic data type is possible as well. %
-
+%
 \begin{spec}
 instance Pack delta (Identity delta) where
   new = Identity
 
 instance PackM delta (Identity delta) Identity where
-  liftIO p x = Identity (p (map runIdentity x))
+  liftO p x = Identity (p (map runIdentity x))
 
-fwd :: (forall alpha. forall mu . PackM delta alpha mu => [alpha] -> mu [alpha]) -> [delta] -> [delta]
-fwd h s =  let Identity v = h (fmap Identity s)
+get :: (forall alpha. forall mu . PackM delta alpha mu => [alpha] -> mu [alpha]) -> [delta] -> [delta]
+get h s =  let Identity v = h (fmap Identity s)
            in fmap runIdentity v
-\end{spec}
-
+\end{spec}%
+%
 In the get direction, we do not want to track any information about
 the mapping of abstract and concrete values, thus, the underlying
 monad is instantiated to the Identity monad\footnote{See Section
   \ref{IdentityMonad} for the definition of the Identity monad.}. %
-
-In order to derive the put direction for a given function, the
-approach tracks information about the location of the source values
-when applying the get function, these information are stored in so
-called observation history. %
-Together with an updated view, we construct an update, which must be
-consistent with the observation history. %
-The following data type is given to track the location. %
+%
+\begin{spec}
+(sub get fst) :: (forall alpha. PackM String alpha mu) => [alpha] -> mu [(String,alpha)]
+(sub get fst) (v:vs) = do
+   b <- liftO2 (\v -> fst v ==) v (new "fst")
+   if b  then return [v]
+         else (sub get fst) vs
+  where
+   liftO2 p x y = liftO (\[x,y] -> p x y) [x,y]
+\end{spec}%
+%
+For rewritten version of the get function, we can apply the get function to an example list. %
+In order to get a better insight of the ongoing operation, we evaluate the following expression with more intermediate steps. %
+%
+\begin{spec}
+sub get example  = get (sub get fst) ["tree","fst","snd"]
+                 = fmap   runIdentity 
+                          (runIdentity ((sub get fst) (fmap  Identity
+                                                             ["tree", "fst", "snd"])))
+                 = fmap runIdentity (runIdentity (Identity [Identity "fst"]))
+                 = ["fst"]
+\end{spec}%
+%
+For the put direction, the approach constructs polymorphic values from the original monomorphic
+values, and does not instantiate type variables when used in
+comparisons in order to fulfill the requirements to use free theorems. %
+Like in the original approach, we first construct a mapping to track
+information about the location of the source values when applying the
+get function. %
 
 \begin{spec}
-data Loc alpha = { body :: alpha, location :: Maybe Int }
+data Loc alpha = Loc { body :: alpha, location :: Maybe Int }
+
+assignLocs :: [delta] -> [Loc delta]
+assignLocs xs = zipWith (\x i -> Loc x (Just i)) xs [0..]
+
+instance Pack delta (Loc delta) where
+  new x = Loc x Nothing
 \end{spec}
 
-If a put function inserts a new value during the update, there is no
-location information for this value in the source; therefore, we model the assigned
-location to be optional within the view structure, i.e. |Maybe Int|. %
-The observation history is also modelled as a data structure; the
-structure depends on an observation function, a list of arguments and a
-resulting value. %
-
+Here, the location is stored in a self-defined data structure, where
+every element of the list is mapped to its index. %
+Additionally, if a put function inserts a new value during the update,
+there is no location information for this value in the source;
+therefore, the author model the assigned location to be optional
+within the view structure, i.e. |Maybe Int|. %
+%
 \begin{spec}
-data Result alpha = forall beta . Eq beta => Result ([alpha] -> beta) -> [alpha] -> beta
-\end{spec}
+sub assign example  = assignLocs ["tree","fst","snd"]
+                    = [Loc "tree" (Just 0), Loc "fst" (Just 1), Loc "snd" (Loc 2)]
+\end{spec}%
+%
 
 Additionally, the authors use a writer monad to actually track the
 observation history. %
 In order to lift a function and its list of arguments
-into the |PackM| monad, the writer monad keeps track of this
-observation function and its arguments, and yields the application of
-the function and the list as result. %
-
+into the |PackM| type class, the writer monad keeps track of this
+observation function and its arguments, which are unwrapped from the |Loc| data type first. %
+The relevant observation history is also modelled as a data structure; the
+structure depends on an observation function, a list of arguments and
+a resulting value. %
+%
 \begin{spec}
-data Writer eta beta = Writer { runWriter :: (beta, Result [eta]) }
+data Result alpha = forall beta . Eq beta => Result ([alpha] -> beta) [alpha] beta
+
+data Writer eta beta = Writer { runWriter :: (beta, [Result eta]) }
 
 instance Monad (Writer alpha) where
   return x = Writer (x, [])
-  Writer (x,h1) >>= f = let Writer (y,sub h 2) = f x
-                   in Writer (y,sub h 1 ++ sub h 2)
+  Writer (x,sub res 1) >>= f =
+    let Writer (y,sub res 2) = f x
+    in Writer (y,sub res 1 ++ sub res 2)
 
 instance PackM delta (Loc delta) (Writer (Loc delta)) where
-  liftIO p x = Writer (p' x, [Result p' x])
+  liftO p x = Writer (p' x, [Result p' x (p' x)])
     where p' = p . map body
-\end{spec}
-
-Last but not least, the actual update function needs to be defined. %
-Similar to the original apporach, we have a mapping between the
-original list and their index position in that list. %
-In addition, we deal with location information for a given element. %
-Thus, we lookup the given position in the mapping and change the
-element for the location information, if we do find a match; otherwise
-we do not change the given information. %
-
+\end{spec}%
+%
+Next, we apply the get function to the mapping with the associated locations in the writer monad to track all information. %
+%
 \begin{spec}
-update :: [(Int,delta)] -> Loc delta -> Loc delta
-update upd (Loc x Nothing)   = Loc x Nothing
-update upd (Loc x (Just i))  = maybe  (Loc x (Just i))
-                                      (flip Loc (Just i))
-                                      (lookup i upd)
-\end{spec}
-
-We construct the mapping with a list of location information and the given source list. %
+sub writer example  = (sub get fst) (sub assign example)
+                    = (sub get fst)  [Loc "tree" (Just 0), Loc "fst" (Just 1)
+                                     , Loc "snd" (Loc 2)]
+                    = Writer   ([Loc "fst" (Just 1)]
+                               ,[  Result  (\ [x,y] -> x == y)
+                                           [Loc "tree" (Just 0), Loc "fst" Nothing]
+                                           False
+                               ,  Result  (\ [x,y] -> x == y)
+                                          [Loc "fst" (Just 1), Loc "fst" Nothing]
+                                          True])
+\end{spec}%
+%
+With the generated list of location information for the source and the updated view, we construct a new mapping. %
 The implementation requires both lists to be of the same size,
 otherwise the function fails because of a shape mismatch. %
 If the two lists have the same size, we create a mapping between the
 elements of the source list and its index in corresponding location
 information. %
 The mapping needs to be consistent, if the same element occurs
-repeatedly, each occurs needs to map to the same location as before;
+repeatedly, each occurrence needs to map to the same location as before;
 otherwise the construction fails because of inconsistency. %
-
+%
 \begin{spec}
 matchViews :: Eq delta => [Loc delta] -> [delta] -> [(Int,delta)]
 matchViews locVs vs
   | length locVs vs  = makeUpd (zip locVs vs)
   | otherwise        = error "Shape mismatch"
 
-makeUpd =
-  foldr  (\(Loc x i, y) u ->
-            maybe  ((i,y) : u)
+makeUpd :: Eq delta => [(Loc delta, delta)] -> [(Int,delta)]
+makeUpd = foldr f []
+ where
+  f (Loc x (Just i), y) u =
+     maybe  ((i,y) : u)
             (\y' -> if y == y' then u else error "Inconsistent Update")
-            (lookup i u))
-         []
+            (lookup i u)
+  f (Loc x Nothing, y) u  | x == y     = u
+                          | otherwise  = error "Update of Constant"
+\end{spec}
+%
+
+In our example, the only element of the updated view is matched with its previous occurence in the5 source list, yielding the following new mapping. %
+
+\begin{spec}
+sub matchViews example  =  let Writer (vs,res) = (sub writer example)
+                           in matchViews vs ["newFst"]
+                        = makeUpd (zip [Loc "fst" (Just 1)] ["newFst"])
+                        = [(1,"newFst")]
+\end{spec}%
+%
+Last but not least, we actually want to execute the update. %
+Similar to the original apporach, we have a mapping between the
+original list and their index position in that list. %
+In addition, we deal with the location information for a given element. %
+Thus, we lookup the given position in the mapping and change the
+element for the corresponding location information if we do find a match; otherwise
+we do not change the given information. %
+%
+\begin{spec}
+update :: [(Int,delta)] -> Loc delta -> Loc delta
+update upd (Loc x Nothing)   = Loc x Nothing
+update upd (Loc x (Just i))  = maybe  (Loc x (Just i))
+                                      (flip Loc (Just i))
+                                      (lookup i upd)
+\end{spec}%
+%
+This update function is important to check the observation history for consistency, and to run the actual modifaction on the source. %
+In the final version of the appropriate put function, we use the previous defined functions, and finally, update the given source list, if the history check succeeds. %
+%
+\begin{spec}
+put :: Eq delta => (forall alpha. forall mu. PackM delta alpha mu => [alpha] -> mu [alpha])
+                -> [delta]
+                -> [delta]
+                -> [delta]
+put h s v
+   | checkHist (update upd) hist  = fmap (body . update upd) locs
+   | otherwise                    = error "Inconsistent History"
+  where
+   locs                = assignLocs s
+   Writer (res, hist)  = h locs
+   upd                 = matchViews res v
+   checkHist updF      = all (\ (Result p xs r) -> p (map updF xs) == r)
 \end{spec}
 
-\todo{Add round up and example}
+At the end, we apply this polymorphic put function to our monomorphic get function to update a source for a given view. %
+In order to round up the ongoing example, we update the source list |["tree","fst","snd"]| to |["newFst"]|. %
+\begin{spec}
+sub put fst  = put (sub get fst) ["tree","fst","snd"] ["newFst"]
+               = fmap (body . update [(1,"newFst")]) [Loc "tree" (Just 0), Loc "fst" (Just 1), Loc "snd" (Loc 2)]
+--               = error "Inconsistent History"
+\end{spec}
 
-\todo{Check implementation regarding usage of writer monad and liftIO implementation}
+\todo{Change example because it throws a run time error ("inconsistent history")}
 
 
 \todo{Add examples}\\
