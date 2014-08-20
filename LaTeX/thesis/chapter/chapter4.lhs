@@ -714,35 +714,19 @@ rather complicated and more technical, adjustment in order to allow
 the use of free theorems
 again. \\
 
-\todo{Add examples}
-
-As an enhancement of the semantic approach, \cite{semRevisited}
-presented a generalisation that extends the range of |get| function to
-higher order functions that are not expressed by type classes, or
-depend on different type classes than |Eq| and |Ord|. %
-Instead of three single functions, like in Voigtl\"ander's work, Wang
-and Najd define a |bffBy| function that takes an observer function as
-first argument that gives rise to equivalence properties of the
-elements. %
-The approach uses these observer functions to build the mappings as in
-the original approach. %
-These mappings are called observation tables here, and generalise the
-explicite usage of different functions for different type class
-dependencies. \\
-
-As a second enhancement, \cite{biForFreeImprove} introduce a type
+As an enhancement of the semantic approach, \cite{biForFreeImprove} introduce a type
 class to extend the range of |get| functions to monomorphic
 transformations. %
 The main idea is to provide a type class |PackM delta alpha mu| to
 convert monomorphic functions into polymorphic ones.\footnote{The following code needs several langue extension to run accordingly: Rank2Types, MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, ExistentialQuantification, FlexibleContexts.} %
-%
+
 \begin{spec}
 class (Pack delta alpha, Monad mu) => PackM delta alpha mu where
   liftO :: Eq beta => ([delta] -> beta) -> [alpha] -> mu beta
 class Pack delta alpha | alpha -> delta where
   new :: delta -> alpha
-\end{spec}%
-%
+\end{spec}
+
 The type variable |delta| represents the type of the concrete data
 structure, whereas |alpha| is the type of the abstracted value. %
 The last type variable |mu| is the used monad, which tracks the transformation on values of the concrete
@@ -755,58 +739,65 @@ of the |get| function, which are, for example, used for comparisons,
 with polymorphic values. %
 The following function is quite similar to Example \ref{filter:fstGet}, but it is defined on lists instead of trees; it selects the first element
 with a label named |"fst"| from the given list. %
-%
+
 \begin{spec}
 (sub get fst) :: [String] -> [String]
+(sub get fst) []     = []
 (sub get fst) (v:vs)
   | v == "fst"  = [v]
   | otherwise   = (sub get fst) vs
-\end{spec}%
-%
+\end{spec}
+
 In order to execute such a function in its get direction, the authors define a special
 function with |PackM| context. %
 The following definition works on lists but any other
 polymorphic data type is possible as well. %
-%
+
 \begin{spec}
 instance Pack delta (Identity delta) where
   new = Identity
 
 instance PackM delta (Identity delta) Identity where
-  liftO p x = Identity (p (map runIdentity x))
+  liftO p x     = Identity (p (map runIdentity x))
 
-get :: (forall alpha. forall mu . PackM delta alpha mu => [alpha] -> mu [alpha]) -> [delta] -> [delta]
+get  :: (forall alpha. forall mu . PackM delta alpha mu
+     => [alpha] -> mu [alpha])
+     -> [delta]
+     -> [delta]
 get h s =  let Identity v = h (fmap Identity s)
            in fmap runIdentity v
-\end{spec}%
-%
+\end{spec}
+
 In the get direction, we do not want to track any information about
 the mapping of abstract and concrete values, thus, the underlying
 monad is instantiated to the Identity monad\footnote{See Section
   \ref{IdentityMonad} for the definition of the Identity monad.}. %
-%
+Our example get function needs to be rewritten in order to obey the |PackM| context. %
+That is, the check needs to be lifted into the |PackM| type class and because of the underlying monad, we need to wrap our result into a monadic value as well. %
+
 \begin{spec}
-(sub get fst) :: (forall alpha. PackM String alpha mu) => [alpha] -> mu [(String,alpha)]
-(sub get fst) (v:vs) = do
-   b <- liftO2 (\v -> fst v ==) v (new "fst")
-   if b  then return [v]
-         else (sub get fst) vs
-  where
-   liftO2 p x y = liftO (\[x,y] -> p x y) [x,y]
-\end{spec}%
-%
-For rewritten version of the get function, we can apply the get function to an example list. %
+(sub get fst) :: forall alpha mu beta . PackM (String,beta) alpha mu => [alpha] -> mu [alpha]
+(sub get fst) [] = return []
+(sub get fst) (val:vs) = do   
+   b <- liftO2 (\x y -> fst x == fst y) val (new ("fst",undefined))
+   if b  then return [val]
+         else getFst vs
+
+liftO2 p x y  = liftIO (\ [x,y] -> p x y) [x,y]
+\end{spec}
+
+For the rewritten version of the get function, we can apply the it to an example list |[("fst",13),("snd",21)]|. %
 In order to get a better insight of the ongoing operation, we evaluate the following expression with more intermediate steps. %
-%
+
 \begin{spec}
-sub get example  = get (sub get fst) ["tree","fst","snd"]
+sub get example  = get (sub get fst) [("fst",13),("snd",21)]
                  = fmap   runIdentity 
                           (runIdentity ((sub get fst) (fmap  Identity
-                                                             ["tree", "fst", "snd"])))
-                 = fmap runIdentity (runIdentity (Identity [Identity "fst"]))
-                 = ["fst"]
-\end{spec}%
-%
+                                                             [("fst",13), ("snd",21)])))
+                 = fmap runIdentity (runIdentity (Identity [Identity ("fst",21)]))
+                 = [("fst",21)]
+\end{spec}
+
 For the put direction, the approach constructs polymorphic values from the original monomorphic
 values, and does not instantiate type variables when used in
 comparisons in order to fulfill the requirements to use free theorems. %
@@ -818,7 +809,7 @@ get function. %
 data Loc alpha = Loc { body :: alpha, location :: Maybe Int }
 
 assignLocs :: [delta] -> [Loc delta]
-assignLocs xs = zipWith (\x i -> Loc x (Just i)) xs [0..]
+assignLocs xs = zipWith (\ x i -> Loc x (Just i)) xs [0..]
 
 instance Pack delta (Loc delta) where
   new x = Loc x Nothing
@@ -830,12 +821,11 @@ Additionally, if a put function inserts a new value during the update,
 there is no location information for this value in the source;
 therefore, the author model the assigned location to be optional
 within the view structure, i.e. |Maybe Int|. %
-%
+
 \begin{spec}
-sub assign example  = assignLocs ["tree","fst","snd"]
-                    = [Loc "tree" (Just 0), Loc "fst" (Just 1), Loc "snd" (Loc 2)]
-\end{spec}%
-%
+sub assign example  = assignLocs [("fst",17),("snd",21)]
+                    = [Loc ("fst",17) (Just 0), Loc ("snd",21) (Loc 1)]
+\end{spec}
 
 Additionally, the authors use a writer monad to actually track the
 observation history. %
@@ -845,7 +835,7 @@ observation function and its arguments, which are unwrapped from the |Loc| data 
 The relevant observation history is also modelled as a data structure; the
 structure depends on an observation function, a list of arguments and
 a resulting value. %
-%
+
 \begin{spec}
 data Result alpha = forall beta . Eq beta => Result ([alpha] -> beta) [alpha] beta
 
@@ -860,23 +850,21 @@ instance Monad (Writer alpha) where
 instance PackM delta (Loc delta) (Writer (Loc delta)) where
   liftO p x = Writer (p' x, [Result p' x (p' x)])
     where p' = p . map body
-\end{spec}%
-%
+\end{spec}
+
 Next, we apply the get function to the mapping with the associated locations in the writer monad to track all information. %
-%
+
 \begin{spec}
-sub writer example  = (sub get fst) (sub assign example)
-                    = (sub get fst)  [Loc "tree" (Just 0), Loc "fst" (Just 1)
-                                     , Loc "snd" (Loc 2)]
-                    = Writer   ([Loc "fst" (Just 1)]
-                               ,[  Result  (\ [x,y] -> x == y)
-                                           [Loc "tree" (Just 0), Loc "fst" Nothing]
-                                           False
-                               ,  Result  (\ [x,y] -> x == y)
-                                          [Loc "fst" (Just 1), Loc "fst" Nothing]
-                                          True])
+Writer (sub upd example,sub history example)  =
+   (sub get fst) (sub assign example)
+=  (sub get fst)  [ Loc ("fst",17) (Just 0)
+                  , Loc ("snd",21) (Loc 1)]
+= Writer   ([Loc ("fst",17) (Just 0)]
+           ,[Result  (\ [x,y] -> x == y)
+                     [Loc ("tree",13) (Just 0), Loc "fst" Nothing]
+                     True])
 \end{spec}%
-%
+
 With the generated list of location information for the source and the updated view, we construct a new mapping. %
 The implementation requires both lists to be of the same size,
 otherwise the function fails because of a shape mismatch. %
@@ -886,7 +874,7 @@ information. %
 The mapping needs to be consistent, if the same element occurs
 repeatedly, each occurrence needs to map to the same location as before;
 otherwise the construction fails because of inconsistency. %
-%
+
 \begin{spec}
 matchViews :: Eq delta => [Loc delta] -> [delta] -> [(Int,delta)]
 matchViews locVs vs
@@ -898,22 +886,21 @@ makeUpd = foldr f []
  where
   f (Loc x (Just i), y) u =
      maybe  ((i,y) : u)
-            (\y' -> if y == y' then u else error "Inconsistent Update")
+            (\ y' -> if y == y' then u else error "Inconsistent Update")
             (lookup i u)
   f (Loc x Nothing, y) u  | x == y     = u
                           | otherwise  = error "Update of Constant"
 \end{spec}
-%
 
-In our example, the only element of the updated view is matched with its previous occurence in the5 source list, yielding the following new mapping. %
+In our example, the element of the updated view is matched with its previous occurence in the5 source list, yielding the following new mapping. %
 
 \begin{spec}
 sub matchViews example  =  let Writer (vs,res) = (sub writer example)
-                           in matchViews vs ["newFst"]
-                        = makeUpd (zip [Loc "fst" (Just 1)] ["newFst"])
-                        = [(1,"newFst")]
-\end{spec}%
-%
+                           in matchViews vs [("fst",42)]
+                        = makeUpd (zip [Loc "fst" (Just 0)] [("fst",42)])
+                        = [(0,("fst",42))]
+\end{spec}
+
 Last but not least, we actually want to execute the update. %
 Similar to the original apporach, we have a mapping between the
 original list and their index position in that list. %
@@ -921,23 +908,20 @@ In addition, we deal with the location information for a given element. %
 Thus, we lookup the given position in the mapping and change the
 element for the corresponding location information if we do find a match; otherwise
 we do not change the given information. %
-%
+
 \begin{spec}
 update :: [(Int,delta)] -> Loc delta -> Loc delta
 update upd (Loc x Nothing)   = Loc x Nothing
 update upd (Loc x (Just i))  = maybe  (Loc x (Just i))
                                       (flip Loc (Just i))
                                       (lookup i upd)
-\end{spec}%
-%
+\end{spec}
+
 This update function is important to check the observation history for consistency, and to run the actual modifaction on the source. %
 In the final version of the appropriate put function, we use the previous defined functions, and finally, update the given source list, if the history check succeeds. %
-%
+
 \begin{spec}
-put :: Eq delta => (forall alpha. forall mu. PackM delta alpha mu => [alpha] -> mu [alpha])
-                -> [delta]
-                -> [delta]
-                -> [delta]
+put :: Eq delta => (forall alpha. forall mu. PackM delta alpha mu => [alpha] -> mu [alpha]) -> [delta] -> [delta] -> [delta]
 put h s v
    | checkHist (update upd) hist  = fmap (body . update upd) locs
    | otherwise                    = error "Inconsistent History"
@@ -949,26 +933,35 @@ put h s v
 \end{spec}
 
 At the end, we apply this polymorphic put function to our monomorphic get function to update a source for a given view. %
-In order to round up the ongoing example, we update the source list |["tree","fst","snd"]| to |["newFst"]|. %
+In order to round up the ongoing example, we update the source list
+|[("fst",17),("snd",21)]| with the modified view |[("fst", 42)]|. %
+
 \begin{spec}
-sub put fst  = put (sub get fst) ["tree","fst","snd"] ["newFst"]
-               = fmap (body . update [(1,"newFst")]) [Loc "tree" (Just 0), Loc "fst" (Just 1), Loc "snd" (Loc 2)]
---               = error "Inconsistent History"
+(sub put fst)  = put (sub get fst) [("fst",17),("snd",21)] [("fst",42)]
+               = if   checkHist  (update (sub upd example))
+                                 (sub history example)
+                      then fmap (body . update (sub upd example)) (sub assign example)
+                      else error "Inconsistent History"
+               = fmap  (body . update [(1,("fst",42))])
+                       [ Loc ("fst",17) (Just 0)
+                       , Loc ("snd",21) (Just 1) ]
+               = [("fst",42),("snd",21)]
 \end{spec}
 
-\todo{Change example because it throws a run time error ("inconsistent history")}
 
-
-\todo{Add examples}\\
-In addition, the semantic bidirectionalisation uses free theorems also
-to prove consistency conditions. %
-We discussed the syntactical bidirectionalisation, which formulates
-its derivation on the ground of the \emph{GetPut} and \emph{PutGet}
-law, in contrast, Voigtl\"ander proves, with the help of free
-theorems, for each of his function definitions, |bff|, |sub bff EQ|
-and |sub bff ORD|, that they obey the lens laws. %
-That is, instead of a correctness-by-construction approach, the laws
-are verified by hand. \\
+As a second enhancement, \cite{semRevisited}
+presented a generalisation that extends the range of |get| function to
+higher order functions that are not expressed by type classes, or
+depend on different type classes than |Eq| and |Ord|. %
+Instead of three single functions, like in Voigtl\"ander's work, Wang
+and Najd define a |bffBy| function that takes an observer function as
+first argument that gives rise to equivalence properties of the
+elements. %
+The approach uses these observer functions to build the mappings as in
+the original approach. %
+These mappings are called observation tables here, and generalise the
+explicite usage of different functions for different type class
+dependencies. \\
 
 It becomes apparent that both approaches have their pros and cons,
 naturally, \cite{synSemComb} proposed a combination that uses the
@@ -1003,6 +996,15 @@ The semantic bidirectionalisation on its own has difficulties in
 shape-changing update, but are covered with the combined approach,
 whereas the syntactic approach operates on specialised programs now,
 which can lead to better results. %
+In addition, the semantic bidirectionalisation uses free theorems also
+to prove consistency conditions. %
+We discussed the syntactical bidirectionalisation, which formulates
+its derivation on the ground of the \emph{GetPut} and \emph{PutGet}
+law, in contrast, Voigtl\"ander proves, with the help of free
+theorems, for each of his function definitions, |bff|, |sub bff EQ|
+and |sub bff ORD|, that they obey the lens laws. %
+That is, instead of a correctness-by-construction approach, the laws
+are verified by hand. \\
 
 \section{Get-Lenses vs Put-Lenses}\label{sec:GetVsPut}
 % Get
