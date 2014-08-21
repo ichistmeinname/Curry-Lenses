@@ -408,6 +408,7 @@ Both techniques have their advantages and disadvantages, so that the
 authors also worked out a combined approach, which yields results at least as good
 as the better one of the two techniques. %
 
+\subsection{Syntactic Bidirectionalisation}
 Matsuda et al. introduce a general first-order functional language
 called \emph{VDL}. %
 Their language has two syntactical restrictions, which we have to keep in
@@ -593,6 +594,7 @@ needs to be defined. %
 Fortunately, injectivity is decidable in VDL and the proposed
 algorithm is sound and complete. \\
 
+\subsection{Semantic Bidirectionalisation}
 On the other hand, \cite{biForFree} introduces an approach for
 semantic bidirectionalisation using free theorems to prove consistency
 conditions. %
@@ -663,10 +665,18 @@ simulated list and map the result to the given view. %
 
 \begin{spec}
 mapping2 :: ([a] -> [a]) -> [Int] -> [a] -> [(Int,a)]
-mapping2 getF = zip . getF 
-      -- = zip ((sub get fst) [0,1,2,3]) [Right False]
-      -- = zip [0] [Right False]
+mapping2 getF = zip' . getF 
+      -- = zip' ((sub get fst) [0,1,2,3]) [Right False]
+      -- = zip' [0] [Right False]
       -- = (0,Right False)
+  where
+   zip' :: [Int] -> [a] -> [(Int,a)]
+   zip' []      _      = []
+   zip' _       []     = []
+   zip' (i:is)  (x:xs)  | isNothing (i `lookup` zs)  = (i,x) : zs
+                        | otherwise                  = zs
+    where
+     zs = zip' is xs
 \end{spec}
 
 We combine both mappings with precedences to the second: if we find a
@@ -674,15 +684,14 @@ value im both mappings, we choose the one from the view. %
 
 \begin{spec}
 mapping3 :: [(Int,a)] -> [(Int,a)] -> [(Int,a)] 
-mapping3 m1 m2 = zip' m1 m2
+mapping3 m1 m2 = union' m1 m2
             -- = [(0,Right False),(1, Left 12), (2, Right True), (3, Left 13)]
 
-zip' :: [a] -> [b] -> [(a,b)]
-zip'  []      []      = []
-zip'  (x:xs)  (y:ys)  | x `notElem` zs  = (x,y) : zs
-                      | otherwise       = zs
-  where
-   zs = assoc xs ys
+union' :: [(i,a)] -> [(i,a)] -> [(i,a)]
+union'  xs            []      = xs
+union'  []            ys      = ys
+union'  (x@(i,_):xs)  ys  | isNothing (i `lookup` ys)  = (x,y) : union' xs ys
+                          | otherwise                  = union' xs ys
 \end{spec}
 
 As last step, every element in the container we used for simulation is
@@ -708,13 +717,153 @@ In a more practical mapping, equivalent elements in the original
 container need to map to the same element in the arbitrary container
 that we need for simulation. %
 In this case, we need to compare the elements within the container,
-this is where the |Eq| type class comes into play.%
+this is where the |Eq| type class comes into play. %
 For the function |sub bff Ord|, the mapping needs a similar, but
 rather complicated and more technical, adjustment in order to allow
 the use of free theorems
 again. \\
 
-As an enhancement of the semantic approach, \cite{biForFreeImprove} introduce a type
+\subsubsection[Generalisation to Higher-Order Functions]{Generalisation for the Three Functions |bff|, |sub bff EQ| and |sub bff ORD|}
+
+As an enhancement for semantic bidirectionalisation, \cite{semRevisited}
+presented a generalisation that extends the range of |get| function to
+higher-order functions that are not expressed by type classes, or
+depend on different type classes than |Eq| and |Ord|. %
+Instead of three single functions, like in Voigtl\"ander's work, Wang
+and Najd define a function
+%format (sup a n) = "\bar{" a "}^{" n "}"
+\[
+|bffBy  :: (forall a. (sup a n) -> [a] -> [a]) -> (sup a n -> Bool) -> (sup i n -> Bool) -> ([a] -> [a] -> [a])|
+\]
+\todo{search for better alternatives regarding overline and bar}
+that takes an observer function as
+second argument that gives rise to equivalence properties of the
+elements; the third argument is an observer function for the simulated source.\footnote{In their paper, Wang and Najd define a more general observer functions |obs :: sup x n -> Z|, where |Z| is an arbitrary, but monomorphic type.
+For simplicity reasons, we omit the generality and use |Bool|, as we do not want to distinguish uppercase and lowercase type variables like in the paper.
+Furthermore, we use the same abbreviation as Wang Najd in their paper and write |f :: sup a n| for a function |f :: |$~\underbrace{|a -> ... -> a|}_\text{n-times}$ with |n| repetitions of the type |a|.}
+The approach uses these observer functions to build the mappings as in
+the original approach. %
+These mappings are called observation tables here, and generalise the
+explicite usage of different functions for different type class
+dependencies. %
+
+As a first modification to the original approach, instead of mapping
+between indices and elements of a list, the map just hold two copies
+of each element. %
+That is, the original and its copy form a pair, where the first
+component stays constant and the second one is used for updates. %
+
+\begin{spec}
+sub mapping by :: [a] -> ([a],[a])
+(sub mapping by) m = zip m m
+\end{spec}
+
+This approach has the advantage, that we can use the equivalence function
+for both components of the pair and do not need to adjust the function
+to work on |Integer|, which are introduced for the mapping in the
+original approach.\footnote{This modification is used for functions with an |Eq| or |Ord| type class context, i.e., for cases where we would use |sub bff EQ| and |sub bff ORD|, respectively, in the original approach. For all other cases, i.e., when we use |bff|, the mapping is build as in the orignal approach.} %
+
+Similiar to before, the next step simulates the get function on the
+source list, and creates a new mapping with the resulting view and the
+given updated view. %
+
+\begin{spec}
+sub mapping2 by :: (a -> a -> Bool) -> (i -> i -> Bool) -> [i] -> [a] -> [(a,a)]
+(sub mapping2 by) eqA eqI is as
+   |  length is == length as =
+       if and [not (i `eqI` j) or (x `eqA'` y) | (i,x) <- zs, (j,y) <- zs]
+         then zs
+         else error "Inconsistent update!"
+  where
+   zs = zip is as
+\end{spec}
+
+The first and second argument are equivalence functions; the first function compares the elements of the actual source list and the other function is used for comparisions on the keys of the given mapping. %
+In the case of the used mapping function |sub mapping by|, we do not need to dinstinguish between these functions. %
+The important step for the new approach is to check the resulting map in regard to the so-called \emph{Map Invariant}. %
+This invariant says that a valid map `zs :: [(i,x)]` must satisfy the following property for two observer functions |f :: sup x n -> Bool| and |g :: sup i n -> Bool|. %
+
+\begin{align*}
+\forall (i_1, x_1) \dots (i_n,x_n) \in zs. f x_1 \dots x_n \equiv i_1 \dots i_n \tag{Map Invariant}
+\end{align*}
+
+The invariant requires all pairs of the given map to be equal in regard to the two observer function. %
+In particular, depending on the arity of the observer functions, all combinations of pairs in the map have to fulfill this property. %
+In order to check the invariant property for our map, we define a function to apply two given observer functions according to the defintion above. %
+
+\begin{spec}
+checkInv :: (sup a n -> Bool) -> (sup i n -> Bool) -> [(i,a)] -> [(i,a)]
+checkInv f g zs  | all check (sub comb n) = zs
+                 | otherwise              = error "Invariant broken!"
+ where
+  (sub comb n) = nub (map (take n) (permutations zs))
+  check ys =  let (is,as) = unzip ys
+              in (sub uncurry n) f ((sub tuple n) as) == (sub uncurry n) g ((sub tuple n) is)
+\end{spec}
+
+Here, |sub comb n| is a list of all combinations of pairs in the given map, |sub uncurry n| is a function to uncurry a |n|-th tuple, and |sub tuple n| is the corresponding function to convert a list into an |n|-th tuple; we omit the definitions for brevity. %
+Furthermore, we combine both mappings with precedences to the second one, like in the original approach. %
+We combine two pairs of the given maps if the used keys, i.e., the first components, are equal with regard to the given equivalence function. %
+For the overall definition, we have to keep in mind to check the map invariant for the result as well. 
+
+\begin{spec}
+sub mapping3 by :: (i -> i -> Bool) -> [(i,a)] -> [(i,a)] -> [(i,a)]
+(sub mapping3 by) eqI m1 m2 = unionBy' eqI m1 m2
+
+unionBy' :: (i -> i -> Bool) -> [(i,a)] -> [(i,a)] -> [(i,a)]
+unionBy' _    xs            []  = xs
+unionBy' _    []            ys  = ys
+unionBy' eqI  (x@(i,_):xs)  ys
+    | not (all (i `eqI`) ys)  = x : unionBy' eqI xs ys
+    | otherwise               = unionBy' eqI xs ys
+\end{spec}
+
+There are still some missing parts that we need to discuss, like the locally defined equality functions |eqA|, |eqI|. %
+Najd and Weng present three different equality functions, where each function has its own dis- and advantages. %
+They distinguish between observable, structura, and physical equivalence and we refer to their paper for further study. %
+As mentiond before, in our example we do not distinguish between keys and values of the given map, that is, we only need to define the equality function for the values of the source and use it for the keys as well. %
+
+Additionally, we need to adapt the |lookup| function that was used in the original approach to select the final values for the updated source. %
+We lookup the values with regard to the given equality function for the keys of the map. %
+
+\begin{spec}
+lookupBy :: (i -> i -> Bool) -> [(i,a)] -> i -> Maybe a
+lookupBy _ []         _  = Nothing
+lookupBy p ((j,x):xs) i
+  | p i j      = Just x
+  | otherwise  = lookupBy p xs i
+\end{spec}
+
+In the end, we can derive a corresponding put function with the following definition. %
+
+\begin{spec}
+(sub bff by) getBy f g s v = map (lookupBy eqI m3) is
+   where
+    is = map fst m1
+    m1 = mapping1 s
+    m2 = checkInv f g (mapping2 eqA eqI (getBy f is) v)
+    m3 = checkInv f g (mapping3 eqI m1 m2)
+    eqA = undefined
+    eqI = eqA
+\end{spec}
+
+In order to round up this approach, we examine the usage of the |bffBy| function for physical equivalence, i.e., |eqA (i,x) (j,y) = i == x && (j,y)|. %
+
+\begin{spec}
+bffBy  filter
+       ((== "fst") . fst)
+       ((== "fst") . fst)
+       [("snd",17),("fst",13)]
+       [("fst",42)]
+  = map (lookupBy ((== "fst") . fst) m3 [("snd",17),("fst",13)]
+     where m3 =  [  (("snd",17),("snd",17))
+                 ,  (("fst",13),("fst",42)) ]
+  = [("snd",17),("fst",42)]
+\end{spec}
+
+\subsubsection{Adaption for Monomorphic Functions}
+
+As a second enhancement, \cite{biForFreeImprove} introduce a type
 class to extend the range of |get| functions to monomorphic
 transformations. %
 The main idea is to provide a type class |PackM delta alpha mu| to
@@ -829,12 +978,15 @@ sub assign example  = assignLocs [("fst",17),("snd",21)]
 
 Additionally, the authors use a writer monad to actually track the
 observation history. %
-In order to lift a function and its list of arguments
-into the |PackM| type class, the writer monad keeps track of this
-observation function and its arguments, which are unwrapped from the |Loc| data type first. %
+In order to lift a function to be an observer function, the writer monad keeps track of the
+function and its arguments, which are unwrapped from the |Loc| data type first. %
 The relevant observation history is also modelled as a data structure; the
 structure depends on an observation function, a list of arguments and
-a resulting value. %
+and the resulting value for the application of the function to its arguments. %
+That way, each result can be checked, when the update is executed in a
+later step, if an updated value does not confirm to the observation
+history, the update fails. %
+
 
 \begin{spec}
 data Result alpha = forall beta . Eq beta => Result ([alpha] -> beta) [alpha] beta
@@ -852,7 +1004,14 @@ instance PackM delta (Loc delta) (Writer (Loc delta)) where
     where p' = p . map body
 \end{spec}
 
-Next, we apply the get function to the mapping with the associated locations in the writer monad to track all information. %
+As a next step, we apply the get function to our dummy list with the
+locations associated to the original source elements. %
+This time, the underlying monad is not the Identity, but the Writer
+monad we just defined, thus, we can track all relevant information
+regarding the observation function. %
+In our example, we only track the the first element because the
+remaining elements are not even touched, hence, we can be sure that
+they do not change during the update. %
 
 \begin{spec}
 Writer (sub upd example,sub history example)  =
@@ -865,7 +1024,8 @@ Writer (sub upd example,sub history example)  =
                      True])
 \end{spec}%
 
-With the generated list of location information for the source and the updated view, we construct a new mapping. %
+We use the generated list of location information for the source and the
+updated view, i.e. |sub upd example|, as a new mapping. %
 The implementation requires both lists to be of the same size,
 otherwise the function fails because of a shape mismatch. %
 If the two lists have the same size, we create a mapping between the
@@ -892,7 +1052,7 @@ makeUpd = foldr f []
                           | otherwise  = error "Update of Constant"
 \end{spec}
 
-In our example, the element of the updated view is matched with its previous occurence in the5 source list, yielding the following new mapping. %
+In our example, the element of the updated view is matched with its previous occurences in the source list, yielding the following new mapping. %
 
 \begin{spec}
 sub matchViews example  =  let Writer (vs,res) = (sub writer example)
@@ -901,13 +1061,14 @@ sub matchViews example  =  let Writer (vs,res) = (sub writer example)
                         = [(0,("fst",42))]
 \end{spec}
 
-Last but not least, we actually want to execute the update. %
+With the updated mapping and the observation history in mind, we actually want to execute the update. %
 Similar to the original apporach, we have a mapping between the
-original list and their index position in that list. %
-In addition, we deal with the location information for a given element. %
-Thus, we lookup the given position in the mapping and change the
-element for the corresponding location information if we do find a match; otherwise
-we do not change the given information. %
+original list and their index position in that list, |sub assign example|. %
+In addition, we have the history with the location information for
+some elements. %
+Thus, we lookup the given position in the mapping, and change the
+element for the corresponding location information if we do find a
+match; otherwise the information remains unchanged. %
 
 \begin{spec}
 update :: [(Int,delta)] -> Loc delta -> Loc delta
@@ -929,10 +1090,20 @@ put h s v
    locs                = assignLocs s
    Writer (res, hist)  = h locs
    upd                 = matchViews res v
-   checkHist updF      = all (\ (Result p xs r) -> p (map updF xs) == r)
 \end{spec}
 
-At the end, we apply this polymorphic put function to our monomorphic get function to update a source for a given view. %
+The history check first applies the update to the underlying value
+and then runs the observation function for the possibly changed value
+and its arguments. %
+The resulting value must be the same
+as the one stored in the history. %
+
+\begin{spec}
+checkHist :: (Loc delta -> Loc delta) -> [Loc delta] -> Bool
+checkHist updF = all (\ (Result p xs r) -> p (map updF xs) == r)
+\end{spec}
+
+At the end, we can apply this polymorphic put function to our monomorphic get function to update a source for a given view. %
 In order to round up the ongoing example, we update the source list
 |[("fst",17),("snd",21)]| with the modified view |[("fst", 42)]|. %
 
@@ -946,22 +1117,9 @@ In order to round up the ongoing example, we update the source list
                        [ Loc ("fst",17) (Just 0)
                        , Loc ("snd",21) (Just 1) ]
                = [("fst",42),("snd",21)]
-\end{spec}
+\end{spec}%
 
-
-As a second enhancement, \cite{semRevisited}
-presented a generalisation that extends the range of |get| function to
-higher order functions that are not expressed by type classes, or
-depend on different type classes than |Eq| and |Ord|. %
-Instead of three single functions, like in Voigtl\"ander's work, Wang
-and Najd define a |bffBy| function that takes an observer function as
-first argument that gives rise to equivalence properties of the
-elements. %
-The approach uses these observer functions to build the mappings as in
-the original approach. %
-These mappings are called observation tables here, and generalise the
-explicite usage of different functions for different type class
-dependencies. \\
+\subsection[Combined Approach]{Combining Semantic and Syntactic Bidirectionalisation}
 
 It becomes apparent that both approaches have their pros and cons,
 naturally, \cite{synSemComb} proposed a combination that uses the
