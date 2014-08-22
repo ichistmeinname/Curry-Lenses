@@ -2,12 +2,13 @@
 	latex,%              PDFTex verwenden
 	a4paper,%             A4 Papier
 	twoside,%             Einseitig
+        openright,%           freilassen der Seite
 	chapterprefix,%       Kapitel anschreiben als Kapitel
 	headsepline,%         Linie nach Kopfzeile
 	%footsepline,%         Linie vor Fusszeile
 	%pointlessnumbers,%     Nummern ohne abschließenden Punkt
 	10pt
-]{scrbook}
+]{scrreprt}
 %
 % Paket für Übersetzungen ins Deutsche
 %
