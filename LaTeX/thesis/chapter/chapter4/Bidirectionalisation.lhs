@@ -348,7 +348,7 @@ again. \\
 \subsubsection[Generalisation to Higher-Order Functions]{Generalisation for the Three Functions |bff|, |sub bff EQ| and |sub bff ORD|}
 
 As an enhancement for semantic bidirectionalisation,
-\cite{semRevisited} presented a generalisation that extends the range
+\citet{semRevisited} presented a generalisation that extends the range
 of |get| function to higher-order functions that are not expressed by
 type classes, or depend on different type classes than |Eq| and
 |Ord|. %
@@ -396,12 +396,11 @@ the original approach.\footnote{This modification is used for
   the mapping is build as in the orignal approach.} %
 
 Similar to before, the next step simulates the get function on the
-source list, and creates a new mapping with the resulting view and the
-given updated view. %
+source list, and creates a new mapping with the resulting view and the updated view. %
 
-%format eqA = "(sub eq a)"
-%format eqI = "(sub eq i)"
-%format unionBy' = "(sub union' by)"
+%format eqA = "eq_{a}"
+%format eqI = "eq_{i}"
+%format unionBy' = "union_{by}"
 \begin{spec}
 sub mapping2 by :: (a -> a -> Bool) -> (i -> i -> Bool) -> [i] -> [a] -> [(a,a)]
 (sub mapping2 by) eqA eqI is as
