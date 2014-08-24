@@ -31,8 +31,8 @@ A bidirectional transformations does not consist of two functions like
 in the unidirectional way, but of one function, that can be read
 forward and backward. %
 In literature, we distinguish between a forward function |get :: A ->
-B|, and a backward function |put :: B -> A|; |A| is most
-commonly called the source and |B| is the view, this naming convention
+B|, and a backward function |put :: B -> A|; |A| is most commonly
+called the source and |B| is the view, this naming convention
 originates from applications in databases. %
 This two functions form, in the easiest approach, an bijection from
 |A| to |B| and back. %
@@ -40,10 +40,7 @@ In the next section, we discuss lenses, a more general approach of
 bidirectional transformation, which, additionally, are one of the most
 popular forms in bidirectional programming. %
 
-\begin{itemize}
-\item the view update problem
-\item status quo \cite{biPApproaches}
-\end{itemize}
+\todo{status quo \cite{biPApproaches}}
 
 \section{Lenses}
 Lenses describe bidirectional transformations that originate in
@@ -101,11 +98,9 @@ definition of |put| above. %
 In the following, we will only consider asymmetric lenses in a
 detailed manner. %
 For an detailed introduction to symmetric lenses, consider to take a
-lookt at the work of \cite{symmLenses}. %
+look at the work of \cite{symmLenses}. %
 
-\begin{itemize}
-\item state vs operation-based
-\end{itemize}
+\todo{state vs operation-based}
 
 \subsection{Laws}
 
@@ -120,41 +115,42 @@ that we just put in. %
 |get (put s v) = v|
 \end{equation}
 
-This law is called \emph{PutGet}, which is read from right to left,
+This law is called \emph{PutGet}, which is read from left to right,
 since we first |put| a new value in our source and then try to |get|
 it out again. %
 
-As an example, let us take a look at bidirectional transformation with
-a pair of |String| and |Integer| as the domain of the source, and
+As an example, let us take a look at a bidirectional transformation
+with a pair of |String| and |Integer| as the domain of the source, and
 |String| as the view's domain. %
-In order to define an appropriate |get| function, we need a get function of type |(String,Integer) -> String|. %
-In Haskell, or Curry, it already exist a function with such an type, namely
-|fst|. %
+In order to define an appropriate |get| function, we need a get
+function of type |(String,Integer) -> String|. %
+In Haskell, or Curry, it already exist a function with such an type,
+namely |fst|. %
 
 \begin{code}
-  (sub get fst) :: (String,Integer) -> String
-  (sub get fst) (str,int) = str
+  (sub fst get) :: (String,Integer) -> String
+  (sub fst get) (str,int) = str
 \end{code}
 
-Our function |get| yields the first component of a pair with no
-further changes or adjustments to the value; this definition is equivalent to
-|fst|. %
+Our function |sub fst get| yields the first component of a pair with
+no further changes or adjustments to the value; this definition is
+equivalent to |fst|. %
 The put function has the form |put :: (String,Integer) -> String ->
 (String,Integer)|; we define a function that sets the first component
 of a pair with a given string without further ado. %
 
 \begin{code}
-  (sub put fst) :: (String,Integer) -> String -> (String,Integer)
-  (sub put fst) (str,int) newStr = (newStr,int)
+  (sub fst put) :: (String,Integer) -> String -> (String,Integer)
+  (sub fst put) (str,int) newStr = (newStr,int)
 \end{code}
 
 In order to test the \emph{PutGet} law, we first run the functions on
 example values. %
 
 \begin{spec}
-  > (sub put fst) ("foo",42)
+  > (sub fst put) ("foo",42)
   "bar" ("bar",42)
-  > (sub get fst) ("bar",42)
+  > (sub fst get) ("bar",42)
   "bar"
 \end{spec}
 
@@ -163,23 +159,25 @@ according to the law for every initial value and additional string. %
 
 \begin{proof}
 For all $w$, $v$ and $v'$, where $(v,w)$ is of type |(String,Integer)|
-and $v'$ is of type |String|, it holds |(sub get fst) ((sub put fst) (v,w) v') = v'|. %
+and $v'$ is of type |String|, it holds |(sub fst get) ((sub fst put) (v,w) v') = v'|. %
 \def\commentbegin{\quad\{\ } \def\commentend{\}}
 \begin{spec}
-  (sub get fst) (put (v,w) v')
-== {- definition of |(sub put fst)| -}
-   (sub get fst) (v',w)
-== {- definition of |(sub get fst)| -}
+  (sub fst get) (put (v,w) v')
+== {- definition of |(sub fst put)| -}
+   (sub fst get) (v',w)
+== {- definition of |(sub fst get)| -}
   v'
 \end{spec}
 \end{proof}
 
 In addition to the \emph{PutGet} law, lenses are also supposed to
 fulfil a second round-tripping criteria. %
-The \emph{GetPut} law states that if we get a view out of a source
-and put it back again, the source does not change at all, as if
-nothing happend. %
-This law can be interpreted as a stability property, that is, a lens is stabil if nothing \emph{magical} happens during an update or a selection. %
+The \emph{GetPut} law states that if we get a view out of a source and
+put it back again, the source does not change at all, as if nothing
+happend. %
+This law can be interpreted as a stability property, that is, a lens
+is stabil if nothing \emph{magical} happens during an update or a
+selection. %
 
 \begin{equation}\tag{GetPut}
 |put s (get s) = s|
@@ -224,23 +222,6 @@ bidirectional programming and lenses, a lens is called
 \emph{well-behaved} if both laws, the \emph{GetPut} and the
 \emph{PutGet} law, hold. %
 
-There is also a third lens law, which is called \emph{PutPut}. %
-A lens satisfies the \emph{PutPut} law if we run two consecutively
-|put| operations on a source with two different views, but only the
-second |put| matters. %
-That is, we can formulate this law with the following equation.  %
-
-\begin{equation}\tag{PutPut}
-|put (put s v) v' = put s v'|
-\end{equation}
-
-In most applications, the \emph{PutPut} does not play an important
-role, because the preconditions are too strong. %
-That is, plenty of constructive well-behaved lens are not very
-well-behaved. %
-
-\todo{Examples}
-
 Furthermore, more and more frameworks for bidirectional
 transformations and bidirectional programming languages, respectively,
 endorse a weaker notion of the presented \emph{PutGet} and
@@ -249,31 +230,60 @@ In our current notion of the laws, we only consider total |get| and
 total |put| functions. %
 In practice, most of the time we do not want to work with total
 functions only. %
-For example, the classical function |head :: [a] -> [a]| to select the first element of the list is only partially, because we can not select an element for the empty list. % 
-An equivalent lens definition consists of a get and put function, which we define as follows. %
+For example, the classical function |head :: [a] -> [a]| to select the
+first element of the list is only partially, because we can not select
+an element for the empty list. %
+We can define a lens that uses |head| as definition for its get
+direction. %
+In order to form a lens, we need a put function as well: the put
+direction replaces the head element of the given list with a new
+element. %
 
 \begin{spec}
-(sub head get) :: [a] -> a
-(sub head get) []      = error "head is undefined for empty lists"
-(sub head get) (x:xs)  = x
+(sub get head) :: [a] -> a
+(sub get head) []      = error "head is undefined for empty lists"
+(sub get head) (x:xs)  = x
 
-(sub head put) :: [a] -> a -> [a]
-(sub head put) []      y = [y]
-(sub head put) (_:xs)  y = y:xs
+(sub put replaceHead) :: [a] -> a -> [a]
+(sub put replaceHead) []      y = [y]
+(sub put replaceHead) (_:xs)  y = y:xs
 \end{spec}
 
-The given definition for the put direction is total, thus, we can observe the expected behaviour. %
-Nevertheless, the given lens does not fulfil the GetPut law. %
+The given definition for the put direction is total, thus, we can
+observe the expected behaviour. %
+In addition, we make some test function calls to check if the given
+lens definition is reasonable in regard to the lens laws. %
 
 \begin{spec}
-> (sub head put) [1,2,3,4,5] 42
+> (sub put replaceHead) [1,2,3,4,5] 42
 [42,2,3,4,5]
 
-> (sub head put) [] ((sub head get) [])
-"head is undefined for empty lists"
+> (sub put replaceHead) [] 13
+[13]
 
-> (sub head put) [11,13,15] ((sub head get) [11,13,15])
-[11,13,15]
+> (sub get head) ((sub put replaceHead) [1,2,3,4,5] 10)
+10
+
+> (sub get head) ((sub put replaceHead) [] 23)
+23
+
+> (sub put replaceHead) [1,2,3,4] ((sub get head) [1,2,3,4])
+[1,2,3,4]
+\end{spec}
+
+The first two test expressions show the behaviour of |sub head put|;
+it becomes apparent that |sub head put| never yields an empty list as
+result. %
+Thus, the GetPut law obviously holds for all possible values. %
+The last expression is a an example with a non-empty lists, where the
+PutGet holds as well. %
+However, the get direction of the just defined lens, i.e. |head|, is
+not defined for empty lists. %
+Thus, the given lens does not fulfil the GetPut law for empty lists. %
+
+\begin{spec}
+> (sub put replaceHead) [] ((sub get head) [])
+"head is undefined for empty lists"
 \end{spec}
 
 In order to use partial lenses like proposed by \cite{biTProperties},
@@ -292,6 +302,118 @@ does not need to be checked and the rule trivially holds. %
 \begin{equation}\tag{Partial-GetPut}
 \dfrac{|(get s)|\downarrow}{|put s (get s) = s|}
 \end{equation}
+
+In our example, we check if |(sub get head)| is defined for
+the given source first.
+
+\begin{spec}
+> (sub get head) []
+"head is undefined for empty lists"
+\end{spec}
+
+Since this is not the case, we do not apply the put direction, because
+the condition only needs to be satisfied, if the first application
+yields a valid result. %
+Thus, the lens consisting of |sub get head| and |sub put replaceHead|
+is a valid lens with respect to the GetPut and PutGet-Partial law. %
+
+As a second example, we define a lens with a put function that is
+similar to the well-known function |take :: Int -> [a] -> [a]| and a
+corresponding get function, which behaves like the function |length ::
+[a] -> Int| in Haskell and Curry, respectively. %
+
+\begin{spec}
+(sub put take) []      _  = []
+(sub put take) (x:xs)  n
+   | n == 0               = []
+   | otherwise            = x : (sub put take) xs (n-1)
+(sub put take) _       _  = error "take fails for negative values"
+
+(sub get length) []      = 0
+(sub get length) (x:xs)  = 1 + (sub get length) xs
+\end{spec}
+
+As a minor adjustment, we define |sub put take| on positive |Integer|
+values only to harmonise better with |sub get length|. %
+Similar as before, we can observe that |sub get length| only yields
+positive |Integer| values as result, thus, the GetPut law holds
+trivially for non-empty and empty lists. %
+
+\begin{spec}
+> (sub get length) [1,2,3,4]
+4
+
+> (sub put take) [1,2,3,4,5] 3
+[1,2,3]
+
+> (sub put take) [1,2,3,4] ((sub get length) [1,2,3,4])
+[1,2,3,4]
+
+> (sub put take) [] ((sub get length) [])
+[]
+\end{spec}
+
+Due to the partial definition of |sub put take|, the defined lens does
+not fulfil the PutGet law as we can see from the following
+expressions. %
+
+\begin{spec}
+> (sub get length) ((sub put take) -3 [1,2,3])
+"take fails for negative values"
+
+> (sub put take) -1 []
+"take fails for negative values"
+\end{spec}
+
+Nevertheless, our second example is a valid lens with respect to GetPut and
+PutGet-Partial. \\
+
+
+There is also a third lens law, which is called \emph{PutPut}. %
+A lens satisfies the \emph{PutPut} law if we run two consecutively
+|put| operations on a source with two different views, but only the
+second |put| matters. %
+That is, we can formulate this law with the following equation.  %
+
+\begin{equation}\tag{PutPut}
+|put (put s v) v' = put s v'|
+\end{equation}
+
+In most applications, the \emph{PutPut} does not play an important
+role, because the preconditions are too strong. %
+That is, plenty of constructive well-behaved lens are not very
+well-behaved. %
+For example the last lens we defined changes the source list
+dependent on the given view element, thus, two consecutive calls to
+the put function with different view values yield different results. %
+
+\begin{spec}
+> (sub put take) ((sub put take) [1,2,3,4,5] 1) 3
+[1]
+
+> (sub put take) [1,2,3,4,5] 3
+[1,2,3]
+
+> (sub put take) [1,2,3,4,5] 1
+[1]
+
+> (sub put take) [1] 3
+[1]
+\end{spec}
+
+In the test expression, we start with the list |[1,2,3,4,5]| and
+reduce it to just the first element, i.e., |(sub put take) [1,2,3,4,5]
+1| yields [1]. %
+The second application of put reduces the list to the first three
+elements; since the list only contains one element, we get |[1]| as
+result again. %
+The PutPut law states that two consecutive calls have the same effect
+as just the latter one. %
+In our case, the second put application to the source list
+|[1,2,3,4,5]| yields the first three elements, i.e. the resulting list
+is [1,2,3], which differs from the result with consecutive put
+calls. %
+
 
 \section{Applications}
 \begin{itemize}
