@@ -23,7 +23,8 @@ checkListPutGet lens x = for neList (\xs -> check' xs)
 checkListPutPut :: Lens [a] b -> b -> b -> [Test]
 checkListPutPut lens x y = for neList (\xs -> check' xs)
  where
-  check' xs = put lens (put lens xs x) y <~> put lens xs y
+  check' xs = isJust (putM lens xs x) && isJust (putM lens (put lens xs x) y)
+            ==> put lens (put lens xs x) y <~> put lens xs y
 
 checkListPutDet :: Lens [a] b -> (b,b) -> [Test]
 checkListPutDet lens (y1,y2) =

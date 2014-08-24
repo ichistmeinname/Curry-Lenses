@@ -260,21 +260,6 @@ namePutDet = easyCheck2 (checkPutDet name)
 namePutStab :: IO ()
 namePutStab = easyCheck1 (checkPutStab name)
 
-mergePeopleGetPut :: IO ()
-mergePeopleGetPut = easyCheck (checkListGetPut mergePeople)
-
-mergePeoplePutGet :: IO ()
-mergePeoplePutGet = easyCheck1 (checkListPutGet mergePeople)
-
-mergePeoplePutPut :: IO ()
-mergePeoplePutPut = easyCheck2 (checkListPutPut mergePeople)
-
-mergePeoplePutDet :: IO ()
-mergePeoplePutDet = easyCheck1 (checkListPutDet mergePeople)
-
-mergePeoplePutStab :: IO ()
-mergePeoplePutStab = easyCheck (checkListPutStab mergePeople)
-
 putAsGetPut :: IO ()
 putAsGetPut = easyCheck (checkListGetPut putAs)
 
@@ -335,35 +320,20 @@ putTailPutDet = easyCheck1 (checkListPutDet putTail)
 putTailPutStab :: IO ()
 putTailPutStab = easyCheck (checkListPutStab putTail)
 
-putReverseGetPut :: IO ()
-putReverseGetPut = easyCheck (checkListGetPut putReverse)
+putTakeGetPut :: IO ()
+putTakeGetPut = easyCheck (checkListGetPut putTake)
 
-putReversePutGet :: IO ()
-putReversePutGet = easyCheck1 (checkListPutGet putReverse)
+putTakePutGet :: IO ()
+putTakePutGet = easyCheck1 (checkListPutGet putTake)
 
-putReversePutPut :: IO ()
-putReversePutPut = easyCheck2 (checkListPutPut putReverse)
+putTakePutPut :: IO ()
+putTakePutPut = easyCheck2 (checkListPutPut putTake)
 
-putReversePutDet :: IO ()
-putReversePutDet = easyCheck1 (checkListPutDet putReverse)
+putTakePutDet :: IO ()
+putTakePutDet = easyCheck1 (checkListPutDet putTake)
 
-putReversePutStab :: IO ()
-putReversePutStab = easyCheck (checkListPutStab putReverse)
-
-putLengthGetPut :: IO ()
-putLengthGetPut = easyCheck (checkListGetPut putLength)
-
-putLengthPutGet :: IO ()
-putLengthPutGet = easyCheck1 (checkListPutGet putLength)
-
-putLengthPutPut :: IO ()
-putLengthPutPut = easyCheck2 (checkListPutPut putLength)
-
-putLengthPutDet :: IO ()
-putLengthPutDet = easyCheck1 (checkListPutDet putLength)
-
-putLengthPutStab :: IO ()
-putLengthPutStab = easyCheck (checkListPutStab putLength)
+putTakePutStab :: IO ()
+putTakePutStab = easyCheck (checkListPutStab putTake)
 
 putZipGetPut :: IO ()
 putZipGetPut = easyCheck1 (checkGetPut putZip)
@@ -652,14 +622,6 @@ mainTest = do
   namePutDet
   putStrLn "\n+++++namePutStab+++++"
   namePutStab
-  putStrLn "\n+++++mergePeopleGetPut+++++"
-  mergePeopleGetPut
-  putStrLn "\n+++++mergePeoplePutGet+++++"
-  mergePeoplePutGet
-  putStrLn "\n+++++mergePeoplePutDet+++++"
-  mergePeoplePutDet
-  putStrLn "\n+++++mergePeoplePutStab+++++"
-  mergePeoplePutStab
   putStrLn "\n+++++putAsGetPut+++++"
   putAsGetPut
   putStrLn "\n+++++putAsPutGet+++++"
@@ -692,22 +654,14 @@ mainTest = do
   putTailPutDet
   putStrLn "\n+++++putTailPutStab+++++"
   putTailPutStab
-  putStrLn "\n+++++putReverseGetPut+++++"
-  putReverseGetPut
-  putStrLn "\n+++++putReversePutGet+++++"
-  putReversePutGet
-  putStrLn "\n+++++putReversePutDet+++++"
-  putReversePutDet
-  putStrLn "\n+++++putReversePutStab+++++"
-  putReversePutStab
-  putStrLn "\n+++++putLengthGetPut+++++"
-  putLengthGetPut
-  putStrLn "\n+++++putLengthPutGet+++++"
-  putLengthPutGet
-  putStrLn "\n+++++putLengthPutDet+++++"
-  putLengthPutDet
-  putStrLn "\n+++++putLengthPutStab+++++"
-  putLengthPutStab
+  putStrLn "\n+++++putTakeGetPut+++++"
+  putTakeGetPut
+  putStrLn "\n+++++putTakePutGet+++++"
+  putTakePutGet
+  putStrLn "\n+++++putTakePutDet+++++"
+  putTakePutDet
+  putStrLn "\n+++++putTakePutStab+++++"
+  putTakePutStab
   putStrLn "\n+++++putZipGetPut+++++"
   putZipGetPut
   putStrLn "\n+++++putZipPutGet+++++"

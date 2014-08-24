@@ -24,7 +24,7 @@ get' l s = case (l :> get) s of
 getM :: Lens s v -> s -> Maybe v
 getM l s = (l :> get) s
 
--- effect :: (Maybe s -> v -> n -> m) -> Lens n v -> Lens m v
+effect :: (Maybe s -> v -> s -> s) -> Lens s v -> Lens s v
 effect f g s v' = f s v' (g s v')
 
 bind :: a -> (a -> b) -> b
