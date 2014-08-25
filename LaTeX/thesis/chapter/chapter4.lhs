@@ -33,5 +33,3 @@ by \cite{putCombinators} to set the focus on the |put| function. %
 %include chapter4/Combinators.lhs
 
 %include chapter4/Bidirectionalisation.lhs
-
-%include chapter4/CurryImplementation.lhs
