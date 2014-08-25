@@ -22,12 +22,13 @@ an uni-directional function and synthesises this function to a
 bidirectional one. %
 
 The remainder of the chapter introduces combinatorial and
-bidirectionalisation approaches for lenses; both approaches have two
-subcategories, because the implementation can either focus on defining
-a |get| function or a |put| function. %
-In this context, we will discuss advantages and disadvantages of
-defining a get function and present a first proposal by
-\cite{putCombinators} to set the focus on the |put| function. %
+bidirectionalisation approaches for lenses. %
+The former approach has two subcategories, because the implementation
+can either focus on defining a |get| function or a |put| function;
+such a subdivision was not investiged for the bidirectionalisation of
+lenses yet.  In this context, we will discuss advantages and
+disadvantages of defining a get function and present a first proposal
+by \cite{putCombinators} to set the focus on the |put| function. %
 
 %include chapter4/Combinators.lhs
 

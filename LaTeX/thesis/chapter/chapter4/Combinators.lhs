@@ -1,10 +1,10 @@
-\section{Combinatorial lenses}\label{sec:Comb}
+\section{Combinatorial lenses}\label{sec:comb}
 The first combinatorial technique is the pioneer work by
 \cite{biTCombinators}, who designed a domain-specific programming
 language to define bidirectional transformations on tree-structured
 data. %
 Foster et al formulate fundamental laws concerning lenses\footnote{We
-  already presented these laws in Section \ref{sec:Laws}, in
+  already presented these laws in Section \ref{subsec:lensesLaws}, in
   particular, PutGet, GetPut and PutPut.}, combine these laws with the
 intuitive behaviour of lenses, and use fundamental tools from domain
 theory to also define lenses by recursion; they lay the focus of the
@@ -253,7 +253,7 @@ influence the synchronisation behaviour. %
 For example, we can program with traditional lenses without monadic
 effects by using the |Identity| monad.
 
-\label{IdentityMonad}%
+\label{code:identityMonad}%
 \begin{spec}
 data Identity a = Identity { runIdentity :: a }
 
@@ -315,7 +315,7 @@ pair. %
 \end{spec}
 
 We will discuss the actual implementation in Section
-\ref{sec:ImplComb} in more detail, because the Haskell library
+\ref{sec:implComb} in more detail, because the Haskell library
 \emph{putlenses}\footnote{\url{http://hackage.haskell.org/package/putlenses}},
 which implements the ideas of the presented paper by
 \cite{putCombinators}, forms the basis of an implementation in Curry

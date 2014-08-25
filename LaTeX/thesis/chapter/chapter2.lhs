@@ -1,8 +1,8 @@
-\chapter[About Bidirectional Transformations]{About Lenses and Other Bidirectional Shenanigans}
+\chapter[About Bidirectional Transformations]{About Lenses and Other Bidirectional Shenanigans}\label{ch:BiTrans}
 
 \todo{Intro}
 
-\section{Bidirectional Programming}
+\section{Bidirectional Programming}\label{sec:biProg}
 Typical problems that are based on bidirectional transformations are
 handled with two separate functions. %
 That is, one function maps the concrete value to the abstract
@@ -42,7 +42,7 @@ popular forms in bidirectional programming. %
 
 \todo{status quo \cite{biPApproaches}}
 
-\section{Lenses}
+\section{Lenses}\label{sec:lenses}
 Lenses describe bidirectional transformations that originate in
 databases as introduced by \cite{viewUpdate}.  In the setting of
 lenses, the |get| function describes a transformation from |A| to |B|,
@@ -102,7 +102,7 @@ look at the work of \cite{symmLenses}. %
 
 \todo{state vs operation-based}
 
-\subsection{Laws}
+\subsection{Laws}\label{subsec:LensesLaws}
 
 So far, we characterised lenses as a bidirectional transformation with
 an adapted |put| function, which allows round-tripping behaviour. %
@@ -295,13 +295,15 @@ terms of inference rules. %
 That is, if the above condition is not satisfied, the equation below
 does not need to be checked and the rule trivially holds. %
 
+%
 \begin{equation}\tag{Partial-PutGet}
 \dfrac{|(put s v)|\downarrow}{|get (put s v) = v|}
 \end{equation}
-
+%
 \begin{equation}\tag{Partial-GetPut}
 \dfrac{|(get s)|\downarrow}{|put s (get s) = s|}
 \end{equation}
+%
 
 In our example, we check if |(sub get head)| is defined for
 the given source first.
@@ -315,7 +317,7 @@ Since this is not the case, we do not apply the put direction, because
 the condition only needs to be satisfied, if the first application
 yields a valid result. %
 Thus, the lens consisting of |sub get head| and |sub put replaceHead|
-is a valid lens with respect to the GetPut and PutGet-Partial law. %
+is a valid lens with respect to the GetPut and Partial-PutGet law. %
 
 As a second example, we define a lens with a put function that is
 similar to the well-known function |take :: Int -> [a] -> [a]| and a
@@ -361,12 +363,12 @@ expressions. %
 > (sub get length) ((sub put take) -3 [1,2,3])
 "take fails for negative values"
 
-> (sub put take) -1 []
+> (sub put take) (-1) []
 "take fails for negative values"
 \end{spec}
 
 Nevertheless, our second example is a valid lens with respect to GetPut and
-PutGet-Partial. \\
+Partial-PutGet. \\
 
 
 There is also a third lens law, which is called \emph{PutPut}. %
@@ -414,8 +416,10 @@ In our case, the second put application to the source list
 is [1,2,3], which differs from the result with consecutive put
 calls. %
 
+\subsection{Algebraic properties}\label{subsec:lensesAlgebraic}
+Limitations concerning injectivity of get-functions!
 
-\section{Applications}
+\section{Applications}\label{sec:applications}
 \begin{itemize}
 \item Boomerang \cite{boomerang}
 \item HaXML \cite{haxml}

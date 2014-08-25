@@ -29,7 +29,7 @@ Both techniques have their advantages and disadvantages, so that the
 authors also worked out a combined approach, which yields results at least as good
 as the better one of the two techniques. %
 
-\subsection{Syntactic Bidirectionalisation}\label{sec:bi:syn}
+\subsection{Syntactic Bidirectionalisation}\label{subsec:biSyn}
 Matsuda et al. introduce a general first-order functional language
 called \emph{VDL}. %
 Their language has two syntactical restrictions, which we have to keep in
@@ -215,7 +215,7 @@ needs to be defined. %
 Fortunately, injectivity is decidable in VDL and the proposed
 algorithm is sound and complete. \\
 
-\subsection{Semantic Bidirectionalisation}\label{sec:bi:sem}
+\subsection{Semantic Bidirectionalisation}\label{subsec:biSem}
 On the other hand, \cite{biForFree} introduces an approach for
 semantic bidirectionalisation using free theorems to prove consistency
 conditions. %
@@ -245,15 +245,6 @@ are independent of the element's values. %
 The use of free theorems allows us to inspect the effect of the |get|
 transformation without knowing about the explicit implementation. %
 
-The definition of |bff| simulates its first argument, i.e. the get
-function, on an arbitrary container, like for example a list of
-|Integer| if we use a polymorphic list, |[a]|, as container. %
-The container to simulate shares its shape property with the given
-container, which is the second argument of |bff|; in the example of
-lists, the simulation list and the given list need to be of the same
-length. %
-Every value in the simulated container has a corresponding value in
-the given container. %
 As an example, we take a look at a get function that selects the first
 element of a list and yields an element with just that element. %
 %
@@ -270,7 +261,18 @@ Bool]|. %
 bff (sub get fst) [Left 10, Left 12, Right True, Left 13] [Right False]
 \end{spec}%
 %
-The |bff| function constructs a mapping for every element of the given
+
+The definition of |bff| simulates its first argument, i.e. the get
+function, on an arbitrary container, like for example a list of
+|Integer| if we use a polymorphic list, |[a]|, as container. %
+The container to simulate shares its shape property with the given
+container, which is the second argument of |bff|; in the example of
+lists, the simulation list and the given list need to be of the same
+length. %
+Every value in the simulated container has a corresponding value in
+the given container. %
+
+In our example, the |bff| function constructs a mapping for every element of the given
 list, each index position of the list is mapped to its element. %
 the given list. %
 \begin{spec}
@@ -292,10 +294,9 @@ mapping2 getF = zip' . getF
       -- = (0,Right False)
   where
    zip' :: [Int] -> [a] -> [(Int,a)]
-   zip' []      _      = []
-   zip' _       []     = []
    zip' (i:is)  (x:xs)  | isNothing (i `lookup` zs)  = (i,x) : zs
                         | otherwise                  = zs
+   zip  _      _      = []
     where
      zs = zip' is xs
 \end{spec}
@@ -589,7 +590,7 @@ get h s =  let Identity v = h (fmap Identity s)
 In the get direction, we do not want to track any information about
 the mapping of abstract and concrete values, thus, the underlying
 monad is instantiated to the Identity monad\footnote{See Section
-  \ref{IdentityMonad} for the definition of the Identity monad.}. %
+  \ref{code:IdentityMonad} for the definition of the Identity monad.}. %
 Our example get function needs to be rewritten in order to obey the
 |PackM| context. %
 That is, the check needs to be lifted into the |PackM| type class and
@@ -860,7 +861,7 @@ For instance, we can convert every get function |get :: [alpha] ->
 Next, we derive this new gained get function with the appropriate
 black-box to get a corresponding put function. %
 We could use, for example, the syntactic bidirectionalisation by
-\cite{viewComp} that we introduced in Section \ref{sec:bi:syn}. %
+\cite{viewComp} that we introduced in Section \ref{subsec:biSyn}. %
 Let us assume, that the resulting put function has the form |put ::
 Nat -> Nat - Maybe Nat|\footnote{The authors wrap their value in a
   |Maybe| constructor in order to handle failures as well, i.e., if
@@ -873,7 +874,7 @@ explicitly handles shape-changing updates, and use the result to
 produce an additional mapping. %
 The final definition of |(sub put comb)|, the put function for the
 combined approach, adopts its additional mappings from the original
-semantic approach, see \ref{sec:bi:sem} for comparison. %
+semantic approach, see \ref{subsec:biSem} for comparison. %
 That is, we first map each element of the given list with its
 index,and, then, run the derived put function |sub put syn| on the
 given shapes of the source and the updated view. %
