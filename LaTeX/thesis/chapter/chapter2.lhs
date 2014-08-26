@@ -8,10 +8,10 @@ handled with two separate functions. %
 That is, one function maps the concrete value to the abstract
 representation and one function serves as backward direction, from the
 abstract value to the concrete representation. %
-This is rather error-prone and tedious to maintain, because, firstly,
-we have to keep the two functions in sync by hand, in order to
+This approach is rather error-prone and tedious to maintain, because, firstly,
+we have to keep the two functions in sync by hand in order to
 guarantee correctness; secondly, changes in one of the representations
-affects both functions in order to maintain round-tripping rules. %
+affects both functions due to the round-tripping rules that have to be obeyed. %
 This unidirectional programming mechanism is well-studied and many
 programmers are familiar with this paradigm. %
 Whereas bidirectional programming is a new approach on a specific
