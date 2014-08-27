@@ -1,4 +1,4 @@
-\section{Case Study III - Lenses for Records}
+\section{Case Study III - Lenses for Records}\label{sec:records}
 
 This section gives an overview about record syntax in Curry and a
 draft proposal for a possible improvement concerning lenses. %
