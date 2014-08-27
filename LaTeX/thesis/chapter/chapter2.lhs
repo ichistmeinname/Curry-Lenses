@@ -14,7 +14,7 @@ guarantee correctness; secondly, changes in one of the representations
 affects both functions due to the round-tripping rules that have to be obeyed. %
 This unidirectional programming mechanism is well-studied and many
 programmers are familiar with this paradigm. %
-Whereas bidirectional programming is a new approach on a specific
+In contrast, bidirectional programming is a new approach on a specific
 domain of problems, which becomes more and more popular in different
 areas of computer science. %
 Software engineering, programming languages, databases and graph
@@ -25,16 +25,17 @@ In the remainder of this thesis, we focus on bidirectional
 transformation from the perspective of the programming language
 community. %
 
-So, what is the new, challenging feature of bidirectional programming,
+So, what is the new, challenging feature of bidirectional programming
 that keeps researchers busy? %
 A bidirectional transformations does not consist of two functions like
-in the unidirectional way, but of one function, that can be read
+in the unidirectional way, but of one function that can be read
 forward and backward. %
-In literature, we distinguish between a forward function |get :: A ->
-B|, and a backward function |put :: B -> A|; |A| is most commonly
-called the source and |B| is the view, this naming convention
+In the literature, we distinguish between a forward function |get :: A ->
+B| and a backward function |put :: B -> A|; |A| is most commonly
+called the source and |B| is the view. %
+This naming convention
 originates from applications in databases. %
-This two functions form, in the easiest approach, an bijection from
+These two functions form, in the easiest approach, a bijection from
 |A| to |B| and back. %
 In the next section, we discuss lenses, a more general approach of
 bidirectional transformation, which, additionally, are one of the most
@@ -47,11 +48,11 @@ Lenses describe bidirectional transformations that originate in
 databases as introduced by \cite{viewUpdate}.  In the setting of
 lenses, the |get| function describes a transformation from |A| to |B|,
 in most applications |B| is a subset of |A|, and information are
-discarded from |A| to |B| respectively. %
+discarded from |A| to |B|, respectively. %
 On the other hand, the |put| function synchronises a given,
 potentially updated, view with respect to the original source. %
 A popular example from databases shows the correspondences quite well:
-we have database with a set of data |S| and a query that yields a
+we have a database with a set of data |S| and a query that yields a
 table |B| that matches the given criteria. %
 The query is the forward transformation |get|. %
 In a second step, we modify the resulting table, because we recognise
@@ -88,21 +89,22 @@ on the given pair of source and view. %
 In an asymmetric setting, we only consider changes of the view that
 will be propagated back to the source; this restricted view implies
 that the given source does not change in the meantime. %
-The definition of the |put| function, which we introduced above, needs
-to be adapted for the asymmetric setting. %
-We want to synchronise the updated view with a source, so that we need
+The definition of the |put| function, which we introduced above,
+\todo{Ist das Komma hier falsch?} needs to be adapted for the
+asymmetric setting. %
+We want to synchronise the updated view with a source so that we need
 |put| to take the initial source as argument as well. %
 In a symmetric setting, both sides can be updated, so that the |get|
 functions takes an additional argument in comparison with our
 definition of |put| above. %
 In the following, we will only consider asymmetric lenses in a
 detailed manner. %
-For an detailed introduction to symmetric lenses, consider to take a
+For a detailed introduction to symmetric lenses, consider to take a
 look at the work of \cite{symmLenses}. %
 
 \todo{state vs operation-based}
 
-\subsection{Laws}\label{subsec:LensesLaws}
+\subsection{Laws}\label{subsec:lensesLaws}
 
 So far, we characterised lenses as a bidirectional transformation with
 an adapted |put| function, which allows round-tripping behaviour. %
@@ -124,7 +126,7 @@ with a pair of |String| and |Integer| as the domain of the source, and
 |String| as the view's domain. %
 In order to define an appropriate |get| function, we need a get
 function of type |(String,Integer) -> String|. %
-In Haskell, or Curry, it already exist a function with such an type,
+In Haskell, or Curry, there already exists a function with such a type,
 namely |fst|. %
 
 \begin{code}
