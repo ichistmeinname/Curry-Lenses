@@ -1,5 +1,36 @@
 \chapter{Lens Implementations in Curry}\label{ch:CurryImpl}
 
+In this chapter, we discuss two implementations of lenses in the
+functional logic programming language Curry: a combinatorial approach
+that focuses on the put function, and a put-based implementation build
+upon Curry's built-in search abilities. %
+Moreover, we present \emph{nondeterministic lenses}, a conservative
+extension that arises naturally in the setting of functional logic
+programming with Curry. %
+
+The first implementation is a combinatorial approach that is based on
+the Haskell library \texttt{putlenses} introduced in Section
+\ref{sec:comb}. %
+The original library is build on monadic combinators that include a
+get and a put function, but, for the actual usage, the user only
+defines the put direction of a lens. %
+For the Curry implementation, we adapt the underlying monadic approach
+by using Curry's built-in nondeterminism as update strategy. %
+
+As second implementation, we discuss a very simple approach that
+offers to build lenses only with the help of a put definition. %
+In order to use these lenses in the get direction, the library offers
+a general get function based on the given put definition and the lens
+laws. %
+In addition, we also discuss a potential get-based approach that
+follows the same idea as our implementation, argue about its
+disadvantages, and present solutions of related work. %
+
+In the context of nondeterministic lenses, we present adapted versions
+of the classical lens laws as well as a handful of lens definitions,
+which are well-suited for a nondeterministic setting. %
+
+
 \begin{spec}
 type (sub Lens simple) s v = (s -> v, s -> v -> s)
 
@@ -60,7 +91,7 @@ programmer. %
 (3,_x1)
 \end{spec}
 
-Unfortunately, this get-based implementation is rather simple, say,
+Unfortunately, this get-based implementation is rather simple, not to say,
 too simple. %
 If we use |sub fst get| in the put direction, we loose the additional
 information of the source pair. %
@@ -152,16 +183,16 @@ describes an update, where source and view values are of different
 types, and the latter is special case, which describes updates for values of
 the same type. % 
 Pacheco et al. criticise the lack of shape alignments in related work
-on lenses, thus, the main effort of their work are recursion patterns for horizontal
-delta lenses, which introduce shape alignments for combinators like
-fold and unfold. %
-Recent approaches focus to align the data of source and view, but
+on lenses. %
+Recent approaches focus on aligning the data of source and view, but
 fail to establish a convenient mapping of both shapes. %
 This positional alignment leads to less predictable updates
 regarding insertion and deletion of elements, which either are not
 detected or effect only the end positions of the underlying
 structure, e.g. new elements are inserted at the end of a list. %
-
+Thus, the main effort of Pacheco's et al. work are recursion patterns for horizontal
+delta lenses, which introduce shape alignments for combinators like
+fold and unfold. %
 
 
 \begin{spec}
