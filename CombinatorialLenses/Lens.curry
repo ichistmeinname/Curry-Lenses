@@ -103,7 +103,7 @@ remFst f = { put := put_
  where
   get_ v                       = Just (f v,v)
   put_ _ (v1,v) | f v == v1 = v
-                   | otherwise = error "remFst: first and second value of pair are not equal"  
+                | otherwise = error "remFst: first and second value of pair are not equal"  
 
 remSnd :: (v -> v1) -> Lens v (v,v1)
 remSnd f = { put := put_
@@ -112,7 +112,7 @@ remSnd f = { put := put_
  where
   get_ v                       = Just (v, f v)
   put_ _ (v,v1) | f v == v1 = v
-                   | otherwise = error "remSnd: first and second value of paire are not equal"
+                | otherwise = error "remSnd: first and second value of paire are not equal"
 
 remFstOne :: Lens v ((),v)
 remFstOne = remFst (const ())
@@ -228,10 +228,8 @@ l1 \/ l2 = { put := put_
                   in checkDisjoint v1 v2
   checkDisjoint v1 v2 | isNothing v1 && isNothing v2 = Nothing
                       | isJust    v1 && isJust    v2 = Nothing
-                      | isJust    v1 && isNothing v2 = liftMaybe Left v1
-                      | isNothing v1 && isJust    v2 = liftMaybe Right v2
-  liftMaybe _ Nothing  = Nothing
-  liftMaybe f (Just v) = Just (f v)
+                      | isJust    v1 && isNothing v2 = fmap Left v1
+                      | isNothing v1 && isJust    v2 = fmap Right v2
 
 (\/.) :: Lens s v1 -> Lens s v2 -> Lens s (Either v1 v2)
 l1 \/. l2 = (phiSource (not . dom l2) l1) \/ l2
