@@ -429,11 +429,11 @@ every field of a given record. %
 $\rightsquigarrow$
 $\begin{array}{l}
 |label1 1 :: LensType Rec (tau 1)|\\
-|label1 1 = (label1 (get_ 1),label1 (set_ 1))|\\
+|label1 1 = (label1 (get__ 1),label1 (set__ 1))|\\
 \quad|where (*)|\\
 \hfill{\vdots} \hfill{}\\
 |label1 k :: LensType Rec (tau k)|\\
-|(label1 k) = (label1 (get_ k),label1 (set_ k))|\\
+|(label1 k) = (label1 (get__ k),label1 (set__ k))|\\
 \quad|where (*)|
 \end{array}
 $
@@ -442,8 +442,8 @@ $
 \end{center}
 
 \begin{align}
-&|label1 (get_ i) (Rec _ -.- val i -.- _)                |& =& ~|val i| \tag{|*|}\\
-&|label1 (set_ i) (Rec (val 1) -.- (val k)) (val new)|& =& ~|Rec (val
+&|label1 (get__ i) (Rec _ -.- val i -.- _)                |& =& ~|val i| \tag{|*|}\\
+&|label1 (set__ i) (Rec (val 1) -.- (val k)) (val new)|& =& ~|Rec (val
 1) -.- (val (i-1)) (val new) (val (i+1)) -.- val k| \tag{|*|}
 \end{align}
 
@@ -463,6 +463,6 @@ for further usage, but we do not generate the lens type synonym in our
 record transformation without any loss of functionality but for
 simplicity reasons only. %
 For every record field |label1 i|, we generate a lens function |label1
-i| in two steps: first, we define two local functions |label1 (get_
-u)| and |label1 (set_ i)| and combine them to a pair of getter and
+i| in two steps: first, we define two local functions |label1 (get__
+u)| and |label1 (set__ i)| and combine them to a pair of getter and
 setter function, i.e. a lens, in a second step. %
