@@ -13,7 +13,7 @@
 %format (label1 i) = "f_{" i "}"
 %format (get_ a) = "get_{" a "}"
 %format (set_ a) = "set_{" a "}"
-%format (sub t i) = t "_{" i "}"
+%format (sub (t) (i)) = t "_{" i "}"
 %format (val (i)) =  "val_{"i "}"
 %format -.- = "~\cdots~"
 %format (label f i) = f "_{" i"}"
