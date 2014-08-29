@@ -24,8 +24,8 @@ get' l s = case (l :> get) s of
 getM :: Lens s v -> s -> Maybe v
 getM l s = (l :> get) s
 
-effect :: (Maybe s -> v -> s -> s) -> Lens s v -> Lens s v
-effect f g s v' = f s v' (g s v')
+-- effect :: (Maybe s -> v -> s -> s) -> Lens s v -> Lens s v
+-- effect f g s v' = f s v' (g s v')
 
 bind :: a -> (a -> b) -> b
 bind val f = f val
@@ -78,7 +78,7 @@ addFst f = enforceGetPut { put := put_
   put_ s v' = f s v' `bind` \s1' -> (s1',v')
 
 addSnd :: (Maybe (v,s1) -> v -> s1) -> Lens (v,s1) v
-addSnd f = enforceGetPut { put := put_
+addSnd f =  { put := put_
                          , get := \(v',_) -> Just v'
                          }
  where
@@ -95,6 +95,11 @@ keepSndOr f = addSnd (\s v' -> maybe (f v') snd s)
 
 keepSnd :: Lens (v,s1) v
 keepSnd = keepSndOr (const failed)
+
+remFst' :: (v -> v1) -> Lens v (v1,v)
+remFst' f = { put:= put_, get := (\ s -> Just (f s,s)) }
+ where
+  put_ _ (_,v) = v
 
 remFst :: (v -> v1) -> Lens v (v1,v)
 remFst f = { put := put_
@@ -123,6 +128,16 @@ remSndOne = remSnd (const ())
 copy :: Lens (v,v) v
 copy = phi (uncurry (==)) <.> addSnd (\_ v -> v)
 
+(<*>) :: Lens s1 v1 -> Lens s2 v2 -> Lens (s1,s2) (v1,v2)
+l1 <*> l2 = { put := put_
+            , get := \(s1,s2) -> Just (get' l1 s1, get' l2 s2)
+            }
+ where
+  put_ s (v1',v2') =
+    let s1' = put' l1 (fmap fst s) v1'
+        s2' = put' l2 (fmap snd s) v2'
+    in (s1',s2')
+
 ------------------------------------------------------------
 -------------------------- Lists ---------------------------
 ------------------------------------------------------------
@@ -143,8 +158,8 @@ outList = isoLens out inn
                   []   -> Left ()
                   y:ys -> Right (y,ys)
 
-mapLens :: Lens a b -> Lens [a] [b]
-mapLens f = (inList <.> (idLens <+> (f <*> mapLens f)) <.> outList)
+-- mapLens :: Lens a b -> Lens [a] [b]
+-- mapLens f = (inList <.> (idLens <+> (f <*> mapLens f)) <.> outList)
 
 cons :: Lens [a] (a, [a])
 cons = inList <.> injR
@@ -165,30 +180,20 @@ untail' = cons <.> keepFstOr (\ (x:_) -> x)
 --------------------------- Sums ---------------------------
 ------------------------------------------------------------
 
-(<*>) :: Lens s1 v1 -> Lens s2 v2 -> Lens (s1,s2) (v1,v2)
-l1 <*> l2 = { put := put_
-            , get := \(s1,s2) -> Just (get' l1 s1, get' l2 s2)
-            }
- where
-  put_ s (v1',v2') =
-    let s1' = put' l1 (fmap fst s) v1'
-        s2' = put' l2 (fmap snd s) v2'
-    in (s1',s2')
-
-(<+>) :: Lens s1 v1 -> Lens s2 v2 -> Lens (Either s1 s2) (Either v1 v2)
-l1 <+> l2 = { put := put_
-            , get := \s -> Just (either (Left . get' l1) (Right . get' l2) s)
-            }
- where
-  put_ s (Left v1') = put' l1 (l s) v1' `bind` Left
-  put_ s (Right v2') = put' l2 (r s) v2' `bind` Right
-  l :: Maybe (Either s1 s2) -> Maybe s1
-  l = maybe Nothing (either Just (const Nothing))
-  r :: Maybe (Either s1 s2) -> Maybe s2
-  r = maybe Nothing (either (const Nothing) Just)
+-- (<+>) :: Lens s1 v1 -> Lens s2 v2 -> Lens (Either s1 s2) (Either v1 v2)
+-- l1 <+> l2 = { put := put_
+--             , get := \s -> Just (either (Left . get' l1) (Right . get' l2) s)
+--             }
+--  where
+--   put_ s (Left v1') = put' l1 (l s) v1' `bind` Left
+--   put_ s (Right v2') = put' l2 (r s) v2' `bind` Right
+--   l :: Maybe (Either s1 s2) -> Maybe s1
+--   l = maybe Nothing (either Just (const Nothing))
+--   r :: Maybe (Either s1 s2) -> Maybe s2
+--   r = maybe Nothing (either (const Nothing) Just)
 
 inj :: (Maybe (Either v v) -> v -> Bool) -> Lens (Either v v) v
-inj p = enforceGetPut { put := put_
+inj p =  { put := put_
                       , get := \s -> either Just Just s
                       }
  where
