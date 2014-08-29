@@ -116,6 +116,8 @@ strings. %
   primitive lenses; user-defined functions are only checked at run
   time}\\
 
+\phantomsection
+\label{bi:fisher}
 Other combinatorial approaches for lenses exist, they all focus on
 specifying a |get| function, and the appropriate |put| function is
 then propagated through the definition of the used |get|
