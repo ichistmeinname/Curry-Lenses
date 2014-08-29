@@ -280,7 +280,7 @@ user can use the function |checkGetPut| and |checkPutGet|\footnote{In
 
 We can rebuild the example given above in terms of the put-based
 language. %
-The language provides a combinator |addfst| to add a left element to
+The language provides a combinator |addfst| to add a second component to
 the current source in order to create a pair. %
 \begin{spec}
 addfst :: (Maybe (sub s 1, v) -> v -> m (sub s 1)) -> LensPG_ m (sub s 1,v) v
@@ -289,7 +289,7 @@ addfst f = enforceGetPut put'
    put' s v = f s v >>= \(sub s 1) -> return (sub s 1,v)
 \end{spec}
 
-The first argument of |addfst| is a function to create the second
+The first argument of |addfst| is a function to create the first
 component of the pair from the given source and view. %
 We can use this combinator to define a lens |label fst GetPut| that
 projects a pair to its first component. %

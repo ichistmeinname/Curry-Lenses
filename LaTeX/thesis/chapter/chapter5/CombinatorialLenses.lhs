@@ -67,9 +67,10 @@ effort, because we do not only have to check the lens property once
 after definition, but every time we modify one of the lens
 components. %
 As an example, let us make a slight modification to the put function
-and define a lens |sub fstInc simple|, which, additionally, increments
+and define a lens |fstInc|, which, additionally, increments
 its second component in the put direction. %
 
+\phantomsection
 \begin{spec}
 fstInc :: (sub Lens Pair) (a,Int) a
 fstInc = (get', put')
@@ -77,6 +78,7 @@ fstInc = (get', put')
     get' (x,_) = x
     put' (_,y) x = (x,y+1)
 \end{spec}
+\label{ex:fstInc}
 
 Do the lens laws still hold? %
 We have only made slight changes to the put function, which only
@@ -148,9 +150,9 @@ fails. %
 We could use \emph{SetFunctions} introduced by \cite{setFunctions} to
 identify defined and undefined values, but we adhere to the original
 implementation for simplicity reasons.\footnote{SetFunctions might
-  behave unexpectedly for partially applied functions.} \\
+  behave unexpectedly for partially applied functions.} %
 
-\textbf{Composition}\\
+\subsubsection*{Composition}
 Composition is the most valuable combinator, because it serves as a
 link between other primitive combinators in order to define more
 complex lenses. %
@@ -202,9 +204,9 @@ The composition of two lenses is a powerful instrument, that is
 assuming there exist primitive combinators to compose. %
 Whereas we discussed the implementation of the composition in much
 detail, in the following, we present some primitive combinators more
-briefly and emphasise examples of these combinators in action. \\
+briefly and emphasise examples of these combinators in action. %
 
-\textbf{Basics: Identity and Filter}\\
+\subsubsection*{Basics: Identity and Filter}
 The identity combinator yields its source in the get direction and
 replaces its source with the given view for the put function. %
 This lens is restricted to sources and views of the same type. %
@@ -216,64 +218,126 @@ This lens is restricted to sources and views of the same type. %
 \end{spec}
 
 A similar, but maybe more feasible, combinator filters its source and
-the view, respectively, with regard to a specified predicate. %
+view, respectively, with regard to a specified predicate. %
 
 \begin{spec}
 phi :: (v -> Bool) -> Lens v v
-phi p lens = Lens get_ put_
+phi p  = Lens get_ put_
   where
-   get_ s    =
-     case getM l s of
-         Just v  -> if p s then Just v else Nothing
-         Nothing -> Nothing
-   put_ s v  =
-     let s' = put' l s v
-     in if p s' then s' error "phiSource: predicate is not fulfilled"
+   get_ s    | p s        = Just s
+             | otherwise  = Nothing
+   put_ _ v  | p v        = Just v
+             | otheriwse  = error "phi: predicate not fulfilled"
 \end{spec}
 
+In particular, the put direction declines any updated view that does
+not fulfil the given predicate, that is, we demand the update on the
+view to be valid. %
+The get function checks if the given source fulfils the predicate
+and yields that source for a positive outcome; otherwise it does not
+exist a valid view for the given source and the function yields
+|Nothing|. %
 
-\textbf{Products: Pairing and Unpairing}
+\subsubsection*{Products: Pairing and Unpairing}
+The second category of combinators covers products to build pairs and
+projects components of pairs. %
+The first lens builds a pair in the put direction by injecting a value to the left of the
+view, and projects the second component of the source in the get direction. %
 
 \begin{spec}
 addFst :: (Maybe (s1,v) -> v -> s1) -> Lens (s1,v) v
-addFst f = enforceGetPut (Lens put_ (\ (_,v') -> Just v')
+addFst f = (Lens put_ (\ (_,v') -> Just v')
  where
-  put_ s v' =
-    let s' = f s v'
-    in (s',v')
+  put_ s v' = (f s v',v')
 \end{spec}
 
-enforces PutTwice law: $s' \in put' l s v \Rightarrow s' = put' l s' v$
+The user constructs the injected value with a specified function,
+which takes a possible source and the updated view to yield a new
+first component. %
+Let us recall the~\hyperref[ex:fstInc]{example of the previous section}:
+the lens |fstInc| resets the first component of the source pair
+with given updated view and, simultaneous, increments the second
+component. %
+We can define this lens by the means of |addSnd|, the dual lens to
+|addFst| that behaves the same but injects a second component and
+projects the first component, respectively. %
+
+\begin{spec}
+fstInc :: Lens (Int,Int) Int
+fstInc = addSnd inc
+  where
+   inc s _ = maybe  (error "fstInc: undefined source")
+                    (\(_,s1) -> s1+1)
+                    s
+\end{spec}
+
+Wait a minute! %
+We critised the use of |fstInc| as a lens, because it does not obey
+the lens laws, in particular, the GetPut law. %
+This observation implies that the given implementation of |addFst|
+does not take any validation checks into account either. %
+In the original implementation, Fisher et. al ensure well-behavedness
+by using an auxiliary function |enforceGetPut| to resolve the
+irregularity. %
+As a second option, they suggest to adjust the implementation of the
+get function to yield undefined for every sources that does not fulfil
+the GetPut law. %
+For our implemention, we chose the latter solution as well, because
+the manual correction increases the range of valid lenses, whereas the
+elimination decreases the range and, thus, makes the lens less
+applicable. %
+
+The helper function |enforceGetPut| intervenes in the behaviour of a
+lens; the get function stays untouched, but the function applies the
+get function to the given source in order to check if the resulting
+value already is the current value. %
 
 \begin{spec}
 enforceGetPut :: Lens a b -> Lens a b
-enforceGetPut l = { put := put_
-                  , get := getM l
-                  }
+enforceGetPut l = Lens put_ (getM l)
  where
-  put_ :: Maybe a -> b -> a
   put_ ms v
-   | isJust ms && getM l (fromJust ms) == Just v = fromJust ms
-   | otherwise        
- \end{spec}
- 
-\begin{spec}
-remFst :: (v -> v1) -> Lens v (v1,v)
-remFst f = Lens put_ get_
- where
-  get_ v         = Just (f v,v)
-  put_ _ (v1,v)  | f v == v1 = v
-                 | otherwise = error "remFst: first and second value of pair are not equal"
+   | isJust ms && getM l (fromJust ms) == Just v  = fromJust ms
+   | otherwise                                    = put' l ms v
 \end{spec}
 
-\textbf{Sums: Either Left or Right}
+If the updated view is equal to the current view, we do not make any
+further changes and yield the source; otherwise we apply the put
+function as usual. %
+That is, |enforeGetPut| yields the give source for an unchanged view according to the
+GetPut law, and, hence, forces the lens to be well-behaved. %
+
+As counterpart to |addFst| and |addSnd|, we define |remFst| and
+|remSnd| to destruct the view pair by discarding the first or second
+component, respectively. %
 
 \begin{spec}
-inj :: (Maybe (Either v v) -> v -> Bool) -> Lens (Either v v) v
-inj p = enforceGetPut (Lens put_ (\ s -> either Just Just s))
-  where
-   put_ s v = if p s v then Left v else Right v
+remFst :: (v -> v1) -> Lens v (v1,v)
+remFst f = Lens put_ (\ s -> Just (f s,s))
+ where
+  put_ _ (v1,v)
+    | f v == v1 = v
+    | otherwise = error "remFst: first and second value do not match"
+\end{spec}
 
+For the definition of |remFst|, the given function creates the new
+first component in the get direction, which is discarded in the
+definition of the put function. %
+Additionally, we have to make sure that the user-specified function
+applied to the second component of the source yields the same value as
+the first value of the source. %
+If not for this correction, the given lens definition would not fufill
+the PutGet law. %
+
+\subsubsection*{Sums: Either Left or Right}
+In order to handle sum types like |Either|, we provide a lenses that
+distinguish between a |Left| and |Right| value. %
+The lens |injL| injects the given update view as a left value and
+ignores the source; its counterpart |injR| injects a right value. %
+In the get direction, the function ignores a given left and right
+value, respectively. %
+
+\begin{spec}
 injL :: Lens (Either v1 v2) v1
 injL = Lens (const (Left v)) get_
   where
@@ -281,25 +345,21 @@ injL = Lens (const (Left v)) get_
    get_ (Right _) = Nothing
 
 injR :: Lens (Either v1 v2) v2
-injR = Lens (\ _ v -> Right v) get_
-  where
-   get_ (Left  _) = Nothing
-   get_ (Right v) = Just v
+injR = { put := \_ v -> Right v
+       , get := get_
+       }
+ where
+  get_ (Left  _) = Nothing
+  get_ (Right v) = Just v
 \end{spec}
 
-\begin{spec}
-(<*>) :: Lens s1 v1 -> Lens s2 v2 -> Lens (s1,s2) (v1,v2)
-l1 <*> l2 = Lens put_ (\ (s1,s2) -> Just (get' l1 s1, get' l2 s2))
- where
-  put_ s (v1',v2') =
-    let s1' = put' l1 (fmap fst s) v1'
-        s2' = put' l2 (fmap snd s) v2'
-    in (s1',s2')
-\end{spec}
+Unlike |addFst| and |remFst|, the given lens definition and its dual
+do not need any dynamic checks to insure well-behavedness. %
+These kind of lenses do not seem very feasible at first sight, but we
+will see some practical lens definitions in the next section. %
 
 \subsection{Usage and Examples}\label{subsec:implCombEx}
 When composing lenses, the user has to think about its update strategy, i.e., the get direction of his lens. %
-
 
 Running example: |fst|. %
 
@@ -314,6 +374,9 @@ keepFst = keepFstOr (const failed)
 Lenses on lists. %
 
 \begin{spec}
+isoLens :: (a -> b) -> (b -> a) -> Lens b a
+isoLens f g = Lens (\_ v -> f v) (\s   -> Just (g s))
+
 inList :: Lens [a] (Either () (a,[a]))
 inList = isoLens inn out
  where
