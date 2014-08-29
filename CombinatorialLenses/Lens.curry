@@ -78,7 +78,7 @@ addFst f = enforceGetPut { put := put_
   put_ s v' = f s v' `bind` \s1' -> (s1',v')
 
 addSnd :: (Maybe (v,s1) -> v -> s1) -> Lens (v,s1) v
-addSnd f =  { put := put_
+addSnd f = enforceGetPut { put := put_
                          , get := \(v',_) -> Just v'
                          }
  where
