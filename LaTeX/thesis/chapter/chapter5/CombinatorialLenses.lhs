@@ -359,17 +359,53 @@ These kind of lenses do not seem very feasible at first sight, but we
 will see some practical lens definitions in the next section. %
 
 \subsection{Usage and Examples}\label{subsec:implCombEx}
-When composing lenses, the user has to think about its update strategy, i.e., the get direction of his lens. %
-
-Running example: |fst|. %
+Althoug the fundamental combinators of the library , we have not
+dived~\todo{dove?} into programming our own lenses so far. %
+When defining lenses, the user has to build his lens by composing the
+combinators of the library. %
+As a first simple example, we define our running example, |fst|, by
+the means of |addFst|. %
 
 \begin{spec}
-keepFstOr :: (v -> s1) -> Lens (s1,v) v
-keepFstOr f = addFst (\ s v' -> maybe (f v') fst s)
-
-keepFst :: Lens (s1,v) v
-keepFst = keepFstOr (const failed)
+(sub fst comb) :: Lens (a,b) a
+(sub fst comb) = addSnd (\ s _ -> maybe failed snd s)
 \end{spec}
+
+If there is no source available, there is not much we can do without
+losing generality~--~we could yield the view instead, consequently,
+both components of the given source pair must be of the same type,
+thus, the lens just fails. %
+Otherwise, we simply select the second component of the given pair and
+add it to the updated view to form a pair again. %
+The usage of |addSnd| indicates that we inject the value as second
+component, whereas the second component is reserved for the updated
+view. %
+Naturally, it follows that we can define |snd| as a lens as well:
+instead of |addSnd| and |snd|, we use their duals |addFst| and
+|fst|. %
+
+And what about the get direction? %
+We have only discussed the update strategy of the lens, i.e., the put
+direction. %
+First of all, let us test the behaviour of |sub fst comb|. %
+
+\begin{spec}
+> put' (sub fst comb) (Just (1,''test'')) 13
+(13,''test'')
+
+> get' (sub fst comb) (13,''test'')
+13
+\end{spec}
+
+The get as well as the put direction behaves as intended. %
+We can observe that we do not need to take the get direction into
+account when we define a new lens. %
+The library encourages the user to define his lenses by means of the
+put direction only. %
+As we discussed in Section~\ref{bi:fisher}, it may be more
+conventional and intuitive, but the put functions that we defined for
+the library have a unique corresponding get function, because all put
+function comply with the requirements stated by Fisher et. al. %
 
 Lenses on lists. %
 
