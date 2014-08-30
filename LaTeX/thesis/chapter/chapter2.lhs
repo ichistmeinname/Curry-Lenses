@@ -8,17 +8,27 @@ suitable. %
 Typical examples for such problems are widespread and can be found in
 several areas of Computer Science: serialisation or synchronisation
 processes, e.g. transforming Safari's bookmarks to be suitable for
-Firefox ~\citet{boomerang}\todo{check reference again};
-printer and parsers that harmonise in a meaningful way (see
+Firefox ~\citet{boomerang}\todo{check reference again}; printer and
+parsers that harmonise in a meaningful way (see
 Section~\ref{sec:printerParser}; tight connection between user
-interfaces and the underlying data
-\citet{constraintMaintainers}. %
+interfaces and the underlying data \citet{constraintMaintainers}. %
 
 In this chapter, we introduce the notion of bidirectional
 transformations and give the necessary fundamentals to dive deeper
 into the topic of bidirectional programming. %
 The first section covers the first attemps of bidirectional
 programming and its origin from databases. %
+Furthermore, we discuss the basic functionality of bidirectional
+transformations. %
+In the subsequent section we talk about a generalisation named lenses,
+the most important part of this section involves the underlying laws
+that apply to lenses as well as first examples of lens definition to
+get a better intuition of their usage. %
+As preliminary for further chapters, we cover some algebraic
+properties of lenses, which constitute as a minor disadvantage in a
+more practical setting later. %
+Last but not least, we present some applications that are build on
+lenses. %
 
 \section{Bidirectional Programming}\label{sec:biProg}
 
