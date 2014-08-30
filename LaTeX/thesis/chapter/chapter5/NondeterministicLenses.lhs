@@ -1,3 +1,3 @@
-\section{Nondeterministic lenses}
-\subsection{Extended laws}
-\subsection{Productive nondeterministic lenses}
+\section{Nondeterministic Lenses}
+\subsection{Extended Laws}
+\subsection{Productive nondeterministic Lenses}

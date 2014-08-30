@@ -46,13 +46,13 @@ the first component under consideration. %
 In most cases, the discarded original source leads to an ambiguous put
 function; in particular, the above implementation is only applicable
 in case of injective get functions as we already pointed out in
-Section \ref{subsec:lensesAlgebraic} %
+Section~\ref{subsec:lensesAlgebraic} %
 
 There are several existing ideas to overcome these limitations. %
 One of the most popular ideas is to choose the best put function based
 on similarities and differences between the original source and its
 potential update. %
-The initial concept was proposed by \cite{constraintMaintainers},
+The initial concept was proposed by~\cite{constraintMaintainers},
 whose framework of constraint maintainers for user interaction is
 sometimes called a pioneer work in the topic of bidirectional
 transformations and lenses. %
@@ -62,8 +62,7 @@ the given constraint; this approach aims to be user-friendly, because
 the results of the transformations are more comphrehensible the more
 they are related to the initial situation. %
 
-More recently,
-\cite{stateToDeltaLenses,stateToDeltaLensesAsymmetric,stateToDeltaLensesSymmetric}
+More recently,~\cite{stateToDeltaLenses,stateToDeltaLensesAsymmetric,stateToDeltaLensesSymmetric}
 follow this approach in their work about \emph{delta lenses}; they
 cover asymmetric as well as symmetric lenses. %
 The general idea is to distinguish between the computed delta and the
@@ -77,10 +76,10 @@ and this idea of delta lenses is a conservative extension to the
 original lens framework, that is, the framework can reproduce the
 behaviour of ordinary lenses. %
 
-Additionally, \cite{matchingLenses} put the theory into practice:
+Additionally,~\cite{matchingLenses} put the theory into practice:
 their development on a new core language of matching lenses for
 strings can be seen as enhancement of their domain-specific language
-Boomerang (see Section \ref{sec:comb}). %
+Boomerang (see Section~\ref{sec:comb}). %
 The framework parametrises lenses with respect to heuristics in order
 to calculate alignments. %
 So-called \emph{chunks} are used to label each element of the source
@@ -92,8 +91,7 @@ That is, every element of the source needs to have a corresponding
 element in the view and vice versa; the focus lies on the data and the
 original shape is ignored during alignment. %
 
-At this point, the work of \cite{editLenses} and
-\cite{deltaLenses,leastChangeLenses} comes into play. %
+At this point, the work of~\cite{editLenses} and~\cite{deltaLenses,leastChangeLenses} comes into play. %
 The former approach develops a theory of \emph{edit lenses}; the main
 difference to basic lenses is their focus on changes of structures
 similar to the idea behind delta lenses. %
@@ -108,7 +106,7 @@ Whereas Diskin et al. merely propose a theoretical framework for
 descriptions of changes, Hofmann et al. introduce a more mature
 approach with additional combinators, e.g., composition, sums,
 products etc, that give rise to brighter area of application. %
-Most recently, \cite{symmetricEditLenses} finished his dissertation
+Most recently,~\cite{symmetricEditLenses} finished his dissertation
 about edit lenses in a symmetric setting that gives rise to the latest
 developments in that area. %
 
@@ -119,7 +117,7 @@ Their approach tackles the problem of positional alignment and
 introduces an explicite separation of shape and data. %
 In their paper, they describe a point-free delta lens language in a
 dependent type setting, which is based on their early work of
-point-free lenses \citeyearpar{pointfree}. %
+point-free lenses~\citeyearpar{pointfree}. %
 They distinguish between horizontal and vertical deltas; the former
 describes an update, where source and view values are of different
 types, and the latter is special case, which describes updates for

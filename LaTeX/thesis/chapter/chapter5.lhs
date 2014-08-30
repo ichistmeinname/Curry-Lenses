@@ -1,4 +1,4 @@
-\chapter{Lens Implementations in Curry}\label{ch:CurryImpl}
+\chapter{Lens Implementations in Curry}\label{ch:curryImpl}
 
 In this chapter, we discuss two implementations of lenses in the
 functional logic programming language Curry: a combinatorial approach

@@ -1,6 +1,9 @@
 \chapter[About Bidirectional Transformations]{About Lenses and Other Bidirectional Shenanigans}\label{ch:BiTrans}
 
-\todo{Intro}
+keeping data in synch
+back-and-forth transformation of data types: serialisation, printer
+and parser, bookmarks for different browsers, 
+
 
 \section{Bidirectional Programming}\label{sec:biProg}
 Typical problems that are based on bidirectional transformations are
@@ -40,15 +43,16 @@ These two functions form, in the easiest approach, a bijection from
 In the next section, we discuss lenses, a more general approach of
 bidirectional transformation, which, additionally, are one of the most
 popular forms in bidirectional programming. %
-
-\todo{status quo \cite{biPApproaches}}
+An statement about the states quo of bidirectional programming is
+postponed to Chapter \ref{ch:impl}, where we disucess several
+implementation approaches, as well as Section \ref{sec:putLenses}. %
 
 \section{Lenses}\label{sec:lenses}
 Lenses describe bidirectional transformations that originate in
-databases as introduced by \cite{viewUpdate}.  In the setting of
-lenses, the |get| function describes a transformation from |A| to |B|,
-in most applications |B| is a subset of |A|, and information are
-discarded from |A| to |B|, respectively. %
+databases as introduced by \cite{viewUpdate}. %
+In the setting of lenses, the |get| function describes a
+transformation from |A| to |B|, in most applications |B| is a subset
+of |A|, and information are discarded from |A| to |B|, respectively. %
 On the other hand, the |put| function synchronises a given,
 potentially updated, view with respect to the original source. %
 A popular example from databases shows the correspondences quite well:
@@ -97,10 +101,11 @@ We want to synchronise the updated view with a source so that we need
 In a symmetric setting, both sides can be updated, so that the |get|
 functions takes an additional argument in comparison with our
 definition of |put| above. %
-In the following, we will only consider asymmetric lenses in a
-detailed manner. %
+In the following, we will only examine asymmetric lenses in a detailed
+manner. %
 For a detailed introduction to symmetric lenses, consider to take a
-look at the work of \cite{symmLenses}. %
+look at the work of \cite{symmLenses} or the dissertation of
+\cite{symmetricEditLenses}. %
 
 \todo{state vs operation-based}
 
@@ -331,7 +336,7 @@ corresponding get function, which behaves like the function |length ::
 (sub put take) (x:xs)  n
    | n == 0               = []
    | otherwise            = x : (sub put take) xs (n-1)
-(sub put take) _       _  = error "take fails for negative values"
+(sub put take) _       _  = error "take: negative value"
 
 (sub get length) []      = 0
 (sub get length) (x:xs)  = 1 + (sub get length) xs
@@ -363,10 +368,10 @@ expressions. %
 
 \begin{spec}
 > (sub get length) ((sub put take) -3 [1,2,3])
-"take fails for negative values"
+"take: negative value"
 
 > (sub put take) (-1) []
-"take fails for negative values"
+"take: negative value"
 \end{spec}
 
 Nevertheless, our second example is a valid lens with respect to GetPut and

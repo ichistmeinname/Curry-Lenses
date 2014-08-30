@@ -1,4 +1,4 @@
-\chapter{Different Implementation Approaches}\label{ch:Impl}
+\chapter{Different Implementation Approaches}\label{ch:impl}
 
 \todo{rephrase} Bidirectional programming is a rising topic in the
 field of computer science, and many different approaches exist to
