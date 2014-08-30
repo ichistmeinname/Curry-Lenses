@@ -21,7 +21,7 @@
 \EnableBpAbbreviations
 
 \usepackage{cite}
-\usepackage[authoryear]{natbib}
+\usepackage[round]{natbib}
 \usepackage{url}
 %
 % Pakete um Latin1 Zeichnensätze verwenden zu können und die dazu
