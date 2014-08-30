@@ -1,20 +1,37 @@
 \chapter[About Bidirectional Transformations]{About Lenses and Other Bidirectional Shenanigans}\label{ch:BiTrans}
 
-keeping data in synch
-back-and-forth transformation of data types: serialisation, printer
-and parser, bookmarks for different browsers, 
+In the setting of data synchronisation and data transformation, most
+approaches are error-prone and cumbersome to maintain. %
+This problem arises from the application of unidirectional
+programming, where bidirectional programming would be way more
+suitable. %
+Typical examples for such problems are widespread and can be found in
+several areas of Computer Science: serialisation or synchronisation
+processes, e.g. transforming Safari's bookmarks to be suitable for
+Firefox ~\citet{boomerang}\todo{check reference again};
+printer and parsers that harmonise in a meaningful way (see
+Section~\ref{sec:printerParser}; tight connection between user
+interfaces and the underlying data
+\citet{constraintMaintainers}. %
 
+In this chapter, we introduce the notion of bidirectional
+transformations and give the necessary fundamentals to dive deeper
+into the topic of bidirectional programming. %
+The first section covers the first attemps of bidirectional
+programming and its origin from databases. %
 
 \section{Bidirectional Programming}\label{sec:biProg}
+
 Typical problems that are based on bidirectional transformations are
 handled with two separate functions. %
 That is, one function maps the concrete value to the abstract
 representation and one function serves as backward direction, from the
 abstract value to the concrete representation. %
-This approach is rather error-prone and tedious to maintain, because, firstly,
-we have to keep the two functions in sync by hand in order to
+This approach is rather error-prone and tedious to maintain, because,
+firstly, we have to keep the two functions in sync by hand in order to
 guarantee correctness; secondly, changes in one of the representations
-affects both functions due to the round-tripping rules that have to be obeyed. %
+affects both functions due to the round-tripping rules that have to be
+obeyed. %
 This unidirectional programming mechanism is well-studied and many
 programmers are familiar with this paradigm. %
 In contrast, bidirectional programming is a new approach on a specific
@@ -24,6 +41,9 @@ Software engineering, programming languages, databases and graph
 transformations are some of the current fields of computer science
 that participate in research activities concerning bidirectional
 transformations. %
+For a more detailed introduction to the cross-discipline of
+bidirectional transformation, we recommend the work
+of~\cite{biTPerspective}. %
 In the remainder of this thesis, we focus on bidirectional
 transformation from the perspective of the programming language
 community. %
@@ -44,8 +64,11 @@ In the next section, we discuss lenses, a more general approach of
 bidirectional transformation, which, additionally, are one of the most
 popular forms in bidirectional programming. %
 An statement about the states quo of bidirectional programming is
-postponed to Chapter \ref{ch:impl}, where we disucess several
-implementation approaches, as well as Section \ref{sec:putLenses}. %
+postponed to Chapter~\ref{ch:impl}, where we disucess several
+implementation approaches, as well as Section~\ref{sec:implPut}. %
+Another good source for further reading is the
+paper of~\cite{biPApproaches} that contrasts three different
+approaches of bidirectional programming with one anoter. %
 
 \section{Lenses}\label{sec:lenses}
 Lenses describe bidirectional transformations that originate in
@@ -66,7 +89,7 @@ We definitely want to propagate the update back to our database; this
 is where the |put| function comes into play. %
 The |put| function synchronises our changes of the view, |B'|, with
 the original database set |A|. %
-Figure \ref{fig:bit} illustrates the discussed situation of an updated
+Figure~\ref{fig:bit} illustrates the discussed situation of an updated
 view, which is synchronised with its original source. %
 
 %
@@ -104,10 +127,11 @@ definition of |put| above. %
 In the following, we will only examine asymmetric lenses in a detailed
 manner. %
 For a detailed introduction to symmetric lenses, consider to take a
-look at the work of \cite{symmLenses} or the dissertation of
-\cite{symmetricEditLenses}. %
-
-\todo{state vs operation-based}
+look at the work of~\cite{symmLenses} or the dissertation
+of~\cite{symmetricEditLenses}. %
+Furthermore, a more detailed listing of different properties that are
+applicable for lenses can be studied in the work
+of~\cite{biTProperties}. %
 
 \subsection{Laws}\label{subsec:lensesLaws}
 
@@ -221,10 +245,10 @@ and $v$ where $(v,w)$ is of type |(String,Integer)|, it holds
 \label{fig:laws}
 \end{figure}
 
-In Figure \ref{fig:laws}, we illustrate both lens laws; the different
+In Figure~\ref{fig:laws}, we illustrate both lens laws; the different
 colouring of the view distinguishes the original value of the view and
 the new updated view. %
-In the pioneering work of \cite{biTCombinators} in the topic of
+In the pioneering work of~\cite{biTCombinators} in the topic of
 bidirectional programming and lenses, a lens is called
 \emph{well-behaved} if both laws, the \emph{GetPut} and the
 \emph{PutGet} law, hold. %
@@ -293,7 +317,7 @@ Thus, the given lens does not fulfil the GetPut law for empty lists. %
 "head is undefined for empty lists"
 \end{spec}
 
-In order to use partial lenses like proposed by \cite{biTProperties},
+In order to use partial lenses like proposed by~\cite{biTProperties},
 we need to adjust the lens laws by means of partiality. %
 In the following, the expression $|(f x)|\downarrow$ is satisfied, if
 the function $f$ yields a result for the argument $x$. %

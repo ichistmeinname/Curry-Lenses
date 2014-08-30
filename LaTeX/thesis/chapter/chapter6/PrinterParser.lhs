@@ -1,4 +1,4 @@
-\section{Case Study I - Bidirectional Printer-Parser}
+\section{Case Study I - Bidirectional Printer-Parser}\label{sec:printerParser}
 
 Printer and parser are well-studied fields in Computer Science and
 take an important role in the design of programming languages. %
