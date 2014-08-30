@@ -1,7 +1,7 @@
 \section{Combinatorial Lens Library}\label{sec:implComb}
 
 We already discussed two different approaches on combinatorial
-frameworks for lenses in Section \ref{sec:comb} to provide an insight
+frameworks for lenses in Section~\ref{sec:comb} to provide an insight
 of recent implementations. %
 As a matter of fact, the combinatorial library for Curry is based on
 the approach of Fisher et. al, who published the Haskell library
@@ -19,7 +19,7 @@ function for the get direction and one for put. %
 We can define such a data structure in Curry in three different ways:
 as a data type declaration with an own constructor, as a record
 type\footnote{We will not pursue the usage of record types here, but
-  seize the concept in Section \ref{sec:records}.}, or as type
+  seize the concept in Section~\ref{sec:records}.}, or as type
 synonym. %
 For the purpose of simplicity, we define lenses with a simple type
 synonym for a pair of get and put functions. %
@@ -56,7 +56,7 @@ The definition of this lens is straight-forward, but what we gain from
 simplicity, we lose in accuracy and maintainability. %
 First of all, the given definition does not automatically form a
 well-behaved lens, because we did not check the lens laws
-yet.\footnote{In fact, we know from Section \ref{sec:lenses} that this
+yet.\footnote{In fact, we know from Section~\ref{sec:lenses} that this
   exemplary lens definition is well-behaved.} %
 Secondly, if we modify one of the two functions, we have to make sure
 that the other one still harmonises with our modifications. %
@@ -142,12 +142,12 @@ get (Lens _ f) s = case f s of
 \end{spec}
 
 In order to handle the problem of partial lens definition, which we
-discussed in Section \ref{subsec:lensesLaws}, the given representation
+discussed in Section~\ref{subsec:lensesLaws}, the given representation
 of lenses wraps a |Maybe| data type around the view for the |get|
 function. %
 That is, we can actually observe if the expression |get s| succeeds or
 fails. %
-We could use \emph{SetFunctions} introduced by \cite{setFunctions} to
+We could use \emph{SetFunctions} introduced by~\cite{setFunctions} to
 identify defined and undefined values, but we adhere to the original
 implementation for simplicity reasons.\footnote{SetFunctions might
   behave unexpectedly for partially applied functions.} %
@@ -175,7 +175,7 @@ well-suited for composition if the view of the first lens and the
 source of the second lens have matching types. %
 That is, in the get direction we can make two consecutive
 applications, i.e., the composition of two get functions is just
-function compostion. %
+function composition. %
 With two get functions |sub get l1 :: s -> v| and |sub get l2 :: v ->
 w|, and a source of type |s|, we apply |sub get l1| to yield a view of
 type |v|, and then, apply |sub get l2| to the result, which yields a
@@ -227,7 +227,7 @@ phi p  = Lens get_ put_
    get_ s    | p s        = Just s
              | otherwise  = Nothing
    put_ _ v  | p v        = Just v
-             | otheriwse  = error "phi: predicate not fulfilled"
+             | otherwise  = error "phi: predicate not fulfilled"
 \end{spec}
 
 In particular, the put direction declines any updated view that does
@@ -238,7 +238,7 @@ and yields that source for a positive outcome; otherwise it does not
 exist a valid view for the given source and the function yields
 |Nothing|. %
 
-\subsubsection*{Products: Pairing and Unpairing}
+\subsubsection*{Products: Pairing and Unpairing~\todo{Splitting?}}
 The second category of combinators covers products to build pairs and
 projects components of pairs. %
 The first lens builds a pair in the put direction by injecting a value to the left of the
@@ -390,10 +390,10 @@ direction. %
 First of all, let us test the behaviour of |sub fst comb|. %
 
 \begin{spec}
-> put' (sub fst comb) (Just (1,''test'')) 13
-(13,''test'')
+> put' (sub fst comb) (Just (1,"test")) 13
+(13,"test")
 
-> get' (sub fst comb) (13,''test'')
+> get' (sub fst comb) (13,"test")
 13
 \end{spec}
 
@@ -405,28 +405,247 @@ put direction only. %
 As we discussed in Section~\ref{bi:fisher}, it may be more
 conventional and intuitive, but the put functions that we defined for
 the library have a unique corresponding get function, because all put
-function comply with the requirements stated by Fisher et. al. %
+functions comply with the requirements stated by Fisher et. al. \\
 
-Lenses on lists. %
+The library consists of several combinators that work on sums and
+products; but what about built-in data types or user-defined
+structures? %
+We use the idea that every algebraic data type can be expressed by
+sums and products. %
+For example, we can take a look at the |Maybe| data type in Curry,
+which is a classical representive for a sum type. %
+
+\begin{spec}
+data Maybe a = Nothing | Just a
+\end{spec}
+
+The |Maybe| data type has one constructor |Nothing| that represents a
+failure value, and the |Just| constructor for valid values. %
+We can easily rewrite this data type and use sum types, i.e.,
+|Either|, instead. %
+
+\begin{spec}
+type Maybe a = Either () a
+
+nothing :: Maybe a
+nothing = Left ()
+
+just :: a -> Maybe a
+just = Right
+\end{spec}
+
+A failure value like |Nothing| can be represented with |Left ()|,
+because |()| is the only value of the Unit type; and any other value
+can be represented with |Right| instead of |Just|. %
+
+As a second example, we discuss how to use the available combinators
+to build lenses for lists. %
+First of all, we need to think about a representation for lists by
+means of sum or product types, therefore, we recall the definition of
+lists in Curry. %
+
+\begin{spec}
+data [a] = [] | a : [a]
+\end{spec}
+
+Similiar to the |Maybe| data type, we have one value that stands for
+itself and does not hold any value, here: the empty list. %
+In addition, the second constructor adds a new element to the head
+of a list, that is, the binary constructor can be represented as a
+product, i.e., with |(,)| %
+With this general structure in mind, we can represent lists as
+combination of |Either| and |(,)| as follows. %
+
+\begin{spec}
+type List a = Either () (a,[a])
+
+empty :: List a
+empty = Left ()
+
+cons :: a -> [a] -> List a
+cons = Right . (,) 
+\end{spec}
+
+In this representation, the list |[1,2,3,4]| is rewritten as |Right
+(1,[2,3,4])|, and the empty list, [], corresponds to |Left ()|. %
+
+Every algebraic data type has a set of selectors to work with, in the
+following, we define lenses equivalent to |head| and |tail| in the get
+direction. %
+Up to this point, we have withold the information about another
+special combinator that builds an isomorphism between two data
+representations. %
 
 \begin{spec}
 isoLens :: (a -> b) -> (b -> a) -> Lens b a
 isoLens f g = Lens (\_ v -> f v) (\s   -> Just (g s))
+\end{spec}
 
+The |isoLens| forms an isomorphism between two types |a| and |b|,
+where |b| is the starting value, and |a| takes the role of the
+internal structure. %
+The functions takes two functions for transformations: from |a| to |b|
+and vice versa; in the get direction, we transform the source to an
+internal structure, and convert the updated structure back again in
+the put direction. %
+In order to provide selectors for lists, we have to define such an
+isomorphism between the list data type and the rewritten stucture
+based on sums and products. %
+
+\begin{spec}
 inList :: Lens [a] (Either () (a,[a]))
 inList = isoLens inn out
  where
   inn eVal = either (\ () -> []) (\ (x,xs) -> x:xs) eVal
   out xs   = case xs of
-                  []   -> Left ()
-                  y:ys -> Right (y,ys)
+                  []   -> empty
+                  y:ys -> cons y ys
+\end{spec}
 
+The transformation functions follow naturally from the definition of
+|List a| above. %
+\todo{Or in detail: For the transformation from |[a]| to |Either ()
+  (a,[a])|, we map an empty list to |empty|, and apply |cons| to the
+  head element and the remainder of the list otherwise. %
+  On the other side, |Left ()| is mapped to the empty list and a
+  |Right value| corresponds to the application of |(:)| to the first
+  and second component.} %
+In order to eliminate the wrapping |Either|, we can use |injR| or
+|injL| that unwrap the |Left| and |Right| constructor, respectively,
+and yield the containing value. %
+
+\begin{spec}
 cons :: Lens [a] (a, [a])
 cons = inList <.> injR
-
-unhead :: Lens [a] a
-unhead = cons <.> keepSnd
-
-untail :: Lens [a] [a]
-untail = cons <.> keepFst
 \end{spec}
+
+That is, for an exemplary list |[1,2,3,4]|, we can apply our lens
+|cons| to transform the list into a pair of head element and remaining
+list, and to replace the given list by a new one. %
+
+\begin{spec}
+> get' cons [1,2,3,4]
+(1,[2,3,4])
+
+> put' cons (Just [1,2,3,4]) (13,[])
+[13]
+
+> get' cons []
+"get': value is `Nothing`"
+\end{spec}
+
+Unfortunately, we cannot transform the empty list into a
+representation with sums only, because, first, the used combinator
+|injR| only selects |Right| values and the empty list is represented
+as |Left ()|, and secondly, sum types are not suitable to model
+failure values like the empty list. %
+On the other hand, the usage of |injL| instead of |injR| is not
+feasible either: |injL| can only select |Left| values and fails
+otherwise. %
+However, this minor disadvantage does not affect the combinators that
+we want to define. %
+The functions |head| and |tail| are partial functions that only
+operate on non-empty lists; we do not need to take the empty list
+under consideration to define our lenses. %
+
+The actual definition of |changeHead| and |changeTail|\footnote{The
+  names conform to the functionality of their put function.} is rather
+simple: the |cons| combinators splits the list into head and tail,
+thus, we only need to chose between the first and second component as
+a last step. %
+
+\begin{spec}
+changeHead :: Lens [a] a
+changeHead = cons <.> keepSnd
+
+changeTail :: Lens [a] [a]
+changeTail = cons <.> keepFst
+\end{spec}
+
+Obviously, |changeHead| replaces the head of the list with a new
+element and leaves the tail untouched with |keepSnd| and vice versa
+for |changeTail|. %
+In the corresponding get direction, we can access the head and tail of
+the list, respectively. %
+
+\begin{spec}
+> get' changeHead [1,2,3,4]
+1
+
+> put' changeHead [1,2,3,4] 13
+[13,2,3,4]
+
+> get' changeTail [1,2,3,4]
+[2,3,4]
+
+> put' changeTail [1,2,3,4] [13,14,15]
+[1,13,14,15]
+\end{spec}
+
+Users can follow the same approach to define lenses for self-defined
+data types. %
+In order to provide an example, a data type with one constructor
+and several arguments can be transformed to a sum. %
+Consider the simple data type |Date| with one constructor and
+two arguments corresponding to a month and day, respectively. %
+
+\begin{spec}
+type Month = Int
+type Day = Int
+
+data Date = Date Month Day
+\end{spec}
+
+We can easily transform this data type to a pair |(Month,Day)| with the
+lens
+
+\begin{spec}
+date :: Lens Date (Month,Day)
+date = isoLens inn out
+  where
+   in (m,d) = Date m d
+   out (Date m d) = (m,d)
+\end{spec}
+
+and provide selectors, |day| and |month|, to access the values in the
+get direction and replace them with new values in the put direction. %
+
+\begin{spec}
+month :: Lens Date Month
+month = dateLens <.> keepSnd
+
+day :: Lens Date Day
+day = dateLens <.> keepFst
+
+> put' month (Date 12 10) 10
+Date 10 10
+
+> get' day (Date 11 18)
+18
+\end{spec}
+
+We can observe from this simple example that, in addition to simple
+accessors, we can add checks in order to restrict the range of valid
+values. %
+In the case of a data structure for dates, valid values range between
+|Date 1 1| and |Date 12 31| with a lot of exceptions in between. %
+We can modify the transformation functions of |date| easily to shrink
+the range of valid dates. %
+
+\begin{spec}
+(sub date advance) :: Lens Date (Month,Day)
+(sub date advance) = isoLens inn out
+  where
+   in (m,d) | check m d = Date m d
+   out (Date m d) | check m d = (m,d)
+   check m d  = m > 0 && m < 13 && d > 0 && d < 32
+\end{spec}
+
+Our modification still tolerates some invalide dates, e.g. |Date 2
+31|, but for simplicity reasons we leave further adjustments to the
+reader. %
+
+This schema can be used for all kind of algebraic data types. %
+We provide some more of our examples in Appendix~\ref{a:combExamples}
+and will discuss some more lenses in Section~\ref{sec:wui}. %
+
