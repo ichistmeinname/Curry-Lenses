@@ -1,6 +1,6 @@
 \chapter{Combinatorial Library: Examples for Lenses}\label{a:combExamples}
 
-\section{Temperature examples}
+\section*{Temperature examples}
 
 \begin{spec}
 data Temp = Temp Float
@@ -20,7 +20,7 @@ fToC :: Float -> Float
 fToC f = (f -. 32) *. (5/.9)
 \end{spec}
 
-\section{Time examples}
+\section*{Time examples}
 \begin{spec}
 data Time = Time Int Int
 
@@ -34,7 +34,7 @@ innT :: Int -> Time
 innT m = Time (m `quot` 60) (m `mod` 60)
 \end{spec}
 
-\section{Person examples}
+\section*{Person examples}
 \begin{spec}
 data Person = Person Name City
 type First = String

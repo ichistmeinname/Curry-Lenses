@@ -1,5 +1,8 @@
-\chapter{Challenges}
-\section{Curry's built-in search abilities}
+\chapter{Summary}
+
+\section{Challenges}
+\subsection{Curry's built-in search abilities}
+\todo{This is just a first draft}
 We have the following interface for put-based lenses that generate a
 corresponding |get|-function for a defined lens. 
 
@@ -71,7 +74,7 @@ data BinInt = Neg Nat | Zero | Pos Nat
 data Nat = IHi | O Nat | I Nat
 \end{code}
 
-\subsection{Guessing lists with a specific length}
+\subsubsection*{Guessing lists with a specific length}
 
 So, how does the evaluation steps look like, when we want to compute
 the length of a list?
@@ -305,7 +308,7 @@ failed ? True ? succ (lengthNat (_x4:([] ? (_x6:zs)))) == IHi
 \end{spec}
 \end{figure}
 
-\subsection{Peano numbers}
+\subsubsection{Peano numbers}
 At first, we use another data structure for numbers that has an unary representation, i.e. we will
 use peano numbers.
 
@@ -401,7 +404,7 @@ of the example shows that no further guesses for free variables are
 necessary, because the partial evaluation of |S n| can never be
 evaluated to  |Z|, hence, the expression fails and the evaluation terminates.
 
-\subsection{Binary List Representation}
+\subsubsection{Binary List Representation}
 
 The second approach is to choose another list representation, more
 precisely, a representation that behaves well with the internal
@@ -524,3 +527,14 @@ In the end, this expression yields the following result in KICS2:
 That is, the expression |putHalveBinaryList v == [(),()] where v free|
 yields |{v = NonEmpty (LIHi ())} True| and |get putHalveBinaryList
 [(),()] | yields |NonEmpty (LIHi ())|, respectively.
+
+\section{Results}
+\begin{itemize}
+\item side-product: reactivation of EasyTest, test library for lens laws, automated test generator
+\end{itemize}
+\section{Outlook}
+\begin{itemize}
+\item static analysis for laws \cite{validityCheck}
+\item record transformation for KiCS2
+\item bidirectionalisation of corresponding get function
+\end{itemize}

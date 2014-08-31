@@ -136,7 +136,7 @@
 %
 % Dargestellte Strukturiertiefe im Inhaltsverzeichnis
 %
-\setcounter{tocdepth}{3}
+\setcounter{tocdepth}{1}
 
 %
 % Zeilenabstand wird um den Faktor 1.25 verändert

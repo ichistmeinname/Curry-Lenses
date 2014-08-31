@@ -1,5 +1,5 @@
 \section{Case Study I - Bidirectional Printer-Parser}\label{sec:printerParser}
-
+\todo{This is just the first draft and not yet complete}
 Printer and parser are well-studied fields in Computer Science and
 take an important role in the design of programming languages. %
 In order to prove a programming language's expressiveness, the

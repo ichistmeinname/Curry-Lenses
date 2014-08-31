@@ -60,7 +60,6 @@
 %include chapter/chapter5.lhs
 %include chapter/chapter6.lhs
 %include chapter/chapter7.lhs
-%include chapter/chapter8.lhs
 
 % Setze Nummerierung wieder auf römisch zurück und setzte von oben fort
 % Wert ist demnach der von 'roemisch'

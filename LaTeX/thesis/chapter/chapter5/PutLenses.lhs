@@ -3,6 +3,8 @@
 
 
 \subsection{Getting in the Way of Productive Results}
+\todo{Explain why get is not applicable for us - intro is still missing}
+
 State of the art: define get direction and derive corresponding put.
 
 \begin{spec}
@@ -48,6 +50,7 @@ function; in particular, the above implementation is only applicable
 in case of injective get functions as we already pointed out in
 Section~\ref{subsec:lensesAlgebraic} %
 
+\subsection{Related Work on Get-Based Lenses}
 There are several existing ideas to overcome these limitations. %
 One of the most popular ideas is to choose the best put function based
 on similarities and differences between the original source and its
@@ -135,6 +138,7 @@ for horizontal delta lenses, which introduce shape alignments for
 combinators like fold and unfold. %
 
 \subsection{Putting it straight}
+\todo{Our acutal implemtation plus implementation an examples}
 
 \begin{spec}
 type (sub Lens put) s v = s -> v -> s
@@ -148,4 +152,4 @@ type (sub Lens put) s v = s -> v -> s
 \end{spec}
 
 
-\subsection{Examples}\label{subsec:implPutEx}
+% \subsection{Examples}\label{subsec:implPutEx}

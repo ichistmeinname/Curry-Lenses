@@ -8,10 +8,10 @@ suitable. %
 Typical examples for such problems are widespread and can be found in
 several areas of Computer Science: serialisation or synchronisation
 processes, e.g. transforming Safari's bookmarks to be suitable for
-Firefox ~\citet{boomerang}\todo{check reference again}; printer and
+Firefox~\citep{boomerang}\todo{check reference again}; printer and
 parsers that harmonise in a meaningful way (see
 Section~\ref{sec:printerParser}; tight connection between user
-interfaces and the underlying data \citet{constraintMaintainers}. %
+interfaces and the underlying data~\citep{constraintMaintainers}. %
 
 In this chapter, we introduce the notion of bidirectional
 transformations and give the necessary fundamentals to dive deeper
@@ -24,11 +24,11 @@ In the subsequent section we talk about a generalisation named lenses,
 the most important part of this section involves the underlying laws
 that apply to lenses as well as first examples of lens definition to
 get a better intuition of their usage. %
-As preliminary for further chapters, we cover some algebraic
-properties of lenses, which constitute as a minor disadvantage in a
-more practical setting later. %
-Last but not least, we present some applications that are build on
-lenses. %
+% As preliminary for further chapters, we cover some algebraic
+% properties of lenses, which constitute as a minor disadvantage in a
+% more practical setting later. %
+% Last but not least, we present some applications that are build on
+% lenses. %
 
 \section{Bidirectional Programming}\label{sec:biProg}
 
@@ -143,7 +143,7 @@ Furthermore, a more detailed listing of different properties that are
 applicable for lenses can be studied in the work
 of~\cite{biTProperties}. %
 
-\subsection{Laws}\label{subsec:lensesLaws}
+\subsection*{PutGet Law}\label{subsec:lensesLaws}
 
 So far, we characterised lenses as a bidirectional transformation with
 an adapted |put| function, which allows round-tripping behaviour. %
@@ -211,6 +211,7 @@ and $v'$ is of type |String|, it holds |(sub fst get) ((sub fst put) (v,w) v') =
 \end{spec}
 \end{proof}
 
+\subsection*{GetPut Law}
 In addition to the \emph{PutGet} law, lenses are also supposed to
 fulfil a second round-tripping criteria. %
 The \emph{GetPut} law states that if we get a view out of a source and
@@ -263,6 +264,7 @@ bidirectional programming and lenses, a lens is called
 \emph{well-behaved} if both laws, the \emph{GetPut} and the
 \emph{PutGet} law, hold. %
 
+\subsection*{Partial Lenses}
 Furthermore, more and more frameworks for bidirectional
 transformations and bidirectional programming languages, respectively,
 endorse a weaker notion of the presented \emph{PutGet} and
@@ -409,9 +411,9 @@ expressions. %
 \end{spec}
 
 Nevertheless, our second example is a valid lens with respect to GetPut and
-Partial-PutGet. \\
+Partial-PutGet. %
 
-
+\subsection{PutPut Law}
 There is also a third lens law, which is called \emph{PutPut}. %
 A lens satisfies the \emph{PutPut} law if we run two consecutively
 |put| operations on a source with two different views, but only the
@@ -457,12 +459,12 @@ In our case, the second put application to the source list
 is [1,2,3], which differs from the result with consecutive put
 calls. %
 
-\subsection{Algebraic properties}\label{subsec:lensesAlgebraic}
-Limitations concerning injectivity of get-functions!
+% \subsection{Algebraic properties}\label{subsec:lensesAlgebraic}
+% \todo{Limitations concerning injectivity of get-functions!}
 
-\section{Applications}\label{sec:applications}
-\begin{itemize}
-\item Boomerang \cite{boomerang}
-\item HaXML \cite{haxml}
-\item Model transformation \cite{parsing1}
-\end{itemize}
+% \section{Applications}\label{sec:applications}
+% \begin{itemize}
+% \item Boomerang \cite{boomerang}
+% \item HaXML \cite{haxml}
+% \item Model transformation \cite{parsing1}
+% \end{itemize}

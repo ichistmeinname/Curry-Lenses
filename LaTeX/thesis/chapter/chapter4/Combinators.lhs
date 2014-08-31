@@ -137,8 +137,9 @@ problems of |get| definitions are the ambiguity of the derived |put|
 functions. %
 That is, in several cases it exists more than one appropriate |put|
 function to correspond with the |get| definition. %
-As we discussed before, these problems concerning ambiguity arrive
-when the defined |get| function is not injective. %
+These problems concerning ambiguity arrive
+when the defined |get| function is not injective; we will discuss
+this topic in more detail in Section~\ref{sec:implPut}. %
 This ambiguity can be eliminated when we define the |put| direction
 instead. %
 Fisher et al. show in their work that the corresponding |get| function
