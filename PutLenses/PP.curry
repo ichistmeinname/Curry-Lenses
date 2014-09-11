@@ -2,7 +2,7 @@ module PP where
 
 import Lens
 import Char (isAlpha, isAlphaNum, isSpace, isDigit, intToDigit)
-import List (isSuffixOf,intercalate)
+import List (isSuffixOf,intercalate,find)
 import Maybe
 import Sort
 import SetFunctions
@@ -12,8 +12,7 @@ type PPrinter a = Lens String (a,String)
 -- type Printer a = a -> String
 
 pParse :: PPrinter a -> String -> a
-pParse pp str = foldr (\ (expr',str') expr ->
-    if null str' then expr' else expr) err values
+pParse pp str = maybe err fst $ find ((== "") . snd) values
  where
   values = getND pp str
   err    = error "no complete parse"
@@ -24,10 +23,10 @@ pPrint pp val = pp "" (val,"")
 ----- data structure for arithmetic expressions
 
 data Expr     = BinOp Op Expr Expr
-              | Paren Expr
               | Num Int
 data Op       = Plus | Mult | Div | Minus
 
+-- (BinOp Plus (BinOp Plus (Num 2) (Num 3)) (Num 4))
 
 ----- combinators for printing
 infixl 4 <>, <<<, >>>
@@ -49,63 +48,84 @@ infixl 3 <|>
                               []   -> pA2 str pair
                               str' -> str'
 
+char :: PPrinter Char
+char _ (c,str') = c : str'
+
+charP :: (Char -> Bool) -> PPrinter Char
+charP p _ (c,str') | p c = c : str'
+
+digit :: PPrinter Int
+digit _ (d,str') | d <= 9 && d >= 0 = show d ++ str'
+
+-- does not work for printer (non-deterministic!)
+many :: PPrinter a -> PPrinter [a]
+many _ _ ([],str')   = str'
+many pp str (x:xs,str') = (pp <> many pp) str ((x,xs),str')
+
+many1 :: PPrinter a -> PPrinter [a]
+many1 pp str (x:xs,str') = (pp <> many pp) str ((x,xs),str')
+
+whitespace :: PPrinter ()
+whitespace _ ((),str') = " " ++ str'
+
+whitespaces' :: PPrinter ()
+whitespaces' str ((),str') = (whitespace <|> whitespaces') str ((),str')
+
+whitespaces :: PPrinter [()]
+whitespaces = many1 whitespace
+
+pure :: PPrinter a
+pure _ (_,str') = str'
+
 
 ----- simple version of printer with prefix operators
-
 ppExpr :: PPrinter Expr
 ppExpr str (BinOp op e1 e2,str') =
-  ((ppOp <<< ppWhitespaces) <> (ppExpr <<< ppWhitespace)
-                           <> ppExpr) str (((op,e1),e2),str')
-ppExpr str (Paren expr,str')     = "(" ++ ppExpr str (expr,")"++str')
-ppExpr str (Num v,str')          = ppNum str (v,str')
+  ((ppOp <<< whitespace) <> (ppExpr <<< whitespace)
+                         <> ppExpr) str (((op,e1),e2),str')
+ppExpr str (Num v,str')          = digit str (v,str')
 
 ppOp :: PPrinter Op
 ppOp _ (Plus,str') = "+" ++ str'
 ppOp _ (Mult,str') = "*" ++ str'
 
-ppNum :: PPrinter Int
-ppNum _ (d,str') | d <= 9 && d >= 0 = show d ++ str'
 
-ppWhitespace :: PPrinter ()
-ppWhitespace _ ((),str') = " " ++ str'
+----- prefix operators with redundant whitespaces
+-- does not terminate in put-drection because of heavily use of nondeterminism
+ppExprSpaces :: PPrinter Expr
+ppExprSpaces str (BinOp op e1 e2,str') =
+  ((ppOp <> whitespaces) <> (ppExprSpaces <> whitespaces)
+                         <> ppExprSpaces) str (((opSpaces,e1Spaces),e2),str')
+ where
+  opSpaces = (op,_)
+  e1Spaces = (e1,_)
+ppExprSpaces str (Num v,str')          = digit str (v,str')
 
-ppWhitespaces :: PPrinter ()
-ppWhitespaces str ((),str') = (ppWhitespace <|> ppWhitespaces) str ((),str')
-
-ppPure :: PPrinter a
-ppPure _ (_,str') = str'
 
 ----- better version of printer with infix operators
-
-aBool :: Bool
-aBool = v where v free
-
-xor :: Bool -> Bool -> Bool
-xor x y = not (x == y)
-
-test :: () -> (Expr,String)
-test _ = if put ppExpr' "4  + 4" v == "4  + 4" then v else failed
- where v free
-
 ppExpr' :: PPrinter Expr
-ppExpr' str t@(e,str') = case e of
-  BinOp op e1 e2 ->
-    ((ppTerm <<< ppWhitespaces)
-      <> ppPlusMinus
-      <> (ppWhitespaces >>> ppExpr')) str (((e1,op),e2),str')
-  _                   -> ppTerm str t
+ppExpr' str t@(BinOp op e1 e2,str')
+  | op == Plus || op == Minus =
+      ((ppTerm <<< whitespace)
+        <> ppPlusMinus
+        <> (whitespace >>> ppExpr')) str (((e1,op),e2),str')
+  | otherwise                 = ppTerm str t
+ppExpr' str t@(Num _,_)       = ppTerm str t
 
 ppTerm :: PPrinter Expr
-ppTerm str (BinOp op e1 e2, str') =
-  ((ppFactor <<< ppWhitespace)
-   <> ppMultDiv
-   <> (ppWhitespace >>> ppTerm)) str (((e1,op),e2),str')
-ppTerm str f = ppFactor str f
+ppTerm str f@(BinOp op e1 e2, str')
+  | op == Mult || op == Div =
+    ((ppFactor <<< whitespace)
+      <> ppMultDiv
+      <> (whitespace >>> ppTerm)) str (((e1,op),e2),str')
+  | otherwise               = ppFactor str f
+ppTerm str f@(Num _,_)      = ppFactor str f
 
 ppFactor :: PPrinter Expr
-ppFactor str (Paren expr,str') = "(" ++ ppExpr' str (expr,")"++str')
-ppFactor str (Num v,str') = ppNum str (v,str')
-
+ppFactor str f@(e,str') = case e of
+  Num v       -> digit str (v,str')
+  _           -> "(" ++ ppExpr' str (e,")" ++ str')
+     
 ppMultDiv :: PPrinter Op
 ppMultDiv _ (Mult,str') = "*" ++ str'
 ppMultdiv _ (Div,str')  = "/" ++ str'
@@ -113,11 +133,6 @@ ppMultdiv _ (Div,str')  = "/" ++ str'
 ppPlusMinus :: PPrinter Op
 ppPlusMinus _ (Plus,str')  = "+" ++ str'
 ppPlusMinus _ (Minus,str') = "-" ++ str'
-
--- does not work for printer (non-deterministic!)
-ppMany :: PPrinter a -> PPrinter [a]
-ppMany _ _ ([],str')   = str'
-ppMany pp str (x:xs,str') = ppMany pp str (xs,pp str (x,str'))
 
 
 ----- Lenses with canonizers (Quotient Lenses)
