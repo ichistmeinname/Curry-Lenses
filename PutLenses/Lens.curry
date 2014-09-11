@@ -59,25 +59,11 @@ remSnd f val1 (val2,val') | f val2 == val' = val1
 keepFst :: Lens (s1,v) v
 keepFst (s,_) v = (s,v)
 
--- keepFstOr :: (v -> s1) -> Lens (s1,v) v
--- keepFstOr 
-
 keepSnd :: Lens (v,s1) v
 keepSnd (_,s) v = (v,s)
 
--- keepSndOr :: (v -> s1) -> Lens (v,s1) v
--- keepSndOr f = addSnd (\s v' -> ifAvailable (f v') snd s)
---  where
---   ifAvailable :: s -> ((v,s) -> s) -> (v,s) -> s
---   ifAvailable = 
-
 addSnd :: ((v,s1) -> v -> s1) -> Lens (v,s1) v
 addSnd f s@(v,_) v' = (v',f s v) 
-
-isoLens :: (a -> b) -> (b -> a) -> Lens b a
-isoLens fAB _ _ v = fAB v 
--- out (a,b,c,d)     = ((a,b),(c,d))
--- inn ((a,b),(c,d)) = (a,b,c,d)
 
 (\/) :: Lens s v1 -> Lens s v2 -> Lens s (Either v1 v2)
 (l1 \/ l2) s (Left  v1) = disjoint l1 l2 (put l1 s v1)
@@ -98,6 +84,12 @@ botLens _ _ = error "_|_"
 mapLens :: Lens a b -> Lens [a] [b]
 mapLens _ []     []     = []
 mapLens lensF (x:xs) (y:ys) = lensF x y : mapLens lensF xs ys
+
+mapLens' :: Lens a b -> Lens [a] [b]
+mapLens' _ []     []     = []
+mapLens' _ []     _      = []
+mapLens' _ _      []     = []
+mapLens' lensF (x:xs) (y:ys) = lensF x y : mapLens' lensF xs ys
 
 unhead :: Lens [a] a
 unhead (_:xs) x' = (x':xs)

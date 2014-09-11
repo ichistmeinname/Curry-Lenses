@@ -8,8 +8,6 @@ import qualified BinaryList as BL
 import Binary
 import qualified Peano as P
 
-import HTML
-
 ----- Data type projections
 
 type Month   = Int
@@ -363,6 +361,11 @@ putAt n (x:xs) v | n < 0     = failed
                  | n == 0    = v:xs
                  | otherwise = x : putAt (n-1) xs v
 
+-- putEvens :: Lens [Int] [Int]
+-- putEvens _ []                  = []
+-- putEvens xs (z:zs) | z `mod` 2 == 0 = z : putEvens xs zs
+--                    | otherwise      = putEvens xs zs
+
 ----- Misc
 
 -- Does not work - why?
@@ -391,14 +394,14 @@ putSetMaybe (Just v) False = Nothing
 
 ----- HTML Replace
 
-replaceExprByTag :: String -> Lens [HtmlExp] HtmlExp
-replaceExprByTag tag hs hExp = map replaceExpr hs
- where
-  replaceExpr h@(HtmlStruct t _ _) | tag == t  = hExp
-                                   | otherwise = h
+-- replaceExprByTag :: String -> Lens [HtmlExp] HtmlExp
+-- replaceExprByTag tag hs hExp = map replaceExpr hs
+--  where
+--   replaceExpr h@(HtmlStruct t _ _) | tag == t  = hExp
+--                                    | otherwise = h
 
-replaceTag :: String -> Lens [HtmlExp] String
-replaceTag tag hs newTag = map replaceTag' hs
- where
-  replaceTag' (HtmlStruct t atts hExps)
-    | tag == t = HtmlStruct newTag atts hExps
+-- replaceTag :: String -> Lens [HtmlExp] String
+-- replaceTag tag hs newTag = map replaceTag' hs
+--  where
+--   replaceTag' (HtmlStruct t atts hExps)
+--     | tag == t = HtmlStruct newTag atts hExps
