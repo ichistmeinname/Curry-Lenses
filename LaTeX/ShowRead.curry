@@ -4,7 +4,7 @@ import List ( intersperse )
 import Maybe ( isJust )
 
 import Lens (mapLens, get, put, Lens, (<.>) )
-import PP ( (<>), (<<<), (>>>), ppWhitespace, ppNum, PPrinter, pParse, pPrint )
+import PP ( (<>), (<<<), (>>>), whitespace, digit, PPrinter, pParse, pPrint )
 
 
 ----- definition of data structures
@@ -59,7 +59,7 @@ matchTeams match (team1, team2) =
   { team1 := team1, team2 := team2 | match }
 
 matchTeam1 :: Lens Match Team
-matchTeam1 = matchTeams <.> fstPair   
+matchTeam1 = matchTeams <.> fstPair
 
 matchTeam2 :: Lens Match Team
 matchTeam2 = matchTeams <.> sndPair
@@ -149,12 +149,11 @@ ppWhitespace _ ((),str') = ' ' : str'
 ppMatch :: PPrinter Match
 ppMatch str' (match,str) =
   (((ppTeam <<< ppWhitespace)
-   <> ppResult) :: PPrinter (Match,Result)
-   <> (ppWhitespace >>> ppTeam)) :: PPrinter ((Match,Result),Match) str'
+   <> ppResult)
+   <> (ppWhitespace >>> ppTeam)) str'
                                  ((( match :> team1, match :> result)
                                    , match :> team2)
                                  , str)
-ppTeam (match :> team1) str' <> 
 
 ppTeam :: PPrinter Team
 ppTeam _ (team,str) =
@@ -165,7 +164,7 @@ ppTeam _ (team,str) =
                       USA      -> "USA")
 ppTeam str (Germany,str') = "G" ++ str ++ str'
 
-ppTeam "G" v == "G" 
+-- ppTeam "G" v == "G"
 
 ppResult :: PPrinter Result
 ppResult str' (Nothing,str) = ppCustom str' ("- : -",str)
@@ -173,7 +172,7 @@ ppResult str' (Just s,str)  = ppScore str' (s,str)
 
 ppScore :: PPrinter Score
 ppScore str' ((s1 :-: s2),str) =
-  (ppNum <> ppCustom <> ppNum) str' (((s1," : "), s2), str)
+  (digit <> ppCustom <> digit) str' (((s1," : "), s2), str)
 
 
 ppCustom :: PPrinter String
