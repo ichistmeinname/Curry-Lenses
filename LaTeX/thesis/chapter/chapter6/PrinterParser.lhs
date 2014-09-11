@@ -108,9 +108,8 @@ String|.\footnote{Note: the additional \emph{"p"} stands for \emph{"pretty"}.} %
 Both functions are parametrised over a printer-parser lens, they run
 this lens with the given string in the get direction and with the
 given data structure in put direction, respectively. %
-We postpone the definitions of these functions, and give the
-implementation of the provided combinators first. %
-
+% We postpone the definitions of these functions, and give the
+% implementation of the provided combinators first. %
 
 \subsubsection*{Primitives}
 As first primitive printer-parser, we define |digit :: PP Int| that
@@ -191,10 +190,12 @@ primitives. %
 
 % \end{spec}
 
-\subsubsection*{Parsing and Printing Arithmetic Expressions in Prefix Notation}
+\phantomsection
+
+\subsubsection*{Parsing and Printing Arithmetic Expressions in Prefix Notation}\label{subsec:ppPrefix}
 
 Next, we define the appropriate printer-parsers for the data structure
-for arithmetic expressions given above. %
+of arithmetic expressions given above. %
 In order to define a printer-parser for our data structure |Expr|, we
 need to cover both representations of the definition. %
 An expression can be a number or a composition of two expressions with
@@ -219,7 +220,7 @@ However, the rule follows naturally from the definition of the data
 type. %
 At first, we print the given operator followed by both of its
 arguments. %
-The arguments of a binary operator are, again, arithmetic expressions,
+The arguments of a binary operator are arithmetic expressions,
 thus, we print the arguments in a recursive manner. %
 Due the two consecutive uses of the composition combinator, |<>|, the
 data has to be provided in form of a nested pair. %
@@ -229,9 +230,23 @@ Then, this pair is injected as the first component of the outer pair
 because of the second usage of |<>|. %
 The part of the second component of this outer is assigned to the
 second argument of the binary operator. %
+In order to test this lens definition, we have to define the
+printer-parser for operators of type |Op| first. %
 
-We can use the dedicated function |pPrint| to see the pretty-printed
-version of an exemplary arithmetic expression. %
+\begin{spec}
+ppOp :: PPrinter Op
+ppOp _ (Plus,str') = "+" ++ str'
+ppOp _ (Mult,str') = "*" ++ str'
+\end{spec}
+
+For the purpose of simplicity, we limit our definition to two
+operators: |Plus| and |Mult|. %
+Obviously, we use |"+"| and |"*"| a string representatives for an
+addition and multiplication operator, respectively. %
+
+With these handy lens definitions in hand, we can use the dedicated
+function |pPrint| to see the pretty-printed version of an exemplary
+arithmetic expression. %
 
 \begin{spec}
 > pPrint ppExpr (Num 3)
@@ -241,8 +256,8 @@ version of an exemplary arithmetic expression. %
 "+23"
 \end{spec}
 
-Unfortunately, we did not pay attention to the definition of a string
-representation in case of a binary operator. %
+Unfortunately, we were a bit careless when we defined the string
+representation of an expression with a binary operator. %
 The resulting string is not \emph{pretty} at all. %
 The upside is that the parser already works very well. %
 In the following examples, we use |pParse| to reconstruct the
@@ -287,6 +302,7 @@ As we will see later, the definition of |parse| distinguishes if the
 resulting remaining string is the empty string or not. %
 In case of a non-empty string, the parse could not be completed and
 the function throws an exception. %
+
 
 \subsubsection*{Pretty Arithmetic Expressions}
 
@@ -385,36 +401,176 @@ BinOp Plus (Num 2) (Num 3)
 BinOp Plus (BinOp Plus (Num 2) (Num 3)) (Num 4)
 
 > get ppExpr "+ 2 34"
-((BinOp Plus (Num 2) (Num 3)),"4")
+(BinOp Plus (Num 2) (Num 3),"4")
 
 > get ppExpr2 "+ 23 4"
 -- no result
 \end{spec}
 
-\begin{spec}
-parse :: PPrinter a -> String -> a
-parse pp str = foldr check err values
-  where
-   check (expr', str') expr  | null str' = expr'
-                             | otherwise = expr
-   values = getND pp str
-   err
+The second and third example shows a successful parse for a simple and
+a nested arithmetic expression, respectively. %
+Next, we reuse the example from above that includes a
+number with two digits as second argument for |Plus|, thus, leading to a
+remaining string. %
+Note, the parse does not fail completely: the prefix |"+ 2 3"| is
+parsed correctly and yields |BinOp Plus (Num 2) (Num 3)| as resulting
+expression. %
+In contrast, the last example fails completely and has no result. %
+The given string |"+ 23 4"| does not consist of a valid prefix to
+yield a partial result with a remaining string. %
 
-print :: PPrinter a -> a -> String
-print pp val = pp "" (val,"")
-\end{spec}
+\subsubsection*{Definition of |pParse| and |pPrint|}
+\todo{Should I give the definition of |pParse| and |pPrint|?}
+% \begin{spec}
+% pParse :: PPrinter a -> String -> a
+% pParse pp str = maybe err fst (find ((== "") . snd) values)
+%  where
+%   values = getND pp str
+%   err    = error "no complete parse"
+
+% print :: PPrinter a -> a -> String
+% print pp val = pp "" (val,"")
+% \end{spec}
 
 \subsubsection*{The Downside}
 As a main disadvantage of this approach, we cannot ignore redundant
-parts in the given string in the parsing direction if these redundancies
-do not appear in the pretty-printer definition. %
-Furthermore, the definitions for the printer have to be more
+parts in the parsing direction. %
+If these redundancies do not appear in the pretty-printer definition,
+we do note have the option to parse them anyway. %
+We have already mentioned the original precedent in the introduction
+of this section: optional whitespaces as delimiter between tokens. %
+In order to make this case more clear, we define a printer-parser for
+one or more whitespaces. %
+
+\begin{spec}
+whitespaces1' :: PPrinter [()]
+whitespaces1' str (x:xs,str') =
+   (whitespace <> whitespaces') str ((x,xs),str')
+  where
+   whitespaces' str ([],str)     = str'
+   whitespaces' str (x:xs,str')  =
+     whitespace str (x,"") ++ whitespaces' str (x,str')
+\end{spec}
+
+The function |whitespaces1'| pretty-prints a series of whitespace
+depending on the length of the given list, which cannot be empty. %
+In contrast, the auxiliary function |whitespaces'| can pretty-print
+zero or many whitespaces. %
+For the parsing direction, we want both functions to parse a series of
+whitespaces. %
+A generalisation of these functions comes in handy to pretty-print a
+list of elements and to parse a series of characters or strings of the
+same category, respectively. %
+For that purpose, we define a generalised version |many1| and |many|
+that takes a printer-parse as argument and applies it to each element
+of a given list. %
+
+\begin{spec}
+many :: PPrinter a -> PPrinter [a]
+many _ _ ([],str')   = str'
+many pp str (x:xs,str') = (pp <> many pp) str ((x,xs),str')
+
+many1 :: PPrinter a -> PPrinter [a]
+many1 pp str (x:xs,str') = (pp <> many pp) str ((x,xs),str')
+\end{spec}
+
+With this definition at hand, we can define a modified version of
+|whitespaces|. %
+
+\begin{spec}
+whitespaces :: PPrinter [()]
+whitespaces = many1 whitespace
+\end{spec}
+
+Next, we integrate the additional trailing whitespaces into our
+printer-parser for arithmetic expression. %
+This integration implicates to change the usage of |<<<| and |>>>| to
+the traditional composition operator again. %
+We can only ignore data of type |Unit|, but |whitespaces| expects a
+list of |Unit|. %
+
+\begin{spec}
+ppExprSpaces :: PPrinter Expr
+ppExprSpaces str (BinOp op e1 e2,str') =
+  ((ppOp <> whitespaces) <> (ppExprSpaces <> whitespaces)
+                         <> ppExprSpaces) str (((opSpaces,e1Spaces),e2),str')
+ where
+  opSpaces = (op,_)
+  e1Spaces = (e1,_)
+ppExprSpaces str (Num v,str')          = digit str (v,str')
+\end{spec}
+
+Since we do not care about the number of trailing whitespaces after an
+operator and its expressions, respectively, we use an anonymus free
+variable as input data. %
+This free variable can be bound to any number of |Unit| elements in
+order to parse all occurring whitespaces. %
+As a first example, we can parse trailing whitespaces after the binary
+operator as well as a pretty-printed version. %
+
+\begin{spec}
+> pParse ppExprSpaces "+   1 2"
+(BinOp Plus (Num 1) (Num 2),"")
+
+> pParse ppExprSpaces "+ 3 4"
+(BinOp Plus (Num 1) (Num 2),"")
+\end{spec}
+
+Fortunately, the integration of redundant whitespaces works like a
+charm. %
+However, there must be a downside of this implementation, otherwise we
+would not discuss it under the used subtitle. %
+In the beginning, we said that we cannot parse redundancies that are
+not included in the printer-parser's definition. %
+In our case, we have added these redundancies and, thus, can parse
+them in a convenient way. %
+This observation leads to the question: how does this integration
+effect the pretty-print of the arithmetic expression?
+In the pretty-printed version of an arithmetic expression, we do not
+allow any leading and trailing whitespaces. %
+Let us test the behaviour by pretty-printing the expression from
+above. %
+
+\begin{spec}
+> pPrint ppExprSpaces (BinOp Plus (Num 1) (Num 2)
+"+ 1 2"
+"+ 1  2"
+"+  1 2"
+"+ 1   2"
+"+  1  2"
+"+   1 2"
+"+ 1    2"
+"+  1   2"
+"+   1  2"
+"+    1 2"
+...
+\end{spec}
+
+Unfortunately, this expression does not terminate, but yields all
+possible versions of string representatives. %
+Possible versions include a different number of trailing whitespace
+after the operator and the first argument of that operator. %
+This unsatisfactory result arises from the use of the free variables
+in the definition of |ppExprSpaces|. %
+We cannot fix the number of used whitespaces to one, the fact is that
+the free variable is instantiated nondeterministically to a suitable
+value. %
+In our case, |[()]| is not the only suitable value, any list of |Unit|
+values fits the specification of the pretty-printer. \\%
+
+Furthermore, the definitions for the pretty-printer have to be more
 sophisticated than usual. %
 The printer and parser definitions are connected, that is, typical
 restrictions known from parser constructions need to be considered. %
 In our example, we only defined a prefix based arithmetic expression
 data structure, but with infix operators, we have to avoid
 left-recursion in the definitions. %
+This modification leads to a more complex definition of the
+printer-parser that bears a resemblance to a typical parser for
+arithmetic expression with infix operators. %
+For the interested reader, we give the implementation for arithmetic
+expressions with infix operators as well as some examples for
+pretty-printing and parsing in Appendix \ref{a:ppInfix}. %
 
 \subsection{Replace-Parser}
 
