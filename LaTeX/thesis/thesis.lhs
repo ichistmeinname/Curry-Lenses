@@ -70,10 +70,11 @@
 
 % Appendix, falls vorhanden
 \appendix
-%include extras/appendix.lhs
 
 % Literaturverzeichnis
 \bibliography{lenses}
+
+%include extras/appendix.lhs
 
 % Eidesstattliche Erklärung
 % \input{extras/eidesstattliche}
