@@ -38,7 +38,7 @@
 ---     "4"
 ---     > put (replaceParse digit) "3" (4," tests")
 ---     "3 tests"
----     > put (replaceParse digit) "3 !!!" (4," tests")
+---     > put (replaceParse digit) "i" (4," tests")
 ---     <no result>
 ---     > put (replaceParse digit) "3 tests" (4," tests")
 ---     "4 tests"
@@ -58,14 +58,15 @@
 --------------------------------------------------------------------------------
 
 module Replace
-  ( replace, pretty, replaceParse
-  , digit, whitespace, whitespaces, char, charP, many, optional, text
-  , charMany, textP, whitespaces2
-  , paren, succeeds, strict
-  , (<>), (<<<), (>>>), (<|>)
-  , PReplace
-  , get, put
-  ) where
+  -- ( replace, pretty, replaceParse
+  -- , digit, whitespace, whitespaces, char, charP, many, optional, text
+  -- , charMany, textP, whitespaces2
+  -- , paren, complete, strict
+  -- , (<>), (<<<), (>>>), (<|>)
+  -- , PReplace
+  -- , get, put
+  -- ) 
+  where
 
 import SetFunctions
 import Char ( intToDigit, isDigit )
@@ -94,12 +95,7 @@ pretty pReplace str pair = case pReplace str pair of
 replaceParse :: PReplace a -> RPLens a
 replaceParse pReplace str pair = unwrap (pReplace str pair)
 
--- put :: PReplace a -> String -> (a,String) -> String
--- put pReplace str pair = unwrap (pReplace str pair)
-
--- get :: PReplace a -> String -> (a,String)
--- get pReplace str | replaceParse str v == str = v
---  where v free
+----- primitives and combinators
 
 digit :: PReplace Int
 digit str (d,str')
@@ -124,10 +120,9 @@ strict pReplace str pair =
 
 (<>) :: PReplace a -> PReplace b -> PReplace (a,b)
 (pA <> pB) str ((expr1,expr2),str')
+  | null str = pA str (expr1, unwrap (pB str (expr2,str')))
   | str == str1 ++ str2 =
-     if null str
-       then pA str1 (expr1, unwrap (pB str2 (expr2,str')))
-       else (strict pA) str1 (expr1, unwrap ((strict pB) str2 (expr2,str')))
+     (strict pA) str1 (expr1, unwrap ((strict pB) str2 (expr2,str')))
  where str1, str2 free
 
 (<<<) :: PReplace a -> PReplace () -> PReplace a
@@ -151,18 +146,18 @@ whitespaces2 str ((),str') = charMany ' ' str (' ',str')
 whitespaces :: PReplace ()
 whitespaces input = case input of
   "" -> whitespace ""
-  _  -> ((whitespace >>> whitespaces')) input
+  _  -> (whitespace >>> whitespaces') input
  where
   whitespaces' :: PReplace ()
-  whitespaces' ""           ((),str') = succeeds "" ((),str')
-  whitespaces' input'@(_:_) ((),str') =
-    ((whitespace >>> whitespaces') <|> succeeds) input' ((),str')
+  whitespaces' input' ((),str') = case input' of
+    ""    -> pure input' ((),str')
+    (_:_) -> (whitespace >>> whitespaces') input' ((),str')
 
-succeeds :: PReplace a
-succeeds "" (_,str') = Replaced str'
+pure :: PReplace a
+pure _ (_,str') = Replaced str'
 
 whitespace :: PReplace ()
-whitespace str ((),str') = char ' ' str (' ',str')
+whitespace str ((),str') = charP (== ' ') str (' ',str')
 
 paren :: PReplace a -> PReplace a
 -- paren pReplace str@"" (e,str') = go str
@@ -209,10 +204,10 @@ many pReplace str (xs,str') =
        [y]  -> pReplace str (y,str')
        y:ys -> (pReplace <> many pReplace) str ((y,ys),str')
 
--- many :: PReplace a -> PReplace [a]
--- many _       _ ([],str')   = Replaced str'
--- many reparse input (x:xs,str') =
---   ((reparse <> many reparse) <|> succeeds) input ((x,xs),str')
+-- many' :: PReplace a -> PReplace [a]
+-- many' _       _ ([],str')   = Replaced str'
+-- many' reparse input (x:xs,str') =
+--   ((reparse <> many' reparse) <|> complete) input ((x,xs),str')
 
 
 charP' :: (Char -> Bool) -> PReplace ()
@@ -222,10 +217,7 @@ charP' p input (_,new) =
        _  -> char' input new
  where
   char' (c':str') rest
-    -- | p c'                    = Replaced (v:rest)
-    | p c' && rest == str'    = Replaced rest
-    | p c' && null str'       = Replaced rest
-    -- | p c' && not (null rest) = New (v:rest)
+    | p c' && (rest == str' || null str')   = Replaced rest
     | otherwise               = New rest
 
 charP :: (Char -> Bool) -> PReplace Char

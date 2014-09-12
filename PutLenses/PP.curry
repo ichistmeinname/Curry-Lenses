@@ -44,9 +44,9 @@ infixl 3 <|>
 (pA >>> pB) str (expr,str') = (pA <> pB) str (((),expr),str')
 
 (<|>) :: PPrinter a -> PPrinter a -> PPrinter a
-(pA1 <|> pA2) str pair = case pA1 str pair of
-                              []   -> pA2 str pair
-                              str' -> str'
+(pA1 <|> pA2) str pair = case isEmpty (set2 pA1 str pair) of
+                              True   -> pA2 str pair
+                              False  -> pA1 str pair
 
 char :: PPrinter Char
 char _ (c,str') = c : str'
@@ -57,7 +57,7 @@ charP p _ (c,str') | p c = c : str'
 digit :: PPrinter Int
 digit _ (d,str') | d <= 9 && d >= 0 = show d ++ str'
 
--- does not work for printer (non-deterministic!)
+-- does not work with free variable for printer (non-deterministic!)
 many :: PPrinter a -> PPrinter [a]
 many _ _ ([],str')   = str'
 many pp str (x:xs,str') = (pp <> many pp) str ((x,xs),str')
@@ -66,16 +66,33 @@ many1 :: PPrinter a -> PPrinter [a]
 many1 pp str (x:xs,str') = (pp <> many pp) str ((x,xs),str')
 
 whitespace :: PPrinter ()
-whitespace _ ((),str') = " " ++ str'
+whitespace str ((),str') = charP (== ' ') str (' ',str')
 
+-- does not work for parsing
 whitespaces' :: PPrinter ()
 whitespaces' str ((),str') = (whitespace <|> whitespaces') str ((),str')
 
 whitespaces :: PPrinter [()]
 whitespaces = many1 whitespace
 
+
+-- alternative version for replace-parser is not applicable,
+--   because the input is never acutally consumed, thus,
+--   the first rule of `whitespaces2'` is never reached
+whitespaces2 :: PPrinter ()
+whitespaces2 input = case input of
+  "" -> whitespace ""
+  _  -> (whitespace >>> whitespaces2') input
+ where
+  whitespaces2' ""           ((),str') = complete "" ((),str')
+  whitespaces2' input'@(_:_) ((),str') =
+    (whitespace >>> whitespaces2') input' ((),str')
+
 pure :: PPrinter a
 pure _ (_,str') = str'
+
+complete :: PPrinter a
+complete "" (_,str') = str'
 
 
 ----- simple version of printer with prefix operators
@@ -86,9 +103,12 @@ ppExpr str (BinOp op e1 e2,str') =
 ppExpr str (Num v,str')          = digit str (v,str')
 
 ppOp :: PPrinter Op
-ppOp _ (Plus,str') = "+" ++ str'
-ppOp _ (Mult,str') = "*" ++ str'
+ppOp str (op,str') = charP isOp str (fromJust opStr,str')
+ where
+  opStr = lookup op [(Plus,'+'),(Minus,'-'),(Mult,'*'),(Div,'/')]
 
+isOp :: Char -> Bool
+isOp c = any (== c) "+*-/"
 
 ----- prefix operators with redundant whitespaces
 -- does not terminate in put-drection because of heavily use of nondeterminism
@@ -122,9 +142,9 @@ ppTerm str f@(BinOp op e1 e2, str')
 ppTerm str f@(Num _,_)      = ppFactor str f
 
 ppFactor :: PPrinter Expr
-ppFactor str f@(e,str') = case e of
-  Num v       -> digit str (v,str')
-  _           -> "(" ++ ppExpr' str (e,")" ++ str')
+ppFactor str (e,str') = case e of
+  Num v -> digit str (v,str')
+  _     -> "(" ++ ppExpr' str (e,")" ++ str')
      
 ppMultDiv :: PPrinter Op
 ppMultDiv _ (Mult,str') = "*" ++ str'
