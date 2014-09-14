@@ -362,11 +362,11 @@ printer-parse to the right and to the left, respectively. %
 We can implement such a combinator by means of |(<>)|. %
 
 \begin{spec}
-(<<<) :: PPrinter a -> PPrinter () -> PPrinter a
-(pA <<< pB) str (expr,str') = (pA <> pB) str ((expr,()),str')
+(<*) :: PPrinter a -> PPrinter () -> PPrinter a
+(pA <* pB) str (expr,str') = (pA <> pB) str ((expr,()),str')
 
-(>>>) :: PPrinter () -> PPrinter b -> PPrinter b
-(pA >>> pB) str (expr,str') = (pA <> pB) str (((),expr),str')
+(*>) :: PPrinter () -> PPrinter b -> PPrinter b
+(pA *> pB) str (expr,str') = (pA <> pB) str (((),expr),str')
 \end{spec}
 
 Unfortunately, we need to restrict the type of the ignored result to
@@ -395,7 +395,7 @@ our definition of |ppExpr| to enhance the readability. %
 
 \begin{spec}
 ppExpr str (BinOp op e1 e2,str') =
-  ((ppOp <<< whitespaces) <> (ppExpr <<< whitespace)
+  ((ppOp <* whitespaces) <> (ppExpr <* whitespace)
                            <> ppExpr) str (((op,e1),e2),str')
 \end{spec}
 
@@ -588,11 +588,11 @@ pretty-printing and parsing in Appendix \ref{a:ppInfix}. %
 
 In a second approach, we want to tackle the disadvantage of
 printer-parser concerning redundancies and optional parsing rules. %
-These disadvantage arises from the declarative, state-free approach of
+These disadvantage arises from the operational, state-free approach of
 our first implementation. %
 The design of printer-parsers provides the definition of
 pretty-printers and implicates a corresponding parser. %
-Unfortunately, the corresponding parses is only suited for the
+Unfortunately, the corresponding parser is only suited for the
 pretty-printed string representation. %
 In the previous subsection, we gave a exemplary definition to parse a
 variable amount of whitespaces, which was unsatisfactory. %
@@ -604,9 +604,11 @@ pretty-printer. %
 Therefore, we want to discuss another implementation that has more
 information about intermediate results. %
 In order to achieve this additional information, we change the
-semantic in contrast to the printer-parser. %
-Instead of replacing the given string collectively, we want to define
-a layout preserving replacement of the given string. %
+underlying data structure in contrast to the printer-parser. %
+Because of the changed data structure, we can also adjust the semantic
+and add an inspection of the given input string. %
+Instead of replacing the input string collectively, we want to perform
+a layout preserving replacement. %
 The new implementation provides a function |replaceParse :: PReplace a
 -> PRLens a| that takes a specification of a so-called
 \emph{replace-parser} and yields a lens function. %
@@ -620,12 +622,13 @@ We can use this lens function in the common way using |get| and
 |put|. %
 The get function for a |RPLens| corresponds to a parsing action like
 before. %
-On the other hand, in the put
-direction we replace a given string and try to preserve its layout. %
+On the other hand, in the put direction we replace a given string and
+try to preserve its layout. %
 If the given string is empty or does not fulfil the replace-parser's
 specification, we pretty-print the data structure at hand. %
-As an example: we have an arithmetic expression with more than one whitespace as
-delimiter for its arguments and update only the second argument. %
+As an example: we have an arithmetic expression with more than one
+whitespace as delimiter for its arguments and update only the second
+argument. %
 
 \begin{spec}
 > put (replaceParse rpExpr) "+  3 2" (BinOp Plus (Num 1) (Num 2) ,"")
@@ -708,18 +711,18 @@ For the purpose of clarification, we start with the implementation of
 \begin{spec}
 charP :: (Char -> Bool) -> PReplace Char
 charP p input (v,new) = case  input of
-                              "" -> New (v:new)
-                              _  -> char' input new
- where
-  char' (c':str') rest
-    | p c' && (rest == str' || null str')  = Replaced rest
-    | otherwise                            = New (v:rest)
+                              ""  -> New (v:new)
+                              _   -> char' input new
+  where
+   char' (c':str') rest
+     | p c' && (rest == str' || null str')  = Replaced rest
+     | otherwise                            = New (v:rest)
 \end{spec}
 
 In two cases, we replace the input and pretty-print the value: the
 input string is empty or the input does not fulfil the given
 predicate. %
-In particular, we check the predicate on the first character on the
+In particular, we check the predicate on the first character of the
 input string and restrict the remaining input to be empty or to be
 equal to the given remaining string |str'|. %
 That is, if we want to replace a digit with another and the input
@@ -796,6 +799,12 @@ result, respectively. %
 
 When composing two replace-parsers, we split the input string into two
 halves. %
+We take advantage of the logic features of Curry and split the input
+string nondeterministically. %
+This idea is adopted from the general approach of the \texttt{Parser}
+library\footnote{\url{http://www-ps.informatik.uni-kiel.de/kics2/lib/CDOC/Parser.html}}
+in Curry that is based on functional-logic parsers as presented by
+\cite{logicParser}. %
 In case of an empty input string, we run the first replace-parser on
 its corresponding value and its half of the input. %
 As remaining string, we provide the result of the second
@@ -841,16 +850,16 @@ constructor. %
 In the case of an empty input string, we apply both replace-parsers in
 series without using the strict version. %
 
-Furthermore, the implementation of |<<<| and |>>>| is straightforward
+Furthermore, the implementation of |(<*)| and |(*>)| is straightforward
 and the same as for the printer parsers, but with an adapted type
 signature. %
 
 \begin{spec}
-(<<<) :: PReplace a -> PReplace () -> PReplace a
-(pA <<< pB) str (e,str') = (pA <> pB) str ((e,()),str')
+(<*) :: PReplace a -> PReplace () -> PReplace a
+(pA <* pB) str (e,str') = (pA <> pB) str ((e,()),str')
 
-(>>>) :: PReplace () -> PReplace b -> PReplace b
-(pA >>> pB) str (e,str') = (pA <> pB) str (((),e),str')
+(*>) :: PReplace () -> PReplace b -> PReplace b
+(pA *> pB) str (e,str') = (pA <> pB) str (((),e),str')
 \end{spec}
 
 \subsubsection*{Arithmetic Expressions, again}
@@ -862,7 +871,7 @@ expressions. %
 \begin{spec}
 rpExpr :: PReplace Expr
 rpExpr str (BinOp op e1 e2,str')  =
-  ((rpOp <<< whitespaces)  <> (rpExpr <<< whitespaces)
+  ((rpOp <* whitespaces)  <> (rpExpr <* whitespaces)
                            <> rpExpr) str (((op,e1),e2),str')
 rpExpr str (Num v,str')           = digit str (v,str')
 \end{spec}
@@ -955,7 +964,7 @@ For each whitespace, we introduce an additional combinator, |(<<<)|,
 that splits the input string into two halves. %
 In the end, the longer the input string and the more composition
 combinators we use, the more splitting combination arise and the
-number of splits increases, repsectively. %
+number of splits increases, respectively. %
 That is, the nondeterministic search for a suitable splitting
 increases fast and causes a bad performance. %
 This performance issue affects the parsing direction as well as the
@@ -976,28 +985,186 @@ expression terms. %
 "* + + + 3 1 - 7 3 / 8 2 - 3 1"
 \end{spec}
 
+The expression consists of thirty combinators and has a three-level
+nesting for recursive calls and executes in |2| milliseconds. %
+
 In the following, we show a series of graphs to illustrate the
 performance issue. %
-All three graphs have the same labels: the x-axis represents the
+Both graphs have the same labels: the x-axis represents the
 number of combinators used in an expression; the y-axis indicates the
 execution time of an expression. %
-In Figure \ref{fig:plotParse}, we show the behaviour of a parsing
-action. %
+In Figure~\ref{fig:plotReplaceA}, we show the execution time of a
+replacement action for an increasing number of combinators. %
+The interpolated graph indicates an exponential growth. %
+In order to investigate this hypothesis, we used a logarithmic scale
+for the execution time in Figure~\ref{fig:plotReplaceB}. %
+Indeed, the adjusted graph shows a linear growth, which indicates an
+overall exponential runtime with respect to the number of
+combinators. %
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{../images/replace.pdf}
+\caption{Performance of replacing for increasing number of combinators}
+\label{fig:plotReplaceA}
+\end{figure}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{../images/replace2.pdf}
+\caption{Performance of replacing for increasing number of combinators}
+\label{fig:plotReplaceB}
+\end{figure}
+
+We also measured the performance for a parsing action, unfortunately,
+the results are even worse. %
+The resulting interpolated graph is illustrated in
+Figure~\ref{fig:plotParse}. %
 
 \begin{figure}[h]
 \caption{Performance of parsing for increasing number of combinators}
 \label{fig:plotParse}
 \end{figure}
 
-\begin{figure}[h]
-\caption{Performance of replacing for increasing number of combinators}
-\label{fig:plotReplace}
-\end{figure}
 
-\begin{figure}[h]
-\caption{Performance of pretty-printing for increasing number of combinators}
-\label{fig:plotPretty}
-\end{figure}
+% \begin{figure}[h]
+% \caption{Performance of pretty-printing for increasing number of combinators}
+% \label{fig:plotPretty}
+% \end{figure}
+
+\subsubsection*{Ace In The Hole}
+
+Although we do not prioritise a good performance, we take a last try
+on implementing a replace-parser. %
+Instead of a functional-logic approach that makes heavily use of
+nondeterminism, we change our underlying implementation to aim for a
+more functional approach. %
+The weak point of our first implementation was the composition
+combinator. %
+When composing two replace-parsers, we make a guess on how to split
+the input string such that both replace-parsers yield appropriate
+results. %
+In the functional approach, the first parser yields a remaining string
+that is used as input for the second parser. %
+Our parsing result has the same representation: the result of the get
+direction is |(a,String)|. %
+However, we cannot effectively use this result for the definition of a
+replace-parser, because of the underlying put-based lenses. %
+Hence, we need to find a convenient representation for the underlying
+data structure in order to use intermediate results for the parsing
+direction as well. %
+
+\begin{spec}
+type PReplace a = String -> (a,String) -> (String,String,String)
+\end{spec}
+
+We chose a triple as result of our replace-parser. %
+The first component represents the string of a successful replacement
+or pretty-print, whereas the other two components are remaining
+strings. %
+We distinguish between the remaining input string that has not been
+consumed yet as the second component, and, lastly, the remaining
+string to concatenate at the end of the resulting string. %
+
+As a first representative example, we define a primitive to handle a
+char that fulfils a given predicate, again. %
+
+\begin{spec}
+charP :: (Char -> Bool) -> PReplace Char
+charP _ ""     (e,str') = ([e],"",str')
+charP p (c:cs) (e,str') | p c  = ([e],cs,str')
+\end{spec}
+
+For an empty input string, we pretty-print the given char value -- the
+pretty-printed result is the first component of the triple. %
+In case of a replacement, we consume the first character if the
+predicate holds and need to remember the remaining input in the second
+component. %
+The given remaining string is transfered as the third component of the
+triple. %
+
+With this technique at hand, we can define a more convenient
+composition combinator that does not rely on nondeterminism. %
+
+\begin{spec}
+(<>) :: PReplace a -> PReplace b -> PReplace (a,b)
+(pA <> pB) input ((e1,e2),str') = case input of
+   ""  -> (res1,str2,str1' ++ str2')
+   _   -> if  null str1 && (res2,str',str2') /= pure str1 (e2,str1')
+            then failed
+            else (res1,str2,str1' ++ str2')
+  where
+   (res1,str1,str1') = pA input (e1,res2)
+   (res2,str2,str2') = pB str1 (e2,str')
+\end{spec}
+
+The general idea of the combinator is as before: we apply the first
+replace-parser on the input string, the corresponding value and the
+result of the second parser. %
+The important difference is that we can actually use the remaining
+string of the first replace-parser as argument to the second one. %
+Unfortunately, we loose performance by concatenating both remaining
+strings for the resulting tuple. %
+However, this concatenation is rather a technicality than a huge
+problem; we can easily rewrite the code to by means of |foldr|, i.e.,
+|str1' ++ str2'| becomes |foldr (:) str2' str1'|. %
+The additional check on a non-empty string can be seen as an
+equivalent to the usage of |strict| in the previous implementation. %
+When composing two replace-parsers, we want to make sure that both
+actually consume any input. %
+However there is one exception: if the given replace-parses does not
+care about its input, we do not want the composition to fail. %
+Therefor, we use |pure|, the primitive replace-parser that succeeds on
+every input, in order to handle the special case of a non-consuming
+replace-parser. %
+
+In order to use the definition of |rpExpr| that we have given above,
+we still need to define |whitespaces|. %
+The key for a modified definition of |whitespaces| is a combination of
+|pure| and the alternative combinator |(<||>)|. %
+In Curry, we can define the alternative combinator by means of |(?)|
+and nondeterministically choose one of the given replace-parsers. %
+
+\begin{spec}
+(<||>) :: PReplace a -> PReplace a -> PReplace a
+(pA <||> _)  ""          = pA ""
+(pA <||> pB) input@(_:_) = (pA ? pB) input
+\end{spec}
+
+In order to restrict the nondeterministic behaviour to the parsing
+direction and a replacement action, we simply apply only the first
+replace-parser for an empty string. %
+That is, pretty-printing is still deterministic and does not introduce
+a choice between the two given replace-parsers. %
+
+In the end, we can define |whitespaces| as follows. %
+
+\begin{spec}
+whitespaces :: PReplace ()
+whitespaces input = case input of
+   ""  -> whitespace ""
+   _   -> ((whitespace *> whitespaces')) input
+  where
+   whitespaces' :: PReplace ()
+   whitespaces' input' ((),str') = case input' of
+      ""  -> pure "" ((),str')
+      _   -> ((whitespace *> whitespaces') <||> pure) input' ((),str')
+\end{spec}
+
+The definition of |whitespaces'| profits from the combination of the
+alternative combinator and |pure|. %
+This combination allows us to consume an arbitrary number of
+whitespaces and stop whenever the |whitespace| parser
+fails. %
+We also stop, if the input string becomes empty and yield a result to
+signal a successful consumption. %
+
+Due to the actual consumption of the input string, we achieve better
+results for the performance. %
+In Figure~\ref{fig:replaceBetter}, we show the measured execution time
+for the same expressions that we ran for the previous
+implementation. %
+The results include two additional text expressions in order to show
+that the expected run-time with respect to the number of used
+combinators is linear. %
 
 % \subsection{Parser-Printer}
 
@@ -1006,6 +1173,6 @@ action. %
 \begin{itemize}
 \item FlipPr \cite{flippr}
 \item Invertible Syntax Description \cite{invertibleSyntax}
-\item Arrows \cite{invertibleArrows}
+% \item Arrows \cite{invertibleArrows}
 \item unparsing/parsing \cite{parsing2}
 \end{itemize}
