@@ -84,6 +84,8 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{latexsym}
+% for prim in lhs-format
+\usepackage{ textcomp }
 
 %
 % Paket für Farben im PDF
