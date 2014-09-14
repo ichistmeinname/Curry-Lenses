@@ -72,7 +72,7 @@ The authors give an algorithm to automatically derive a view
 complement function for a given get function. %
 The algorithm uses so-called \emph{context notation}. %
 A context is a tree of the form $K \square_1 \cdots \square_n$, and
-such a context can be filled with expressions $e_!,\dots,e_n$, which
+such a context can be filled with expressions $e_1,\dots,e_n$, which
 is denoted as $K ~[e_1,\cdots,e_n]$ where every $\square_i$ is
 replaced by the corresponding $e_i$ for every $i \in
 \{1,\cdots,n\}$. %
@@ -312,7 +312,7 @@ mapping3 (sub m 1) (sub m 2) = union' (sub m 1) (sub m 2)
 union' :: [(i,a)] -> [(i,a)] -> [(i,a)]
 union'  xs            []      = xs
 union'  []            ys      = ys
-union'  (x@(i,_):xs)  ys  | isNothing (i `lookup` ys)  = (x,y) : union' xs ys
+union'  (x@(i,_):xs)  ys  | isNothing (i `lookup` ys)  = (x,i) : union' xs ys
                           | otherwise                  = union' xs ys
 \end{spec}
 
@@ -377,7 +377,7 @@ explicite usage of different functions for different type class
 dependencies. %
 
 As a first modification to the original approach, instead of mapping
-between indices and elements of a list, the map just hold two copies
+between indices and elements of a list, the map just holds two copies
 of each element. %
 That is, the original and its copy form a pair, where the first
 component stays constant and the second one is used for updates. %
@@ -403,7 +403,7 @@ source list, and creates a new mapping with the resulting view and the updated v
 %format eqI = "eq_{i}"
 %format unionBy' = "union_{by}"
 \begin{spec}
-sub mapping2 by :: (a -> a -> Bool) -> (i -> i -> Bool) -> [i] -> [a] -> [(a,a)]
+sub mapping2 by :: (a -> a -> Bool) -> (i -> i -> Bool) -> [i] -> [a] -> [(i,a)]
 (sub mapping2 by) eqA eqI is as
    |  length is == length as =
        if and [not (i `eqI` j) or (x `eqA'` y) | (i,x) <- zs, (j,y) <- zs]
@@ -425,7 +425,7 @@ following property for two observer functions |f :: sup x n -> Bool|
 and |g :: sup i n -> Bool|. %
 
 \begin{align*}
-\forall (i_1, x_1) \dots (i_n,x_n) \in zs. f x_1 \dots x_n \equiv i_1 \dots i_n \tag{Map Invariant}
+\forall (i_1, x_1) \dots (i_n,x_n) \in zs. f x_1 \dots x_n \equiv g i_1 \dots i_n \tag{Map Invariant}
 \end{align*}
 
 The invariant requires all pairs of the given map to be equal in
@@ -466,15 +466,15 @@ unionBy' :: (i -> i -> Bool) -> [(i,a)] -> [(i,a)] -> [(i,a)]
 unionBy' _    xs            []  = xs
 unionBy' _    []            ys  = ys
 unionBy' eqI  (x@(i,_):xs)  ys
-    | not (all (i `eqI`) ys)  = x : unionBy' eqI xs ys
+    | not (all ((i `eqI`) . fst) ys)  = x : unionBy' eqI xs ys
     | otherwise               = unionBy' eqI xs ys
 \end{spec}
 
 There are still some missing parts that we need to discuss, like the
 locally defined equality functions |eqA|, |eqI|. %
 Najd and Weng present three different equality functions, where each
-function has its own dis- and advantages. %
-They distinguish between observable, structura, and physical
+function has its own pros and cons. %
+They distinguish between observable, structural, and physical
 equivalence and we refer to their paper for further study. %
 As mentioned before, in our example we do not distinguish between keys
 and values of the given map, that is, we only need to define the
@@ -512,7 +512,7 @@ following definition. %
 In order to round up this approach, we examine the usage of the
 |bffBy| function for physical equivalence, i.e., |eqA (i,x) (j,y) = i == x && (j,y)|. %
 
-%format lookupBy = "(sub lookup by)"
+%format lookupBy = "lookup_{by}"
 \begin{spec}
 bffBy  filter
        ((== "fst") . fst)
@@ -608,7 +608,7 @@ monadic value as well. %
 liftO2 p x y  = liftIO (\ [x,y] -> p x y) [x,y]
 \end{spec}
 
-For the rewritten version of the get function, we can apply the it to
+For the rewritten version of the get function, we can apply it to
 an example list |[("fst",13),("snd",21)]|. %
 In order to get a better insight of the ongoing operation, we evaluate
 the following expression with more intermediate steps. %
@@ -618,8 +618,8 @@ sub get example  = get (sub get fst) [("fst",13),("snd",21)]
                  = fmap   runIdentity 
                           (runIdentity ((sub get fst) (fmap  Identity
                                                              [("fst",13), ("snd",21)])))
-                 = fmap runIdentity (runIdentity (Identity [Identity ("fst",21)]))
-                 = [("fst",21)]
+                 = fmap runIdentity (runIdentity (Identity [Identity ("fst",13)]))
+                 = [("fst",13)]
 \end{spec}
 
 For the put direction, the approach constructs polymorphic values from
@@ -644,7 +644,7 @@ Here, the location is stored in a self-defined data structure, where
 every element of the list is mapped to its index. %
 Additionally, if a put function inserts a new value during the update,
 there is no location information for this value in the source;
-therefore, the author model the assigned location to be optional
+therefore, the author modelled the assigned location to be optional
 within the view structure, i.e. |Maybe Int|. %
 
 \begin{spec}
@@ -698,7 +698,7 @@ Writer (sub upd example,sub history example)  =
                   , Loc ("snd",21) (Loc 1)]
 = Writer   ([Loc ("fst",17) (Just 0)]
            ,[Result  (\ [x,y] -> x == y)
-                     [Loc ("tree",13) (Just 0), Loc "fst" Nothing]
+                     [Loc "fst" Nothing]
                      True])
 \end{spec}%
 

@@ -3,7 +3,7 @@ The first combinatorial technique is the pioneer work by
 \cite{biTCombinators}, who designed a domain-specific programming
 language to define bidirectional transformations on tree-structured
 data. %
-Foster et al formulate fundamental laws concerning lenses\footnote{We already presented these laws in Section \ref{subsec:lensesLaws}, in
+Foster et al. formulate fundamental laws concerning lenses\footnote{We already presented these laws in Section \ref{subsec:lensesLaws}, in
   particular, PutGet, GetPut and PutPut.}, combine these laws with the
 intuitive behaviour of lenses, and use fundamental tools from domain
 theory to also define lenses by recursion; they lay the focus of the
@@ -29,14 +29,14 @@ constant lens. %
 These definitions work on arbitrary data structures, whereas all other
 combinators specialise on tree data structures only. %
 The defined transformations are closely related to tables and views
-from databases: a transformations maps a concrete structure into an
+from databases: a transformation maps a concrete structure into an
 abstract view, and maps a possibly modified abstract view together
 with the original concrete structure back to a modified concrete
 structure. %
 
 In the DSL, the user defines the forward transformation in a
 straight-forward fashion, whereas the backward transformation is the
-result of reading the definition from right to left. %
+result of reading the definition backwards. %
 
 The following expression shows a tree with two labels, |fst| and
 |snd|, representing a pair, which corresponds to a pair |(42,"Hello
@@ -50,15 +50,15 @@ World")| in Haskell. %
 
 As an example, we define a lens that yields the first component of a
 pair, like the one we defined above. %
-Foster et al. use $\nearrow: S \Leftrightarrow V \times S \rightarrow
-V$ and $\searrow:~ S \Leftrightarrow V \times (S,B) \rightarrow S$ as
-representation for |get| and |put| functions, respectively, where $S
+Foster et al. use $(\nearrow: S \Leftrightarrow V) \times S \rightarrow
+V$ and $\searrow:~ (S \Leftrightarrow V) \times (S,V) \rightarrow S$ as
+representation for get and put functions, respectively, where $S
 \Leftrightarrow V$ is a lens with a source of type $S$ and a view of
 type $V$.\footnote{Foster et al. use $C$ and $V$ as representative for
   the concrete and abstract value, respectively.} %
 We can use the predefined tree combinator |filter p d| to keep
 particular children of the tree, where |p| describes the set of names
-that we want to keep in the tree, and |d| is used for the |put|
+that we want to keep in the tree, and |d| is used for the put
 direction as a default value for missing information. %
 In the end, we get the following expression to extract the first
 component of a given pair.\footnote{We represent the empty tree as
@@ -79,16 +79,16 @@ component of a given pair.\footnote{We represent the empty tree as
 \end{align*}
 
 As a second example, we use the same lens to change the first
-component of our pair to |13|, i.e., apply the |put| function. %
+component of our pair to |13|, i.e., apply the put function. %
 \label{filter:fstPut}
 \begin{align*}
-  & ~|(filter {fst} {})| \searrow |(13,aPair)| \\
-  =& ~|(filter {fst} {})| \searrow \left(|13|,~
+  & ~|(filter {fst} {})| \searrow |(aPair,13)| \\
+  =& ~|(filter {fst} {})| \searrow \left(
     \left\{ \begin{array}{l}
         ~~\text{fst} \rightarrow 42\\
         ,~\text{snd} \rightarrow \text{"Hello World"}
       \end{array}
-    \right\}\right)\\
+    \right\},|13|\right)\\
   =& ~\left\{ \begin{array}{l}
       ~~\text{fst} \rightarrow 13\\
       ,~\text{snd} \rightarrow \text{"Hello World"}
@@ -96,7 +96,7 @@ component of our pair to |13|, i.e., apply the |put| function. %
   \right\}
 \end{align*}
 
-The work of Foster et al origins in the Harmony
+The work of Foster et al. origins in the Harmony
 project\footnote{\url{https://alliance.seas.upenn.edu/~harmony/old/}}
 \citeyearpar{relationalLenses,harmonyOverview,harmonyManual}, a
 generic framework to synchronise tree-structured data; an ongoing
@@ -119,12 +119,12 @@ strings. %
 \phantomsection
 \label{bi:fisher}
 Other combinatorial approaches for lenses exist, they all focus on
-specifying a |get| function, and the appropriate |put| function is
-then propagated through the definition of the used |get|
+specifying a get function, and the appropriate put function is
+then propagated through the definition of the used get
 combinators. %
-For example, \cite{pointfree} designed a proint-free DSL in Haskell,
-in which the programmer also defines the |get| transformation only. %
-\cite{putback} are the first to propose to use the |put| definition
+For example, \cite{pointfree} designed a point-free DSL in Haskell,
+in which the programmer defines only the get transformations. %
+\cite{putback} are the first to propose to use the put definition
 instead. %
 It seems quite obvious that both, the forward and the backward
 function of a bidirectional transformation, can be used for
@@ -133,24 +133,24 @@ Nevertheless, so far, the current techniques pursue the idea of Foster
 et al. %
 
 In the work of Fisher et al., it becomes apparent that typical
-problems of |get| definitions are the ambiguity of the derived |put|
+problems of get definitions are the ambiguity of the derived put
 functions. %
-That is, in several cases it exists more than one appropriate |put|
-function to correspond with the |get| definition. %
+That is, in several cases it exists more than one appropriate put
+function to correspond with the get definition. %
 These problems concerning ambiguity arrive
-when the defined |get| function is not injective; we will discuss
+when the defined get function is not injective; we will discuss
 this topic in more detail in Section~\ref{sec:implPut}. %
-This ambiguity can be eliminated when we define the |put| direction
+This ambiguity can be eliminated when we define the put direction
 instead. %
-Fisher et al. show in their work that the corresponding |get| function
-for a defined |put| function is unique if certain requirements apply
-to the |put| function. %
+Fisher et al. show in their work that the corresponding get function
+for a defined put function is unique if certain requirements apply
+to the put function. %
 They prepare their theorem with some transformations on the
 \emph{PutGet} and \emph{GetPut} laws; instead of the classical
-representation, they express their requirements based on the |put|
+representation, they express their requirements based on the put
 definition only. %
 As \cite{putback} state in their technical report, the \emph{PutGet}
-law can be reformulated as injectivity property of the |put|
+law can be reformulated as injectivity property of the put
 function. %
 For that purpose, let us recapitulate the \emph{PutGet} law. %
 As a first step, we can express the equation in a more functional
@@ -159,32 +159,33 @@ manner. %
   |get (put s v) = v|
 \]
 
-The view |v| occurs on both sides of the equation, here, eta reduction
-comes to the rescue in order to simplify the equation. %
+The view |v| occurs on both sides of the equation, here, $\eta$-reduction
+can help us to simplify the equation. %
 \[\tag{PutGet'}
   |get . put s = id|
 \]
 
 The |(.)| operator defines function composition, that is, the equation
-\emph{PutGet'} says that |get| is a left inverse for |put s| for all
+\emph{PutGet'} says that get is a left inverse for |put s| for all
 sources |s|. %
 Furthermore, a function |f :: A-> B| is injective if and only if there
 exists a function |g :: B -> A| such that |g . f = (id :: A -> A)|. %
 In the \emph{PutGet'} equation above, we have the function |put s :: V
--> S| that corresponds to |f| and the counterpart |get :: S - > V| as
+-> S| that corresponds to |f| and the counterpart |get :: S -> V| as
 the equivalent to |g|. %
 The identity function in the equation above is obviously of type |id
-:: V -> V|, because we eta-reduced the view argument |v :: V|, thus,
+:: V -> V|, because we $\eta$-reduced the view argument |v :: V|, thus,
 |V| must be the resulting type as well. %
 
-In the end, we can express the identity property of the first round-
-tripping rule \emph{GetPut} with the use of the |put| function only. %
+In the end, we can express the identity property of the first
+round-tripping rule \emph{GetPut} with the use of the put function
+only. %
 Thus, we postulate |put s| to be injective for all sources |s|. %
 \[\tag{PutInj}
   |s'| \in |put s v| \wedge |s'| \in |put s v'| \Rightarrow |v = v'|
 \]
 
-Similar to the eta reduction for the \emph{PutGet} law, we can rewrite
+Similar to the $\eta$ reduction for the \emph{PutGet} law, we can rewrite
 the \emph{GetPut} law as well. %
 It is a bit more complicated to rewrite the equation
 \[
@@ -214,7 +215,7 @@ surjective function |f :: A -> B| if and only if it exists a function
 \[\tag{PutSurj}
   \forall |s| \in |S| ~\exists |s'| \in |S|: |put' (s', get s') = s|
 \]
-Actually, this equation only holds for total |put| function, because
+Actually, this equation only holds for total put functions, because
 the equation requires to be fulfilled for all values |s| of the
 resulting type |S|. %
 Fisher et al. lay out idempotence of |`put` v| for all views |v| as
@@ -223,11 +224,11 @@ additional requirement for well-behaved lenses. %
   |s'| \in |put s v| \Rightarrow |s'| = |put s' v|
 \]
 
-Furthermore, Fisher et al. verified that there is only one |get|
-function for an arbitrary |put| function, which obeys \emph{PutInj}
+Furthermore, Fisher et al. verified that there is only one get
+function for an arbitrary put function, which obeys \emph{PutInj}
 and \emph{PutTwice}\footnote{In later work of \cite{validityCheck}
   these both properties are called \emph{PutDetermination} and
-  \emph{PutStability} respectively}, and this |get| function can be
+  \emph{PutStability} respectively}, and this get function can be
 determined with the following equation.
 \[\tag{relation between |get| and |put|}
   |get s = v| \Leftrightarrow |s = put s v|
@@ -240,15 +241,20 @@ determined with the following equation.
 
 As a next step, \cite{putCombinators} developed a put-based language
 in their subsequent work. %
-In this work, they present a general design of put-based language as
+In this work, they present a general design of put-based languages as
 well as an implementation of an embedded DSL for Haskell. %
 The main idea of the put-based language is to provide a handfull of
-combinators, which allows two define the |put| function of a lens. %
-The |put| function of a lens defines the synchronisation strategy
+combinators, which allows two define the put function of a lens. %
+The put function of a lens defines the synchronisation strategy
 between a modified view and a given source. %
 In order to provide a wide scope of such strategies, the put-based
 language is based on functions with monadic effects. %
-A lens is represented as |type LensPG_ m s v = Maybe s -> v -> m s|,
+A lens is represented as
+
+%format LensPG_ = "LensPG\textquotesingle"
+\begin{spec}
+type LensPG_ m s v = Maybe s -> v -> m s,
+\end{spec}
 where |m| denotes a monadic constraint. %
 Depending on the given instance of the monad, the programmer can
 influence the synchronisation behaviour. %
@@ -266,7 +272,7 @@ instance Monad Identity where
 type LensPG s v = LensPG_ Identity s v
 \end{spec}
 
-The put-based language is built upon a handfull of combinators, which
+The put-based language is built upon a handful of combinators, which
 are inspired by the combinators of Foster et al., e.g., identity and
 constant lens as well as lenses for filter, composition, products,
 sums and conditionals. %
@@ -280,22 +286,27 @@ Due to the lack of statical checks concerning well-behavedness, the
 user can use the function |checkGetPut| and |checkPutGet|\footnote{In
   the associated paper, Fisher et al. use the name |enforceGetPut|
   instead.} to check for the corresponding lens laws at runtime. %
+For simplicty reasons, we refrain from defining these check
+functions and focus on the lens combinators instead. %
 
 We can rebuild the example given above in terms of the put-based
 language. %
-The language provides a combinator |addfst| to add a second component to
-the current source in order to create a pair. %
+Therefore, we language provides a combinator |addfst| to work with pairs. %
 \begin{spec}
 addfst :: (Maybe (sub s 1, v) -> v -> m (sub s 1)) -> LensPG_ m (sub s 1,v) v
-addfst f = enforceGetPut put'
+addfst f = checkGetPut put'
   where
+   put' :: LensPG_ m (sub s 1,v) v
    put' s v = f s v >>= \(sub s 1) -> return (sub s 1,v)
 \end{spec}
 
+The lens |addfst| adds a second component to the current source in
+order to create a pair. %
 The first argument of |addfst| is a function to create the first
 component of the pair from the given source and view. %
 We can use this combinator to define a lens |label fst GetPut| that
 projects a pair to its first component. %
+
 \begin{spec}
 label fst GetPut :: LensPG_ m (sub s 1,v) v
 label fst GetPut =
