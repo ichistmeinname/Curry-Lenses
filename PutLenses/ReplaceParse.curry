@@ -1,5 +1,5 @@
 module ReplaceParse
-  ( char, charP, digit, whitespace, whitespaces, succeeds
+  ( char, charP, digit, whitespace, whitespaces, pure
   , many, optional, paren
   , (<|>), (<<<), (>>>), (<>)
   , get, put, PReplace, replaceParse
@@ -12,6 +12,10 @@ import Lens ( Lens, get, put)
 ----- main definitions
 
 -- Datatype definition
+--- result is a triple:
+---  (1) replacement or pretty-print
+---  (2) remaining inputr
+---  (3) remaining string to concatenate at the end
 type PReplace a = String -> (a,String) -> (String,String,String)
 
 -- Transforms a `PReplace` structure to a lens
@@ -48,13 +52,13 @@ whitespaces input = case input of
   _  -> ((whitespace >>> whitespaces')) input
  where
   whitespaces' :: PReplace ()
-  whitespaces' ""           ((),str') = succeeds "" ((),str')
-  whitespaces' input'@(_:_) ((),str') =
-    ((whitespace >>> whitespaces') <|> succeeds) input' ((),str')
+  whitespaces' input' ((),str') = case input' of
+    "" -> pure "" ((),str')
+    _  -> ((whitespace >>> whitespaces') <|> pure) input' ((),str')
 
 -- Always succeeding replace operator
-succeeds :: PReplace a
-succeeds input (_,str') = ("",input,str')
+pure :: PReplace a
+pure input (_,str') = ("",input,str')
 
 
 paren :: PReplace a -> PReplace a
@@ -74,10 +78,10 @@ paren pReplace str@('(' : _ ++ ")"++_) (e,str') =
 many :: PReplace a -> PReplace [a]
 many _       input ([],str')   = ("",input,str')
 many reparse input (x:xs,str') =
-  ((reparse <> many reparse) <|> succeeds) input ((x,xs),str')
+  ((reparse <> many reparse) <|> pure) input ((x,xs),str')
 
 optional :: PReplace a -> PReplace a
-optional pReplace = pReplace <|> succeeds
+optional pReplace = pReplace <|> pure
 
 
 (<|>) :: PReplace a -> PReplace a -> PReplace a
@@ -100,7 +104,7 @@ optional pReplace = pReplace <|> succeeds
 -- (<>) :: PReplace a -> PReplace b -> PReplace (a,b)
 -- (pA <> pB) input ((e1,e2),str') = case input of
 --   "" -> (res1 ++ res2,str2,str2')
---   _  -> if null str1 && (res2,str',str2') /= succeeds str1 (e2,str1')
+--   _  -> if null str1 && (res2,str',str2') /= pure str1 (e2,str1')
 --           then failed
 --           else (res1 ++ res2,str2,str2')
 --  where
@@ -111,7 +115,7 @@ optional pReplace = pReplace <|> succeeds
 (<>) :: PReplace a -> PReplace b -> PReplace (a,b)
 (pA <> pB) input ((e1,e2),str') = case input of
   "" -> (res1,str2,str1' ++ str2')
-  _  -> if null str1 && (res2,str',str2') /= succeeds str1 (e2,str1')
+  _  -> if null str1 && (res2,str',str2') /= pure str1 (e2,str1')
           then failed
           else (res1,str2,str1' ++ str2')
  where
