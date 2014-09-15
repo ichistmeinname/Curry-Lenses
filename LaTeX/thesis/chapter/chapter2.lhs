@@ -151,7 +151,7 @@ Furthermore, a detailed listing of different properties that are
 applicable for lenses can be studied in the work
 of~\cite{biTProperties}. %
 
-\subsection*{PutGet Law}\label{subsec:lensesLaws}
+\subsection{PutGet Law}\label{subsec:lensesLaws}
 
 So far, we characterised lenses as a bidirectional transformation with
 an adapted |put| function, which allows round-tripping behaviour. %
@@ -217,7 +217,7 @@ and $v'$ is of type |String|, it holds |(sub fst get) ((sub fst put) (v,w) v') =
 \end{spec}
 \end{proof}
 
-\subsection*{GetPut Law}
+\subsection{GetPut Law}
 In addition to the \emph{PutGet} law, lenses are also supposed to
 fulfil a second round-tripping criteria. %
 The \emph{GetPut} law states that if we get a view out of a source and
@@ -270,7 +270,7 @@ bidirectional programming and lenses, a lens is called
 \emph{well-behaved} if both laws, the \emph{GetPut} and the
 \emph{PutGet} law, hold. %
 
-\subsection*{Partial Lenses}
+\subsection{Partial Lenses}
 Furthermore, more and more frameworks for bidirectional
 transformations and bidirectional programming languages, respectively,
 endorse a weaker notion of the presented \emph{PutGet} and
@@ -419,7 +419,7 @@ expressions. %
 Nevertheless, our second example is a valid lens with respect to GetPut and
 Partial-PutGet. %
 
-\subsection*{PutPut Law}
+\subsection{PutPut Law}
 There is also a third lens law, which is called \emph{PutPut}. %
 A lens satisfies the \emph{PutPut} law if we run two consecutively
 |put| operations on a source with two different views, but only the
