@@ -22,8 +22,8 @@ Furthermore, we discuss the basic functionality of bidirectional
 transformations. %
 In the subsequent section we talk about a generalisation named lenses,
 the most important part of this section involves the underlying laws
-that apply to lenses as well as first examples of lens definition to
-get a better intuition of their usage. %
+that apply to lenses as well as examples to
+get a better intuition of the usage of lenses. %
 % As preliminary for further chapters, we cover some algebraic
 % properties of lenses, which constitute as a minor disadvantage in a
 % more practical setting later. %
@@ -72,23 +72,23 @@ These two functions form, in the easiest approach, a bijection from
 We visualise this idea of two types and their corresponding
 transformation functions in Figure~\ref{fig:bijective}. %
 
-\begin{figure}[h]
+\begin{figure}
 \begin{center}
   \includegraphics[width=0.75\textwidth]{../images/bx3iVC_newFormat.pdf}
 \end{center}
 \caption{Bijective relation between two types |A| and |B|}
-\label{fig:bit}
+\label{fig:bijective}
 \end{figure}%
 
 In the next section, we discuss lenses, a more general approach of
 bidirectional transformation, which, additionally, are one of the most
 popular forms in bidirectional programming. %
 A statement about the status quo of bidirectional programming is
-postponed to Chapter~\ref{ch:impl} and Section ~\ref{sec:implPut},
+postponed to Chapter~\ref{ch:impl} and Section~\ref{sec:implPut},
 where we disucess several implementation approaches. %
 Another good source for further reading is the paper
-by~\cite{biPApproaches} that compares three different approaches of
-bidirectional programming with one another. %
+by~\cite{biPApproaches} that contrasts three different approaches of
+bidirectional programming. %
 
 \section{Lenses}\label{sec:lenses}
 Lenses describe bidirectional transformations that originate in

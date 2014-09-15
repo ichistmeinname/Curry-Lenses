@@ -1190,6 +1190,9 @@ In this section we presented the usage of lenses for a new approach to
 specify printer and parser in one definition. %
 The resulting performance is still in need of improvement, but the
 implementation is sufficent for a first prototype. %
+This approach is a big selling point for nondeterministic lenses. %
+The nondeterministic parsing direction helps us to achieve a
+meaningful lens definition in both the get and the put direction. %
 Several papers that deal with bidirectional programming mention the
 usage of lenses to unify the definition of printer and parser. %
 However, there is only one actual implementation that realises this
