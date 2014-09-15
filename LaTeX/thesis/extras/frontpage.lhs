@@ -1,5 +1,5 @@
 \newcommand{\trtitle}{Lenses and Bidirectional Programming in Curry}
-\newcommand{\trtype}{Master Thesis}
+\newcommand{\trtype}{Master's Thesis}
 \newcommand{\trauthor}{Sandra Dylus}
 \newcommand{\trbetreuer}{M.o.Sc. Bj\"orn Peem\"oller}
 \newcommand{\trprof}{Prof. Dr. Michael Hanus}
@@ -7,7 +7,7 @@
 \newcommand{\trinstitut}{Computer Science}
 \newcommand{\trfakultaet}{Technische Fakult\"at}
 \newcommand{\truni}{Christian-Albrechts-Universit\"at zu Kiel}
-\newcommand{\trdate}{\today}
+\newcommand{\trdate}{September 2014}
 
 \thispagestyle{empty}
 
@@ -37,8 +37,10 @@
 
 \begin{center}
   \textbf{\trtype} \\
+  submitted in \trdate
+\end{center}
+\begin{center}
   \trfachgebiet \\
-  \trprof \\
   Department of \trinstitut \\
   % \trfakultaet \\
   \truni \\[0.5cm]
