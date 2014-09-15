@@ -250,12 +250,15 @@ putAppend (_:xs,ys) (z:zs) = let (xs',ys') = putAppend (xs,ys) zs
                              in (z:xs',ys')
 
 -- does not work; `putDrop [] _` does not instantiate `_`, so the expression
---  `get putDrop []` yields an unbounden variable
+--  `get putDrop []` yields an unbound variable
 -- putDrop :: Lens [a] Int
 -- putDrop []        _ = []
 -- putDrop xs@(_:ys) n | n <  0    = failed
 --                     | n == 0    = xs
 --                     | otherwise = putDrop ys (n-1)
+
+putReplicate :: Int -> Lens a [a]
+putReplicate n x ys@(y:_) | length ys == n && (all (== x) ys || all (== y) ys) = y
 
 putReplaceAt :: Int -> Lens [a] a
 putReplaceAt n (x:xs) y | n == 0  = y:xs
@@ -278,7 +281,7 @@ putMap _ []     []     = []
 putMap lensF (x:xs) (y:ys) = lensF x y : putMap lensF xs ys
 
 putFoldr :: (a -> b -> b) -> Lens b [a]
-putFoldr f v []     = v
+putFoldr _ v []     = v
 putFoldr f v (x:xs) = f x (putFoldr f v xs)
 
 -- does not work
@@ -389,7 +392,7 @@ putUpdateMaybe (Just _) v = Just v
 putSetMaybe :: Lens (Maybe a) Bool
 putSetMaybe Nothing  False = Nothing
 putSetMaybe (Just v) True  = Just v
-putSetMaybe (Just v) False = Nothing
+putSetMaybe (Just _) False = Nothing
 
 
 ----- HTML Replace
