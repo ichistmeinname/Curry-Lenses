@@ -17,6 +17,11 @@
 %format (val (i)) =  "val_{"i "}"
 %format -.- = "~\cdots~"
 %format (label f i) = f "_{" i"}"
+%format <$$> = "<\$>"
+%format <*> = "<*>"
+%format <||> = "<|>"
+%format *> = ">>>"
+%format <* = "<<<"
 
 \begin{document}
 

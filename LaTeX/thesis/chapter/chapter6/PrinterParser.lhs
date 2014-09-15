@@ -1,5 +1,3 @@
-%format *> = ">>>"
-%formt <* = "<<<"
 \section{Case Study I - Bidirectional Printer-Parser}\label{sec:printerParser}
 Printer and parser are well-studied fields in Computer Science and
 take an important role in the design of programming languages. %
@@ -568,7 +566,18 @@ We cannot fix the number of used whitespaces to one, the fact is that
 the free variable is instantiated nondeterministically to a suitable
 value. %
 In our case, |[()]| is not the only suitable value, any list of |Unit|
-values fits the specification of the pretty-printer. \\%
+values fits the specification of the pretty-printer. %
+
+The work of \cite{quotientLenses} sounds promising as a solution to
+our problem. %
+Quotient lenses are well-behaved bidirectional transformations that
+allow the programmer to specify equivalence relations on his data to
+process. %
+They authors have added an implementation of quotient lenses to the
+Boomerang language. %
+Thus, the specific usage of quotient lenses is not applicable for our
+implementation and in the context of our study cases, we did not have
+the time to implement our own version quotient lenses. %
 
 Furthermore, the definitions for the pretty-printer have to be more
 sophisticated than usual. %
@@ -989,13 +998,16 @@ The expression consists of thirty combinators and has a three-level
 nesting for recursive calls and executes in |2| milliseconds. %
 
 In the following, we show a series of graphs to illustrate the
-performance issue. %
-Both graphs have the same labels: the x-axis represents the
-number of combinators used in an expression; the y-axis indicates the
-execution time of an expression. %
+performance issue.\footnote{We tested the performance with KiCS2 and
+  the |+time| flag; the testing device was a MacBook Air with Mac OS
+  10.9.4 as operation aystem, |4| GB memory and a |1.8| GHz Intel Core
+  i5 as processor.} %
+Both graphs have the same labels: the x-axis represents the number of
+combinators used in an expression; the y-axis indicates the execution
+time of an expression. %
 In Figure~\ref{fig:plotReplaceA}, we show the execution time of a
 replacement action for an increasing number of combinators. %
-The interpolated graph indicates an exponential growth. %
+The behaviour of the graph indicates an exponential growth. %
 In order to investigate this hypothesis, we used a logarithmic scale
 for the execution time in Figure~\ref{fig:plotReplaceB}. %
 Indeed, the adjusted graph shows a linear growth, which indicates an
@@ -1016,8 +1028,7 @@ combinators. %
 
 We also measured the performance for a parsing action, unfortunately,
 the results are even worse. %
-The resulting interpolated graph is illustrated in
-Figure~\ref{fig:plotParse}. %
+The results are illustrated in Figure~\ref{fig:plotParse}. %
 
 \begin{figure}[h]
 \caption{Performance of parsing for increasing number of combinators}
@@ -1152,9 +1163,8 @@ whitespaces input = case input of
 The definition of |whitespaces'| profits from the combination of the
 alternative combinator and |pure|. %
 This combination allows us to consume an arbitrary number of
-whitespaces and stop whenever the |whitespace| parser
-fails. %
-We also stop, if the input string becomes empty and yield a result to
+whitespaces and stop whenever the |whitespace| parser fails. %
+We also stop if the input string becomes empty, and yield a result to
 signal a successful consumption. %
 
 Due to the actual consumption of the input string, we achieve better
@@ -1162,17 +1172,78 @@ results for the performance. %
 In Figure~\ref{fig:replaceBetter}, we show the measured execution time
 for the same expressions that we ran for the previous
 implementation. %
-The results include two additional text expressions in order to show
+The results include two additional test expressions in order to show
 that the expected run-time with respect to the number of used
-combinators is linear. %
+combinators is nearly linear. %
+
+\begin{figure}
+\includegraphics[width=\textwidth]{../images/replaceBetter.pdf}
+\caption{Performance of replacing for an increasing number of combinators}
+\label{fig:replaceBetter}
+\end{figure}
 
 % \subsection{Parser-Printer}
 
-\subsection{Similar Approaches}
+\subsection{Conclusion and Similar Approaches}
 
-\begin{itemize}
-\item FlipPr \cite{flippr}
-\item Invertible Syntax Description \cite{invertibleSyntax}
-% \item Arrows \cite{invertibleArrows}
-\item unparsing/parsing \cite{parsing2}
-\end{itemize}
+In this section we presented the usage of lenses for a new approach to
+specify printer and parser in one definition. %
+The resulting performance is still in need of improvement, but the
+implementation is sufficent for a first prototype. %
+Several papers that deal with bidirectional programming mention the
+usage of lenses to unify the definition of printer and parser. %
+However, there is only one actual implementation that realises this
+specification with the help of lenses. %
+
+The approach is followed by \cite{parsing1} and \cite{parsing2},
+respectively. %
+The first publication is a conglomerate of case studies in the field
+of bidirectionalisation that also includes a section about printer and
+parser. %
+The second publication focuses on parsing and unparsing, in which the
+authors illustrate a megamodel of parsing. %
+This megamodel includes all different artefacts and the corresponding
+mappings of one artefact to another. %
+As a result of this investigation, he applies different
+bidirectionalisation techniques in order to implement parsing and
+unparsing in the meta-programming language
+Rascal~\citeyearpar{rascal}. %
+The mappings include similiar features that are available in our
+implementation: layout-preservation, parsing, unparsing and
+redundancies in the parsing direction. %
+In addition, the authors discuss a feature to automatically correct
+misspellings and likewise parse errors. %
+
+Other related work includes the idea of \cite{invertibleSyntax}, who
+propose a new interface to describe parser and pretty-printer in a
+single program. %
+They provide a type class |Syntax delta| that include common parser
+functions like |(<$$>)|,|(<*>)|\footnote{Due to the usage of
+  pretty-printers, the composition combinator forms a pair like in our
+  implementation, instead of using the traditional composition
+  semantic of parsers.}, |(<||>)|, |pure| and |empty|. %
+In order to define parser and pretty-printers, the programmes defines
+an instance for the |Syntax| typeclass. %
+In the end, the implemented instance decides if the combinator behaves
+like a pretty-printer or a parser. %
+This approach has similiarties to using a pair of functions to
+represent lenses: we still have to define and maintain both sides of
+the implementation. %
+Thus, we see an advantage of our implementation in comparison to the
+idea of Rendell and Ostermann. %
+
+Last but not least, we want to mention the publication of
+\cite{flippr}, who introduce a \emph{FliPpr}, a program transformation
+system that can be used to define pretty-printers and gain a
+corresponding parser. %
+FlipPr produces a CFG parser that is consistent with the given
+definition of the pretty-printer. %
+Their advantage in comparision to bidirectional approaches is that
+they can outsource their parsing algorithms to parser generators and
+reuse efficient implementations of exisiting pretty-printer
+libraries. %
+In particular, FlipPr is implemented in Haskell and reuses
+\citeauthor{pretty}'s existing implementation of pretty-printers,
+additionally, they make use of
+\emph{happy}\footnote{\url{http://www.haskell.org/happy/}} as parser
+generator. %

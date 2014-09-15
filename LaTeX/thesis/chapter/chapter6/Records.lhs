@@ -103,7 +103,7 @@ For example, the record type |Contact| contains a field |person| of
 type |Person|, which, again, is a record type itself with fields
 |first| and |last|, both of type |String|. %
 
-\subsubsection{Getting there is half the fun}
+\subsubsection*{Getting there is half the fun}
 
 We can define a function |getFirstForAddress| that takes a value of
 type |Contact| as argument and yields a |String| as result. %
@@ -134,7 +134,7 @@ getFirstForContact' = first . person
 In Curry, we cannot apply well-known simplification mechanism, e.g.,
 eta-reduction or point-free style, for record accessors. %
 
-\subsubsection{Set your record straight}
+\subsubsection*{Set your record straight}
 
 In a second step, we define a function to change the value of a field
 in a given record. %
@@ -186,7 +186,7 @@ functions for all record types that we define in a program. %
 Thus, as a next step, we try to generalise the defined get and set
 function to work for all record types. %
 
-\subsubsection{Make you a lens for a greater good}
+\subsubsection*{Make you a lens for a greater good}
 We define a function |get :: (rec -> recField) -> rec -> recField|, where |rec| is
 a record type and |recField| is the type of a field of that record. %
 
