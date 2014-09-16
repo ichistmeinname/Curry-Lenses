@@ -1,29 +1,32 @@
 \chapter[About Bidirectional Transformations]{About Lenses and Other Bidirectional Shenanigans}\label{ch:BiTrans}
 
-In the setting of data synchronisation and data transformation, many
-approaches are error-prone and cumbersome to maintain. %
-This problem arises from the application of unidirectional
-programming, where bidirectional programming would be way more
-suitable. %
+Many approaches in the context of data synchronisation and data
+transformation are error-prone and cumbersome to maintain. %
 Typical examples for such problems are widespread and can be found in
-several areas of Computer Science: serialisation or synchronisation
-processes, e.g. transforming Safari's bookmarks to be suitable for
-Firefox~\citep{boomerang}\todo{check reference again}; printer and
+several areas of Computer Science: printer and
 parsers that harmonise in a meaningful way (see
-Section~\ref{sec:printerParser}; tight connection between user
-interfaces and the underlying data~\citep{constraintMaintainers}. %
+Section~\ref{sec:printerParser}); tight connection between user
+interfaces and the underlying data~\citep{constraintMaintainers};
+serialisation or synchronisation
+processes, e.g. transforming Safari's bookmarks to be suitable for
+Firefox~\citep{boomerang}\todo{check reference again}. %
 
-In this chapter, we introduce the notion of bidirectional
+We believe that in many cases the application of bidirectional
+programming avoids the problems mentioned and is more suitable than
+unidirectional programming. \\%
+
+In this chapter we introduce the notion of bidirectional
 transformations and give the necessary fundamentals to dive deeper
 into the topic of bidirectional programming. %
-The first section covers the first attemps of bidirectional
+The first section covers the first attempt of bidirectional
 programming and its origin from databases. %
 Furthermore, we discuss the basic functionality of bidirectional
 transformations. %
-In the subsequent section we talk about a generalisation named lenses,
-the most important part of this section involves the underlying laws
-that apply to lenses as well as examples to
-get a better intuition of the usage of lenses. %
+In the subsequent section we talk about a generalisation named
+lenses. %
+The most important part of this section involves the underlying laws
+that apply to lenses as well as examples to get a better intuition of
+the usage of lenses. %
 % As preliminary for further chapters, we cover some algebraic
 % properties of lenses, which constitute as a minor disadvantage in a
 % more practical setting later. %
@@ -32,24 +35,24 @@ get a better intuition of the usage of lenses. %
 
 \section{Bidirectional Programming}\label{sec:biProg}
 
-Typical problems that are based on bidirectional transformations are
+Problems that are based on bidirectional transformations are typically
 handled with two separate functions. %
-That is, one function maps the concrete value to the abstract
-representation and one function serves as backward direction, from the
+That is, one function maps the specific value to the abstract
+representation and one function serves as the reverse, from the
 abstract value to the concrete representation. %
-This approach is rather error-prone and tedious to maintain, because,
-firstly, we have to keep the two functions in sync by hand in order to
-guarantee correctness; secondly, changes in one of the representations
-affects both functions due to the round-tripping rules that have to be
-obeyed. %
+This approach is rather error-prone and tedious to maintain; firstly,
+because we have to keep the two functions in sync by hand in order to
+guarantee correctness; secondly, because changes in one of the
+representations affect both functions due to certain round-tripping
+rules that we introduce later. %
 This unidirectional programming mechanism is well-studied and many
 programmers are familiar with this paradigm. %
-In contrast, bidirectional programming is a new approach on a specific
+In contrast, bidirectional programming is a new approach to a specific
 domain of problems, which becomes more and more popular in different
 areas of computer science. %
 Software engineering, programming languages, databases and graph
-transformations are some of the current fields of computer science
-that participate in research activities concerning bidirectional
+transformations are some of the fields of computer science that
+currently participate in research activities concerning bidirectional
 transformations. %
 For a more detailed introduction to the cross-discipline of
 bidirectional transformation, we recommend the work
@@ -59,15 +62,15 @@ transformation from the perspective of the programming language
 community. %
 
 So, what is the new, challenging feature of bidirectional programming
-that keeps researchers busy? %
+keeping researchers busy? %
 A bidirectional transformations does not consist of two functions like
 in the unidirectional way, but of one function that can be read
-forward and backward. %
-In the literature, we distinguish between a forward function |get :: A ->
-B| and a backward function |put :: B -> A|; |A| is most commonly
+forwards and backwards. %
+We distinguish between a forward function |get :: A
+-> B| and a backward function |put :: B -> A|; |A| is most commonly
 called the source and |B| is the view. %
 The naming convention originates from applications in databases. %
-These two functions form, in the easiest approach, a bijection from
+These two functions form, in the easiest approach, a bijection between
 |A| to |B| and back. %
 We visualise this idea of two types and their corresponding
 transformation functions in Figure~\ref{fig:bijective}. %
@@ -80,35 +83,28 @@ transformation functions in Figure~\ref{fig:bijective}. %
 \label{fig:bijective}
 \end{figure}%
 
-In the next section, we discuss lenses, a more general approach of
-bidirectional transformation, which, additionally, are one of the most
-popular forms in bidirectional programming. %
+In the next section, we discuss a more general approach of
+bidirectional transformation calles lenses. %
+Lenses are one of the most popular forms in bidirectional
+programming. %
 A statement about the status quo of bidirectional programming is
 postponed to Chapter~\ref{ch:impl} and Section~\ref{sec:implPut},
-where we disucess several implementation approaches. %
+where we discusess several implementation approaches. %
 Another good source for further reading is the paper
 by~\cite{biPApproaches} that contrasts three different approaches of
 bidirectional programming. %
 
 \section{Lenses}\label{sec:lenses}
-Lenses describe bidirectional transformations that originate in
+Lenses describe bidirectional transformations, which originate in
 databases as introduced by \cite{viewUpdate}. %
 In the setting of lenses, the |get| function describes a
-transformation from |A| to |B|, in most applications |B| is a part
-of |A|, and information are discarded from |A| to |B|, respectively. %
+transformation from |A| to |B|. %
+In most applications |A| is a product type and |B| is one component of
+that product. %
+Thus, the get direction of a lens discards information when projecting
+from|A| to |B| %
 On the other hand, the |put| function synchronises a given,
 potentially updated, view with respect to the original source. %
-A popular example from databases shows the correspondences quite well:
-we have a database with a set of data |S| and a query that yields a
-table |T| that matches the given criteria. %
-The query is the forward transformation |get|. %
-In a second step, we modify the resulting table, because we recognise
-a misspelled name field or suchlike, which yields to a updated table
-|T'|. %
-We definitely want to propagate the update back to our database; this
-is where the |put| function comes into play. %
-The |put| function synchronises our changes of the view, |T'|, with
-the original database set |S|. %
 Figure~\ref{fig:bit} illustrates the discussed situation of an updated
 view, which is synchronised with its original source. %
 
@@ -121,51 +117,6 @@ view, which is synchronised with its original source. %
     functions: |get| and |put|}
 \label{fig:bit}
 \end{figure}%
-
-
-Furthermore, we distinguish two characteristics of lenses:
-\emph{symmetric} and \emph{asymmetric} lenses. %
-The typical case is an asymmetric setting. %
-As we stated at the beginning of the section, in most applications the
-view is a subset of the source. %
-That is, the |get| function discards some information, when it
-transforms a source of type |A| to a view of type |B|. %
-The names \emph{asymmetric} and \emph{symmetric} describes the focus
-on the given pair of source and view. %
-In an asymmetric setting, we only consider changes of the view that
-will be propagated back to the source; this restricted view implies
-that the given source does not change in the meantime. %
-The definition of the |put| function, which we introduced above, needs
-to be adapted for the asymmetric setting. %
-We want to synchronise the updated view with a source so that we need
-|put| to take the initial source as argument as well. %
-In a symmetric setting, both sides can be updated, so that the |get|
-function takes an additional argument, just as the definition of |put|
-above. %
-In the following, we will only examine asymmetric lenses in a detailed
-manner. %
-For a detailed introduction to symmetric lenses, consider to read the
-work of~\cite{symmLenses} or the dissertation
-of~\cite{symmetricEditLenses}. %
-Furthermore, a detailed listing of different properties that are
-applicable for lenses can be studied in the work
-of~\cite{biTProperties}. %
-
-\subsection{PutGet Law}\label{subsec:lensesLaws}
-
-So far, we characterised lenses as a bidirectional transformation with
-an adapted |put| function, which allows round-tripping behaviour. %
-It is important to state that lenses fulfil certain laws. %
-The first law states that, if we update a given source with a specific
-view and transform the result to a view afterwards, we get the view
-that we just put in. %
-
-\begin{equation}\tag{PutGet}
-|get (put s v) = v|
-\end{equation}
-
-This law is called \emph{PutGet}: we first |put| a new value in our
-source and then try to |get| it out again. %
 
 As an example, let us take a look at a bidirectional transformation
 with a pair of |String| and |Integer| as the domain of the source, and
@@ -192,8 +143,8 @@ of a pair with a given string without further ado. %
 (sub fst put) (str,int) newStr = (newStr,int)
 \end{code}
 
-In order to test the \emph{PutGet} law, we first run the functions on
-example values. %
+In order to see the get and put function of such a lens in action, we
+give two exemplary expressions. %
 
 \begin{spec}
 > (sub fst put) ("foo",42) "bar" ("bar",42)
@@ -201,12 +152,74 @@ example values. %
 "bar"
 \end{spec}
 
-We can even show that the defined pair of get and put behaves
+Moreover, a popular example from databases shows the general idea
+quite well: we have a database with a data set |S| and a query that
+yields a table |T| that matches the given criteria. %
+The query is the forward transformation |get|. %
+In a second step, we modify the resulting table, because we recognise
+a misspelled name field or suchlike, which yields a updated table
+|T'|. %
+We definitely want to propagate the update back to our database; this
+is where the |put| function comes into play. %
+The |put| function synchronises our changes of the view, |T'|, with
+the original database set |S|. %
+
+Furthermore, the literature distinguishes between two categories of
+lenses: \emph{symmetric} and \emph{asymmetric} lenses. %
+The names \emph{asymmetric} and \emph{symmetric} describe the focus on
+the given pair of source and view. %
+
+In a symmetric setting, each structure |A| and |B| contains
+information that is not present in the other. %
+That is, we can also update both strucutres which leads two put
+functions: |putl :: B -> A -> B| to update |B| and a put function
+|putr :: A -> B -> A| to update |A|. %
+
+In an asymmetric setting, we only consider changes of the view that
+will be propagated back to the source; this restricted view implies
+that the given source does not change in the meantime. %
+That is, the example above is a representative for an asymmetric
+lens. %
+In comparision to the bijective setting, the |put| function take the
+initial source as argument to synchronise the updated view with that
+source. %
+This additional argument leads to a slight change in the type of the
+|put| function: |put :: A -> B -> A|. %
+
+In the following, we will only examine asymmetric lenses. %
+For a detailed introduction to symmetric lenses, consider to read the
+work of~\cite*{symmLenses} or the dissertation
+of~\cite{symmetricEditLenses}. %
+Furthermore, a detailed listing of different properties that are
+applicable for lenses can be studied in the work
+of~\cite{biTProperties}. %
+
+\subsection{PutGet Law}\label{subsec:lensesLaws}
+
+So far, we characterised lenses as a bidirectional transformation with
+an adapted |put| function. %
+It is important to note that lenses fulfil certain laws. %
+The first two of three laws that we discuss are also called
+round-tripping rules, because they state how get and put interact when
+used consecutively. %
+The first law states that if, using the same lens, we put something in
+and extract it again, we get the same thing back.
+
+\begin{equation}\tag{PutGet}
+|get (put s v) = v|
+\end{equation}
+
+This law is called \emph{PutGet}: we first |put| a new value in our
+source and then try to |get| it out again. %
+
+In order to give an example, we use the lens definition of |sub fst
+get| and |sub fst put| from above to check the \emph{PutGet} law. %
+We can show that the defined pair of get and put behaves
 according to the law for every initial value and additional string. %
 
 \begin{proof}
 For all $w$, $v$ and $v'$, where $(v,w)$ is of type |(String,Integer)|
-and $v'$ is of type |String|, it holds |(sub fst get) ((sub fst put) (v,w) v') = v'|. %
+and $v'$ is of type |String|, it holds that |(sub fst get) ((sub fst put) (v,w) v') = v'|. %
 \def\commentbegin{\quad\{\ } \def\commentend{\}}
 \begin{spec}
   (sub fst get) (put (v,w) v')
@@ -219,13 +232,13 @@ and $v'$ is of type |String|, it holds |(sub fst get) ((sub fst put) (v,w) v') =
 
 \subsection{GetPut Law}
 In addition to the \emph{PutGet} law, lenses are also supposed to
-fulfil a second round-tripping criteria. %
+fulfil a second round-tripping criterion. %
 The \emph{GetPut} law states that if we get a view out of a source and
-put it back again, the source does not change at all, as if nothing
-happend. %
-This law can be interpreted as a stability property, that is, a lens
-is stabil if nothing \emph{magical} happens during an update or a
-selection. %
+put it back unmodified again, the source does not change at all, as if
+nothing happened. %
+This law can be interpreted as a stability property. %
+That is, a lens is stable if nothing \emph{magical} happens during an
+update or a selection. %
 
 \begin{equation}\tag{GetPut}
 |put s (get s) = s|
@@ -234,7 +247,7 @@ selection. %
 \begin{proof}
 With our example above, we obtain the following equation, where for all $w$
 and $v$ where $(v,w)$ is of type |(String,Integer)|, it holds
-|put (v,w) (get (v,w)) = (v,w)|. %
+that |put (v,w) (get (v,w)) = (v,w)|. %
 \def\commentbegin{\quad\{\ }
 \def\commentend{\}}
 \begin{spec}
@@ -270,17 +283,18 @@ bidirectional programming and lenses, a lens is called
 \emph{well-behaved} if both laws, the \emph{GetPut} and the
 \emph{PutGet} law, hold. %
 
-\subsection{Partial Lenses}
-Furthermore, more and more frameworks for bidirectional
-transformations and bidirectional programming languages, respectively,
-endorse a weaker notion of the presented \emph{PutGet} and
-\emph{GetPut} law. %
+\phantomsection
+
+\subsection{Partial Lenses}\label{subsec:partialLenses}
+More and more frameworks for bidirectional transformations and
+bidirectional programming languages, respectively, endorse a weaker
+notion of the presented \emph{PutGet} and \emph{GetPut} law. %
 In our current notion of the laws, we only consider total |get| and
 total |put| functions. %
-In practice, most of the time we do not want to work with total
-functions only. %
+In practice, most of the time we want to be able to work with
+functions that are not total. %
 For example, the classical function |head :: [a] -> a| to select the
-first element of the list is only partially, because we cannot select
+first element of the list is only partial, because we cannot select
 an element for the empty list. %
 We can define a lens that uses |head| as definition for its get
 direction. %
@@ -366,7 +380,7 @@ Since this is not the case, we do not apply the put direction, because
 the condition only needs to be satisfied, if the first application
 yields a valid result. %
 Thus, the lens consisting of |head| and |replaceHead|
-is a valid lens with respect to the PutGet and Partial-GetPut law. %
+is a valid lens with respect to both the PutGet and Partial-GetPut law. %
 
 As a second example, we define a lens with a put function that is
 similar to the well-known function |take :: Int -> [a] -> [a]| and a
@@ -386,7 +400,7 @@ length (x:xs)  = 1 + length xs
 
 As a minor adjustment, we define |sub put take| on positive |Integer|
 values only to harmonise better with |sub get length|. %
-Similar as before, we can observe that |sub get length| only yields
+Similar to before, we can observe that |sub get length| only yields
 positive |Integer| values as result, thus, the GetPut law holds
 trivially for non-empty and empty lists. %
 
@@ -421,7 +435,7 @@ Partial-PutGet. %
 
 \subsection{PutPut Law}
 There is also a third lens law, which is called \emph{PutPut}. %
-A lens satisfies the \emph{PutPut} law if we run two consecutively
+A lens satisfies the PutPut law if we run two consecutively
 |put| operations on a source with two different views, but only the
 second |put| matters. %
 That is, we can formulate this law with the following equation.  %
@@ -430,12 +444,13 @@ That is, we can formulate this law with the following equation.  %
 |put (put s v) v' = put s v'|
 \end{equation}
 
-In most applications, the \emph{PutPut} does not play an important
+In most applications, the PutPut law does not play an important
 role, because the preconditions are too strong. %
-That is, plenty of constructive well-behaved lens are not very
+That is, plenty of constructive well-behaved lenses are not very
 well-behaved. %
 For example the last lens we defined changes the source list
-dependent on the given view element, thus, two consecutive calls to
+dependent on the given view element. %
+Thus, two consecutive calls to
 the put function with different view values yield different results. %
 
 \begin{spec}

@@ -85,7 +85,7 @@ This result leads to the realisation that the get-based implementation
 is rather simple, not to say, too simple. %
 If we use |sub fst get| in the put direction, we loose the additional
 information of the source pair. %
-The problem arises from the definition of |sub get put|: we ignore the
+The problem arises from the definition of |sub put get|: we ignore the
 information about the original source, and examine the updated view
 instead. %
 After all, we do not have any information about the second component

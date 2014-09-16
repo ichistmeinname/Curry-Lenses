@@ -6,15 +6,16 @@ of recent implementations. %
 As a matter of fact, the combinatorial library for Curry is based on
 the approach of Fisher et. al, who published the Haskell library
 \texttt{putlenses} as a result of their work on lenses. %
-In the remainder section, we discuss the underlying implementation
-with respect to its original counterpart, and present some of the most
-important combinators as representatives. %
-In addition, we give some exemplary lens definitions to show the usage
-of the library, and the definition of classical lens examples with
-the available combinators. %
+In the remaining section, we discuss the underlying implementation and
+give additional comments about its original counterpart. %
+Additionally, we present some of the most important combinators as
+representatives. %
+Last but not least, we give some exemplary lens definitions to show
+the usage of the library, and the definition of classical lens
+examples with the available combinators. %
 
 \subsection{Motivation}
-The simplest representation of lenses is a pair of function; one
+The simplest representation of lenses is a pair of functions: one
 function for the get direction and one for put. %
 We can define such a data structure in Curry in three different ways:
 as a data type declaration with an own constructor, as a record
@@ -51,7 +52,7 @@ second component. %
     get' :: (a,b) -> a
     get' (x,_) = x
     put' :: (a,b) -> a -> (a,b)
-    put' (_,y) z = (x,z)
+    put' (_,y) z = (z,y)
 \end{spec}
 
 The definition of this lens is straight-forward, but what we gain from
@@ -87,17 +88,17 @@ We have only made slight changes to the put function, which only
 affect the second component. %
 
 \begin{spec}
-(sub get Pair) ((sub put Pair) fstInc (1,2) 13)
+(sub get Pair) fstInc ((sub put Pair) fstInc (1,2) 13)
 > 13
 
-(sub put Pair) (1,2) ((sub get Pair) fstInc (1,2))
+(sub put Pair) fstInc (1,2) ((sub get Pair) fstInc (1,2))
 > (1,3)
 \end{spec}
 
 The first expression checks the behaviour of the PutGet law, which
 seems fine, because the modification that we make with the put
 function can still be retraced with the get function. %
-However, the second expression behaves rather strange with respect to
+However, the second expression behaves rather strangely with respect to
 the GetPut law. %
 Technically, we do not change the given source at all, but the updated
 source |(1,3)| differs from the original source |(1,2)|, because of
@@ -121,12 +122,10 @@ In the following, we present a reimplementation of the Haskell library
 \texttt{putlenses} in Curry. %
 The original implementation provides a monadic interface to instantiate
 different update strategies. %
-Due to the lack of type classes in Curry, we avoid this problem by
-using one explicite monad instantiation -- namely, lists. %
-Actually, we do not really use lists in our implementation, but the
-built-in nondeterminism Curry provides. %
-However, we can reproduce an equivalent behaviour of our implementation in the Haskell
-library by instantiating the underlying monad to lists. %
+Due to the lack of type classes in Curry, we can not use this
+approach, and instead use the build-in nondeterminism. %
+However, we can approximate that behaviour by instantiating the monad
+with a list when using the Haskell library. % 
 
 \begin{spec}
 data Lens s v = Lens (Maybe s -> v -> s) (s -> Maybe v)
@@ -143,8 +142,8 @@ get (Lens _ f) s = case f s of
                         Nothing  -> error "get': value is `Nothing`"
 \end{spec}
 
-In order to handle the problem of partial lens definition, which we
-discussed in Section~\ref{subsec:lensesLaws}, the given representation
+In order to handle the problem of partial lens definitions, which we
+discussed in Section~\ref{subsec:partialLenses}, the given representation
 of lenses wraps a |Maybe| data type around the view for the |get|
 function. %
 That is, we can actually observe if the expression |get s| succeeds or
@@ -162,12 +161,12 @@ The composition functions takes two lens functions that are
 well-suited and yields a specialised combination of these lenses. %
 
 \begin{spec}
-((sub (<.>) Pair)) :: (sub Lens Pair) s v -> (sub Lens Pair) v w -> (sub Lens Pair) s w
-((sub (<.>) Pair)) l1 l2 =  LensPair putNew getNew
+(<.>) :: Lens s v -> Lens v w -> Lens s w
+l1 <.> l2 =  Lens putNew getNew
    where
-    putNew ms@(Just s)  w  = put' l1 ms (put' l2 (getM l1 s) w)
-    putNew Nothing      w  = put' l1 Nothing (put' l2 Nothing w)
-    getNew s               = getM l2 (get' l1 s)
+    putNew ms@(Just s)  w  = put l1 ms (put l2 (getM l1 s) w)
+    putNew Nothing      w  = put l1 Nothing (put l2 Nothing w)
+    getNew s               = getM l2 (get l1 s)
 
 \end{spec}
 
@@ -180,26 +179,28 @@ applications, i.e., the composition of two get functions is just
 function composition. %
 With two get functions |sub get l1 :: s -> v| and |sub get l2 :: v ->
 w|, and a source of type |s|, we apply |sub get l1| to yield a view of
-type |v|, and then, apply |sub get l2| to the result, which yields a
+type |v|, and then apply |sub get l2| to the result, which yields a
 value of type |w|. %
 In the end, we have a new get function of type |sub get (l1+l2) :: s
 -> w|. %
-For the put direction, we have to play a bit more with the available
+For the put direction we have to play a bit more with the available
 functions and take a closer look at their type signatures. %
 In addition to the get functions we discussed before, we have two put
-functions, |(sub put l1) :: s -> v -> s| and |(sub put l2) :: v -> w ->
-v|, a source of type |s|, an updated view of type |w|, and the
+functions, |(sub put l1) :: s -> v -> s| and |(sub put l2) :: v -> w
+-> v|, a source of type |s|, an updated view of type |w|, and the
 resulting put function is supposed to be of type |sub put (l1+l2) :: s
 -> w -> s|. %
 If there is no source available, i.e., the value of the source is
 |Nothing|, we can apply the two put functions consecutively, in which
 |sub put l2| is applied to the source an the given view and |sub put
 l1| is applied to the resulting value as second argument. %
-In the other case, we have to set the inner structure first with
-the given updated view, that
-is, we apply |sub put l2| to the view of the given source and the
-updated view. %
-As second step, the source is updated with resulting inner structure
+In the other case, we have to set the inner structure first with the
+given updated view, that is, we apply |sub put l2| to the view of the
+given source and the updated view. %
+Here, the usage of |Maybe| to wrap the result of a put function comes
+in handy, we can easily make the distinction if a put function failed
+or not. %
+In the end, the source is updated with the resulting inner structure
 from the previous step using |sub put l1|. %
 
 The composition of two lenses is a powerful instrument, that is
@@ -214,8 +215,8 @@ replaces its source with the given view for the put function. %
 This lens is restricted to sources and views of the same type. %
 
 \begin{spec}
-(sub id Pair) :: Lens v v
-(sub id Pair) = Lens (\_ v' -> v') (\s -> Just s)
+id :: Lens v v
+id = Lens (\_ v' -> v') (\s -> Just s)
                    -- Lens (flip const) Just
 \end{spec}
 
@@ -224,21 +225,20 @@ view, respectively, with regard to a specified predicate. %
 
 \begin{spec}
 phi :: (v -> Bool) -> Lens v v
-phi p  = Lens get_ put_
+phi p  = Lens get' put'
   where
-   get_ s    | p s        = Just s
+   get' s    | p s        = Just s
              | otherwise  = Nothing
-   put_ _ v  | p v        = Just v
+   put' _ v  | p v        = Just v
              | otherwise  = error "phi: predicate not fulfilled"
 \end{spec}
 
 In particular, the put direction declines any updated view that does
 not fulfil the given predicate, that is, we demand the update on the
 view to be valid. %
-The get function checks if the given source fulfils the predicate
-and yields that source for a positive outcome; otherwise it does not
-exist a valid view for the given source and the function yields
-|Nothing|. %
+The get function checks if the given source fulfils the predicate and
+yields that source for a positive outcome; otherwise a valid view for
+the given source does not exist and the function yields |Nothing|. %
 
 \subsubsection*{Products: Pairing and Unpairing~\todo{Splitting?}}
 The second category of combinators covers products to build pairs and
@@ -248,9 +248,9 @@ view, and projects the second component of the source in the get direction. %
 
 \begin{spec}
 addFst :: (Maybe (s1,v) -> v -> s1) -> Lens (s1,v) v
-addFst f = (Lens put_ (\ (_,v') -> Just v')
+addFst f = (Lens put' (\ (_,v') -> Just v')
  where
-  put_ s v' = (f s v',v')
+  put' s v' = (f s v',v')
 \end{spec}
 
 The user constructs the injected value with a specified function,
@@ -282,7 +282,7 @@ In the original implementation, Fisher et. al ensure well-behavedness
 by using an auxiliary function |enforceGetPut| to resolve the
 irregularity. %
 As a second option, they suggest to adjust the implementation of the
-get function to yield undefined for every sources that does not fulfil
+get function to yield undefined for every source that does not fulfil
 the GetPut law. %
 For our implemention, we chose the latter solution as well, because
 the manual correction increases the range of valid lenses, whereas the
@@ -296,9 +296,9 @@ value already is the current value. %
 
 \begin{spec}
 enforceGetPut :: Lens a b -> Lens a b
-enforceGetPut l = Lens put_ (getM l)
+enforceGetPut l = Lens put' (getM l)
  where
-  put_ ms v
+  put' ms v
    | isJust ms && getM l (fromJust ms) == Just v  = fromJust ms
    | otherwise                                    = put' l ms v
 \end{spec}
@@ -315,9 +315,9 @@ component, respectively. %
 
 \begin{spec}
 remFst :: (v -> v1) -> Lens v (v1,v)
-remFst f = Lens put_ (\ s -> Just (f s,s))
+remFst f = Lens put' (\ s -> Just (f s,s))
  where
-  put_ _ (v1,v)
+  put' _ (v1,v)
     | f v == v1 = v
     | otherwise = error "remFst: first and second value do not match"
 \end{spec}
@@ -341,18 +341,16 @@ value, respectively. %
 
 \begin{spec}
 injL :: Lens (Either v1 v2) v1
-injL = Lens (const (Left v)) get_
+injL = Lens (const . Left) get'
   where
-   get_ (Left  v) = Just v
-   get_ (Right _) = Nothing
+   get' (Left  v) = Just v
+   get' (Right _) = Nothing
 
 injR :: Lens (Either v1 v2) v2
-injR = { put := \_ v -> Right v
-       , get := get_
-       }
+injR = Lens (\_ v -> Right v) get'
  where
-  get_ (Left  _) = Nothing
-  get_ (Right v) = Just v
+  get' (Left  _) = Nothing
+  get' (Right v) = Just v
 \end{spec}
 
 Unlike |addFst| and |remFst|, the given lens definition and its dual
@@ -361,8 +359,8 @@ These kind of lenses do not seem very feasible at first sight, but we
 will see some practical lens definitions in the next section. %
 
 \subsection{Usage and Examples}\label{subsec:implCombEx}
-Althoug the fundamental combinators of the library , we have not
-dived~\todo{dove?} into programming our own lenses so far. %
+Although we gave the fundamental combinators of the library, we did not
+dive into programming our own lenses so far. %
 When defining lenses, the user has to build his lens by composing the
 combinators of the library. %
 As a first simple example, we define our running example, |fst|, by
@@ -392,10 +390,10 @@ direction. %
 First of all, let us test the behaviour of |sub fst comb|. %
 
 \begin{spec}
-> put' (sub fst comb) (Just (1,"test")) 13
+> put (sub fst comb) (Just (1,"test")) 13
 (13,"test")
 
-> get' (sub fst comb) (13,"test")
+> get (sub fst comb) (13,"test")
 13
 \end{spec}
 
@@ -469,7 +467,7 @@ cons = Right . (,)
 \end{spec}
 
 In this representation, the list |[1,2,3,4]| is rewritten as |Right
-(1,[2,3,4])|, and the empty list, [], corresponds to |Left ()|. %
+(1,[2,3,4])|, and the empty list, |[]|, corresponds to |Left ()|. %
 
 Every algebraic data type has a set of selectors to work with, in the
 following, we define lenses equivalent to |head| and |tail| in the get
