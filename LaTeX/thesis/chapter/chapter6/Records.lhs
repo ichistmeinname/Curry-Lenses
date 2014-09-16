@@ -2,7 +2,7 @@
 
 This section gives an overview about record syntax in Curry and a
 draft proposal for a possible improvement concerning lenses. %
-First, we discuss the current implementation of records in KICS2,
+First, we discuss the current implementation of records in KiCS2,
 which covers the general idea and some insights of the transformations
 that take place during compilation. %
 As a second step, we take a closer look at these transformations and
@@ -14,7 +14,7 @@ In the last subsection, we sketch the transformations from record type
 declarations into corresponding lens definitions. %
 
 \subsection{Record Syntax in Curry}
-In the current KICS2 implementation\citeyearpar{kics2Manual}, we can
+In the current KiCS2 implementation~\citeyearpar{kics2Manual} we can
 define types similar to data type declarations as records in
 Haskell. %
 In the remainder of this section, we call these definitions record
@@ -297,8 +297,7 @@ In the end, we get the following definition of |(<.>)|. %
 \end{code}
 
 The attentive reader may recognise the structure: it looks exactly
-like our primitive lens definitions from Section \todo{which
-  section?}. %
+like our primitive lens definitions from Section~\ref{ex:lensSimple}. %
 This observation leads to the idea of a new transformation of record
 declarations in Curry, which we discuss in the next subsection. %
 
@@ -319,7 +318,7 @@ type Person = { first, last :: String }
 
 -- generated code
 data Contact = Contact Person String
-data Person = Person sString String
+data Person = Person String String
 
 person :: (Contact -> Person, Contact -> Person -> Contact)
 person = (personGet,personSet)

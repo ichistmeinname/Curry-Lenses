@@ -22,20 +22,20 @@ This observation leads to the following equation for a data structure
 |val :: a| and associated functions |parse_a| for parsing and
 |print_a| for printing, which are parametrised over the specific data
 structure. %
-
-\begin{equation}\tag{Print-Parse}
+%
+\begin{align*}\tag{Print-Parse}
   |parse_a (print_a val) = val|
-\end{equation}
-
+\end{align*}
+%
 We might also consider the inverse round-tripping rule and demand that
 if we parse a string and print it again, we get the original string as
 result. %
 The following equation postulates this round-tripping rule. %
-
-\begin{equation}\tag{Parse-Print}
+%
+\begin{align*}\tag{Parse-Print}
   |print_a (parse_a str) = str|
-\end{equation}
-
+\end{align*}
+%
 In certain scenarios, the \emph{Parse-Print} rule is a desirable
 requirement. %
 For example, when we choose a format for the data that is unambiguous,
@@ -1029,12 +1029,20 @@ combinators. %
 We also measured the performance for a parsing action, unfortunately,
 the results are even worse. %
 The results are illustrated in Figure~\ref{fig:plotParse}. %
+Parsing a string with our library performs bad, because the get
+function guesses the resulting value -- the arithmetic expression. %
+Thus, the performance depends on the size of the arithmetic expression
+and of the number of possible values of each component. %
+For example, the operator data type has four possible constructors,
+each of this constructor is tested in order to find the corresponding
+arithmetic expression for a given string. %
 
+\todo{change Figure~\ref{fig:plotParse}}
 \begin{figure}[h]
+\includegraphics[width=\textwidth]{../images/kitten.jpg}
 \caption{Performance of parsing for increasing number of combinators}
 \label{fig:plotParse}
 \end{figure}
-
 
 % \begin{figure}[h]
 % \caption{Performance of pretty-printing for increasing number of combinators}
@@ -1160,7 +1168,7 @@ whitespaces input = case input of
       _   -> ((whitespace *> whitespaces') <||> pure) input' ((),str')
 \end{spec}
 
-The definition of |whitespaces'| profits from the combination of the
+The definition of |whitespaces'| benefits from the combination of the
 alternative combinator and |pure|. %
 This combination allows us to consume an arbitrary number of
 whitespaces and stop whenever the |whitespace| parser fails. %

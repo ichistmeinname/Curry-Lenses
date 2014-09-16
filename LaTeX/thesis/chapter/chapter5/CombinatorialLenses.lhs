@@ -24,6 +24,7 @@ synonym. %
 For the purpose of simplicity, we define lenses with a simple type
 synonym for a pair of get and put functions. %
 
+\phantomsection
 \begin{spec}
 type (sub Lens Pair) s v = (s -> v, s -> v -> s)
 
@@ -33,6 +34,7 @@ type (sub Lens Pair) s v = (s -> v, s -> v -> s)
 (sub get Pair) :: (sub Lens Pair) s v -> s -> v
 (sub get Pair) = fst
 \end{spec}
+\label{ex:lensSimple}
 
 In addition to the definition of a lens type, we can access the get
 and put component of the pair with helper functions |sub get Pair| and
