@@ -1,6 +1,6 @@
 \chapter{Summary}
 
-\section{Challenges}
+\section{Challenges}\label{sec:chall}
 \subsection{Curry's built-in search abilities}
 \todo{This is just a first draft}
 We have the following interface for put-based lenses that generate a
