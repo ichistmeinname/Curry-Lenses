@@ -37,6 +37,12 @@
 \usepackage{multirow}
 
 %
+% needed for colorcode.fmt
+%
+%% \usepackage{colortbl}
+%% \usepackage{calc}
+
+%
 % Paket für schönere Tabellen
 %
 \usepackage{booktabs}

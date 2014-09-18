@@ -1,10 +1,10 @@
 \section{Case Study I - Bidirectional Printer-Parser}\label{sec:printerParser}
-Printer and parser are well-studied fields in Computer Science and
+Pretty-Printers and parsers are well-studied fields in Computer Science and
 take an important role in the design of programming languages. %
 In order to prove a programming language's expressiveness, the
 implementation of a printer or parser library is a very popular
 example. %
-Printer and parser are also represented in processes that include
+Printers and parsers are also represented in processes that include
 reading and updating data from files. %
 For example, measurements of experiments in the field of biology are
 often tracked in CSV files. %
@@ -14,7 +14,7 @@ file. %
 Parsers specify the format of the CSV data in hand and yield an
 editable structure in the source language, whereas printers write the
 results back in a valid format. %
-This process leads to the observation that printer and parsers fulfil
+This process leads to the observation that printers and parsers fulfil
 certain round-tripping rules, which need to be considered. %
 We want to print the resulting data in a valid format, that is, the
 printed results can be reread again by the parser. %
@@ -53,7 +53,7 @@ and braces, so that a parsed data structure corresponds to more than
 one string representation. \\%
 
 In the following, we present different approaches to combine the
-definition of printer and parser into one function. %
+definition of printers and parsers into one function. %
 We can achieve this combination in the setting of lenses: we define a
 lens for printing in the put and parsing in get direction. %
 In addition, we provide a handfull of combinators to simplify the
@@ -172,7 +172,7 @@ primitives. %
 
 Furthermore, we provide a combinator to pretty-print one of two
 alternatives. %
-That is, we have two printers-parser in hand and run the second one
+That is, we have two printer-parsers in hand and run the second one
 only, if the first one fails. %
 
 \begin{spec}
@@ -352,11 +352,11 @@ whitespace characters as arguments. %
 
 In the case of an injected prettiness factor like additional
 whitespaces, it would be convenient to provide a combinator to ignore
-an printer-parser's result. %
+a printer-parser's result. %
 Those additional adjustments regarding the printed string mostly occur
 in the context of composing. %
 Thus, we define two additional composition functions to ignore the
-printer-parse to the right and to the left, respectively. %
+printer-parser to the right and to the left, respectively. %
 We can implement such a combinator by means of |(<>)|. %
 
 \begin{spec}
@@ -450,7 +450,7 @@ yield a partial result with a remaining string. %
 \subsubsection*{The Downside}
 As a main disadvantage of this approach, we cannot ignore redundant
 parts in the parsing direction. %
-If these redundancies do not appear in the pretty-printer definition,
+If these redundancies do not appear in the pretty-printer's definition,
 we do note have the option to parse them anyway. %
 We have already mentioned an original precedent in the introduction
 of this section: optional whitespaces as delimiter between tokens. %
@@ -477,7 +477,7 @@ A generalisation of these functions comes in handy to pretty-print a
 list of elements and to parse a series of characters or strings of the
 same category, respectively. %
 For that purpose, we define a generalised version |many1| and |many|
-that takes a printer-parse as argument and applies it to each element
+that takes a printer-parser as argument and applies it to each element
 of a given list. %
 
 \begin{spec}
@@ -596,7 +596,7 @@ pretty-printing and parsing in Appendix \ref{a:ppInfix}. %
 \subsection{Replace-Parser}
 
 In a second approach, we want to tackle the disadvantage of
-printer-parser concerning redundancies and optional parsing rules. %
+printer-parsers concerning redundancies and optional parsing rules. %
 These disadvantage arises from the operational, state-free approach of
 our first implementation. %
 The design of printer-parsers provides the definition of
@@ -860,7 +860,7 @@ In the case of an empty input string, we apply both replace-parsers in
 series without using the strict version. %
 
 Furthermore, the implementation of |(<*)| and |(*>)| is straightforward
-and the same as for the printer parsers, but with an adapted type
+and the same as for the printer-parser, but with an adapted type
 signature. %
 
 \begin{spec}
@@ -874,7 +874,7 @@ signature. %
 \subsubsection*{Arithmetic Expressions, again}
 
 In order to compare this approach with our previous implementation of
-printer-parses, we want to define a replace-parser for arithmetic
+printer-parsers, we want to define a replace-parser for arithmetic
 expressions. %
 
 \begin{spec}
@@ -1195,22 +1195,22 @@ combinators is nearly linear. %
 \subsection{Conclusion and Similar Approaches}
 
 In this section we presented the usage of lenses for a new approach to
-specify printer and parser in one definition. %
+specify printers and parsers in one definition. %
 The resulting performance is still in need of improvement, but the
 implementation is sufficent for a first prototype. %
 This approach is a big selling point for nondeterministic lenses. %
 The nondeterministic parsing direction helps us to achieve a
 meaningful lens definition in both the get and the put direction. %
 Several papers that deal with bidirectional programming mention the
-usage of lenses to unify the definition of printer and parser. %
+usage of lenses to unify the definition of printers and parsers. %
 However, there is only one actual implementation that realises this
 specification with the help of lenses. %
 
 The approach is followed by \cite{parsing1} and \cite{parsing2},
 respectively. %
 The first publication is a conglomerate of case studies in the field
-of bidirectionalisation that also includes a section about printer and
-parser. %
+of bidirectionalisation that also includes a section about printers and
+parsers. %
 The second publication focuses on parsing and unparsing, in which the
 authors illustrate a megamodel of parsing. %
 This megamodel includes all different artefacts and the corresponding
@@ -1233,7 +1233,7 @@ functions like |(<$$>)|,|(<*>)|\footnote{Due to the usage of
   pretty-printers, the composition combinator forms a pair like in our
   implementation, instead of using the traditional composition
   semantic of parsers.}, |(<||>)|, |pure| and |empty|. %
-In order to define parser and pretty-printers, the programmes defines
+In order to define parsers and pretty-printers, the programmes defines
 an instance for the |Syntax| typeclass. %
 In the end, the implemented instance decides if the combinator behaves
 like a pretty-printer or a parser. %

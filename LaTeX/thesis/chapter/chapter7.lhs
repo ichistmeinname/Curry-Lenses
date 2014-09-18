@@ -76,11 +76,11 @@ data Nat = IHi | O Nat | I Nat
 
 \subsubsection*{Guessing lists with a specific length}
 
-So, how does the evaluation steps look like, when we want to compute
+So, how do the evaluation steps look like, when we want to compute
 the length of a list?
 
 \begin{code}
-length :: [a] -> Bin Int
+length :: [a] -> BinInt
 length []     = Zero
 length x:xs = inc (length xs)
 

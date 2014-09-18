@@ -66,7 +66,7 @@ want to change. %
 
 \begin{code}
 appendToFirst :: Person -> Person
-appendToFirst person = { aLabel2 := val + 1 | person }
+appendToFirst person = { first := val ++ "1" | person }
   where val = person :> first
 \end{code}
 
@@ -78,8 +78,8 @@ one field is explicitly set to the left of the pipe operator. %
 Record updates allow the programmer to only write down the fields to be
 updated for a given record, all other fields remain unchanged. % 
 
-The usage of records can be very helpful and elegant, but has its downsides as
-well. %
+The usage of records can be very helpful and elegant, but has its
+downsides as well. %
 In contrast to Haskell, the fields |first| and |last| of the |Person|
 type are not functions, but syntactical constructs called labels. %
 The advantage of these labels is that the name spaces of function
@@ -95,6 +95,9 @@ person :: Contact -> Person
 person c = c :> person
 \end{code}
 
+We postpone an example that highlights one of the disadvantages of
+labels in comparison with functions to the next subsection. %
+
 \subsection{Step by Step: From Records to Lenses}
 
 In order to examine records a little bit further, let us define more
@@ -108,8 +111,8 @@ type |Person|, which, again, is a record type itself with fields
 We can define a function |getFirstForAddress| that takes a value of
 type |Contact| as argument and yields a |String| as result. %
 The result |String| is the first name of the person of the given
-contact, i.e., we first access the field |person| and use the resulting record
-type |Person| to access the field |first|. %
+contact, i.e., we first access the field |person| and use the
+resulting record type |Person| to access the field |first|. %
 
 \begin{code}
 getFirstForContact :: Contact -> String
@@ -126,12 +129,10 @@ In order to make this point more clear, we define a second version
 
 \begin{code}
 getFirstForContact' :: Contact -> String
--- getFirstForContact' contact = first (person contact)
--- getFirstForContact' contact = (first . person) contact
 getFirstForContact' = first . person
 \end{code}
 
-In Curry, we cannot apply well-known simplification mechanism, e.g.,
+In Curry, we cannot apply well-known simplification mechanisms, e.g.,
 eta-reduction or point-free style, for record accessors. %
 
 \subsubsection*{Set your record straight}
@@ -206,11 +207,11 @@ record value as follows\footnote{As we stated before, KICS2 translated
 \begin{spec}
 personGet :: Get Contact Person
 personGet c = c :> person
-firstGet :: Get Person -> String
+firstGet :: Get Person String
 firstGet p = p :> first
 
-aContact :: Contact a
-Contact = { person := aPerson, street := "Folkstreet 1969" }
+aContact :: Contact
+aContact = { person := aPerson, street := "Folkstreet 1969" }
 
 > get personGet aContact
 Person "Bob" "Dylan"
@@ -355,7 +356,7 @@ The arrangement of arguments are adopted from the record
 declaration; in the process, we desugar grouped fields and write every
 pair of fields and type declaration consecutively. %
 In the following, we call the desugared version of a record type
-flatten. %
+flattened. %
 For example, the record type
 
 \begin{code}
@@ -375,7 +376,7 @@ type Person =  { first   :: Int
 and we resign to give a general approach to flatten a record type,
 because it is rather technical to write down than is of any more
 help. %
-Hence, in the following we use flatten record types to simplify the
+Hence, in the following we use flattened record types to simplify the
 transformation without losing expressiveness. % 
 That is, for a given record type declaration |type Rec = { label1 1 ::
   tau 1, ..., label1 k :: tau k }|, we get the following

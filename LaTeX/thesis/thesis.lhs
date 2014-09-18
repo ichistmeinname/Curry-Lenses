@@ -3,7 +3,12 @@
 %include polycode.fmt
 %include greek.fmt
 %include forall.fmt
+%include colorcode.fmt
+\definecolor{codecolor}{rgb}{1,1,1}
+\colorhs
+%include lineno.fmt
 \arrayhs
+\numbersoff
 
 %format parse_a = "parse_a"
 %format print_a = "print_a"

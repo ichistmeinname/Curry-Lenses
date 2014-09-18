@@ -216,8 +216,7 @@ This lens is restricted to sources and views of the same type. %
 
 \begin{spec}
 id :: Lens v v
-id = Lens (\_ v' -> v') (\s -> Just s)
-                   -- Lens (flip const) Just
+id = Lens (\_ v' -> v') Just
 \end{spec}
 
 A similar, but maybe more feasible, combinator filters its source and
@@ -229,7 +228,7 @@ phi p  = Lens get' put'
   where
    get' s    | p s        = Just s
              | otherwise  = Nothing
-   put' _ v  | p v        = Just v
+   put' _ v  | p v        = v
              | otherwise  = error "phi: predicate not fulfilled"
 \end{spec}
 
@@ -248,7 +247,7 @@ view, and projects the second component of the source in the get direction. %
 
 \begin{spec}
 addFst :: (Maybe (s1,v) -> v -> s1) -> Lens (s1,v) v
-addFst f = (Lens put' (\ (_,v') -> Just v')
+addFst f = Lens put' (Just . snd)
  where
   put' s v' = (f s v',v')
 \end{spec}
@@ -260,7 +259,7 @@ Let us recall the~\hyperref[ex:fstInc]{example of the previous section}:
 the lens |fstInc| resets the first component of the source pair
 with given updated view and, simultaneous, increments the second
 component. %
-We can define this lens by the means of |addSnd|, the dual lens to
+We can define this lens by means of |addSnd|, the dual lens to
 |addFst| that behaves the same but injects a second component and
 projects the first component, respectively. %
 
@@ -268,9 +267,8 @@ projects the first component, respectively. %
 fstInc :: Lens (Int,Int) Int
 fstInc = addSnd inc
   where
-   inc s _ = maybe  (error "fstInc: undefined source")
-                    (\(_,s1) -> s1+1)
-                    s
+   inc Nothing _    = error "fstInc: undefined source"
+   inc Just (_,sub s 2)  = (sub s 2) + 1
 \end{spec}
 
 Wait a minute! %
@@ -296,11 +294,11 @@ value already is the current value. %
 
 \begin{spec}
 enforceGetPut :: Lens a b -> Lens a b
-enforceGetPut l = Lens put' (getM l)
+enforceGetPut (Lens putL getL) = Lens put' getL
  where
-  put' ms v
-   | isJust ms && getM l (fromJust ms) == Just v  = fromJust ms
-   | otherwise                                    = put' l ms v
+  put' ms v = case ms of
+    Just v' | getL v' == Just v  -> v'
+    _                            -> putNew
 \end{spec}
 
 If the updated view is equal to the current view, we do not make any
@@ -328,7 +326,7 @@ definition of the put function. %
 Additionally, we have to make sure that the user-specified function
 applied to the second component of the source yields the same value as
 the first value of the source. %
-If not for this correction, the given lens definition would not fufill
+Without this correction, the given lens definition would not fulfil
 the PutGet law. %
 
 \subsubsection*{Sums: Either Left or Right}
@@ -372,9 +370,9 @@ the means of |addFst|. %
 \end{spec}
 
 If there is no source available, there is not much we can do without
-losing generality~--~we could yield the view instead, consequently,
-both components of the given source pair must be of the same type,
-thus, the lens just fails. %
+losing generality~--~we could yield the view instead. %
+Consequently, both components of the given source pair must be of the
+same type; thus, the lens just fails. %
 Otherwise, we simply select the second component of the given pair and
 add it to the updated view to form a pair again. %
 The usage of |addSnd| indicates that we inject the value as second
@@ -463,7 +461,7 @@ empty :: List a
 empty = Left ()
 
 cons :: a -> [a] -> List a
-cons = Right . (,) 
+cons x xs = Right (x,xs) 
 \end{spec}
 
 In this representation, the list |[1,2,3,4]| is rewritten as |Right
@@ -496,7 +494,7 @@ based on sums and products. %
 inList :: Lens [a] (Either () (a,[a]))
 inList = isoLens inn out
  where
-  inn eVal = either (\ () -> []) (\ (x,xs) -> x:xs) eVal
+  inn = either (\ () -> []) (\ (x,xs) -> x:xs)
   out xs   = case xs of
                   []   -> empty
                   y:ys -> cons y ys
@@ -535,9 +533,11 @@ list, and to replace the given list by a new one. %
 \end{spec}
 
 Unfortunately, we cannot transform the empty list into a
-representation with sums only, because, first, the used combinator
+representation with product only for two reasons. %
+Firstly, the used combinator
 |injR| only selects |Right| values and the empty list is represented
-as |Left ()|, and secondly, sum types are not suitable to model
+as |Left ()|. %
+Secondly, product types are not suitable to model
 failure values like the empty list. %
 On the other hand, the usage of |injL| instead of |injR| is not
 feasible either: |injL| can only select |Left| values and fails
@@ -558,8 +558,14 @@ a last step. %
 changeHead :: Lens [a] a
 changeHead = cons <.> keepSnd
 
+keepSnd :: Lens (v,s1) v
+keepSnd = addSnd (\s v' -> maybe (const failed) snd s)
+
 changeTail :: Lens [a] [a]
 changeTail = cons <.> keepFst
+
+keepFst :: Lens (v,s1) v
+keepFst = addFst (\s v' -> maybe (const failed) fst s)
 \end{spec}
 
 Obviously, |changeHead| replaces the head of the list with a new
@@ -567,6 +573,8 @@ element and leaves the tail untouched with |keepSnd| and vice versa
 for |changeTail|. %
 In the corresponding get direction, we can access the head and tail of
 the list, respectively. %
+The definition of the auxiliary functions |keepSnd| and |keepFst| is
+analogue to the definition of |sub fst comb| given above. %
 
 \begin{spec}
 > get' changeHead [1,2,3,4]

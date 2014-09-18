@@ -18,7 +18,9 @@ The lens definitions can be seen as smart constructors for these
 algebraic data types. %
 
 \section*{Person examples}
-\begin{spec}
+\numberson
+\numbersright
+\begin{code}
 data Person = Person Name City
 type First = String
 
@@ -36,18 +38,19 @@ nameLens = person <.> keepSnd
 
 addressLens :: Lens Person Address
 addressLens = person <.> keepFst
-\end{spec}
+\end{code}
 
 
 \section*{Temperature examples}
+\numbersreset
 \begin{spec}
 data Temp = Temp Float
 
 centigrade :: Lens Temp Float
 centigrade = isoLens inn out
- where
-  inn celsius = Temp (cToF celsius)
-  out (Temp temp) = fToC temp
+  where
+   inn celsius = Temp (cToF celsius)
+   out (Temp temp) = fToC temp
 \end{spec}
 \begin{spec}
 cToF :: Float -> Float
@@ -58,6 +61,7 @@ fToC f = (f -. 32) *. (5/.9)
 \end{spec}
 
 \section*{Time examples}
+\numbersreset
 \begin{spec}
 data Time = Time Int Int
 
@@ -85,6 +89,7 @@ printer-parser, the implementation needs to avoid left-recursions. %
 Thus, the printer-parser follows the traditional technique for
 implementing a parser for arithmetic expressions. %
 
+\numbersreset
 \begin{spec}
 ppExpr' :: PPrinter Expr
 ppExpr' str t@(BinOp op e1 e2,str')
@@ -122,6 +127,7 @@ ppPlusMinus _ (Minus,str') = "-" ++ str'
 In order to see the printer-parser in action, we give some exemplary
 expressions for printing and parsing. %
 
+\numbersoff
 \begin{spec}
 > pPrint ppExpr' (BinOp Mult (Num 1) (BinOp Mult (Num 2) (Num 3)))
 1 * 2 * 3
