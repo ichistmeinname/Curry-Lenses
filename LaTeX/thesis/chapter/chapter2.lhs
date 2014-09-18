@@ -323,7 +323,8 @@ lens definition is reasonable in regard to the lens laws. %
 
 > replaceHead [] 13
 [13]
-
+\end{spec}
+\begin{spec}
 > head (replaceHead [1,2,3,4,5] 10)
 10
 
@@ -439,19 +440,19 @@ A lens satisfies the PutPut law if we run two consecutively
 |put| operations on a source with two different views, but only the
 second |put| matters. %
 That is, we can formulate this law with the following equation.  %
-
+%
 \begin{equation}\tag{PutPut}
 |put (put s v) v' = put s v'|
 \end{equation}
-
-In most applications, the PutPut law does not play an important
-role, because the preconditions are too strong. %
+%
+In most applications, the PutPut law does not play an important role,
+because the preconditions are too strong. %
 That is, plenty of constructive well-behaved lenses are not very
 well-behaved. %
-For example the last lens we defined changes the source list
-dependent on the given view element. %
-Thus, two consecutive calls to
-the put function with different view values yield different results. %
+For example the last lens we defined changes the source list dependent
+on the given view element. %
+Thus, two consecutive calls to the put function with different view
+values yield different results. %
 
 \begin{spec}
 > take (take [1,2,3,4,5] 1) 3
@@ -460,16 +461,13 @@ the put function with different view values yield different results. %
 > take [1,2,3,4,5] 3
 [1,2,3]
 
-> take [1,2,3,4,5] 1
-[1]
-
 > take [1] 3
 [1]
 \end{spec}
 
 In the test expression, we start with the list |[1,2,3,4,5]| and
-reduce it to just the first element, i.e., |take [1,2,3,4,5]
-1| yields [1]. %
+reduce it to just the first element, i.e., |take [1,2,3,4,5] 1| yields
+[1]. %
 The second application of put reduces the list to the first three
 elements; since the list only contains one element, we get |[1]| as
 result again. %
@@ -482,7 +480,7 @@ calls. %
 
 Nevertheless, the PutPut law can be applicabale for a number of
 convenient lens definitions. %
-For example, the lens consists of |head| and |replaceHead| obeys the
+For example, the lens consisting of |head| and |replaceHead| obeys the
 PutPut law. %
 In the put direction, we replace the head of a given list; thus, for
 two consecutive |replaceHead| actions, only the latter matters. %

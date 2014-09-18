@@ -76,7 +76,6 @@
 
 \newpage
 \pagenumbering{Roman}
-\setcounter{page}{\value{roemisch}}
 
 % Appendix, falls vorhanden
 \appendix

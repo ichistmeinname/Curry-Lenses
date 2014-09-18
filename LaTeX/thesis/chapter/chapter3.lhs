@@ -106,7 +106,7 @@ for all lists with at least one element. %
 Thus, we yield the head element of the list for each recursion step. %
 
 \begin{spec}
-> member "Hello World"
+> member "Curry"
 'C'
 'u'
 'r'

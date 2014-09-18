@@ -1,7 +1,7 @@
-\newcommand{\trtitle}{Lenses and Bidirectional Programming in Curry}
+\newcommand{\trtitle}{Lenses and Bidirectional Programming\\ in Curry}
 \newcommand{\trtype}{Master's Thesis}
 \newcommand{\trauthor}{Sandra Dylus}
-\newcommand{\trbetreuer}{M.o.Sc. Bj\"orn Peem\"oller}
+\newcommand{\trbetreuer}{M.Sc. Bj\"orn Peem\"oller}
 \newcommand{\trprof}{Prof. Dr. Michael Hanus}
 \newcommand{\trfachgebiet}{Programming Languages and Compiler Construction}
 \newcommand{\trinstitut}{Computer Science}

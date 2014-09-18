@@ -14,6 +14,11 @@
 %
 % \usepackage[english,ngerman]{babel}
 
+%
+% figures over several pages
+%
+\usepackage{subcaption}
+
 \usepackage{todonotes}
 
 % Paket fuer Inferenzsysteme
