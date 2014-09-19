@@ -145,3 +145,8 @@ expressions for printing and parsing. %
 > pParse ppExpr' "1 + 3 * (4 - 9)"
 (BinOp Plus (Num 1) (BinOp Mult (Num 3) (BinOp Minus (Num 4) (Num 9))))
 \end{spec}
+
+\chapter{Combinatorial WUILenses}\label{a:wui}
+\cite{webLenses}
+\cite{wui}
+\cite{spicey}

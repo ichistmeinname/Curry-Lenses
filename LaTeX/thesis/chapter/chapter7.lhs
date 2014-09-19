@@ -108,10 +108,10 @@ putHalveSimple xs' | length xs' == Pos IHi = xs' ++ drop 1 [(),()]
 
 length' :: [a] -> BinInt
 length' []     = Zero
-length' x:xs = inc (length xs)
+length' (x:xs) = inc (length' xs)
 \end{code}
 
-Additionally, we define an axuilary function |length'| that computes
+Additionally, we define an auxiliary function |length'| that computes
 the length of a given list and yields a |BinInt|. %
 
 \subsubsection*{The Problem}
@@ -122,10 +122,6 @@ the length of a list?
 \numberson
 \numbersright
 \begin{code}
-length :: [a] -> BinInt
-length []     = Zero
-length x:xs = inc (length xs)
-
 inc :: BinInt -> BinInt
 inc Zero        = Pos IHi
 inc (Pos n)     = Pos (succ n)
@@ -240,7 +236,7 @@ that is sufficient to propagate a constructor, because it is
 problematic to map the empty list to a value of type |Nat|. %
 We discuss the problem concerning |Nat| in more detail later. %
 
-In the end, the |length| function evalutes the whole list to determine
+In the end, the |length| function evaluates the whole list to determine
 its length, which leads to non-evaluation when guessing a list with a
 specific length. %
 The built-in search for free variables in KICS2 can be translated in
@@ -319,12 +315,13 @@ is used for further function calls.
 For our example, we get the following results in the interactive
 environment of KiCS2. %
 
-\begin{code}
+\begin{spec}
+> length v == Pos IHi where v free
 {v = []} False
 {v = [_x2]} True
 {v = [_x2,_x4]} False
 ...
-\end{code}
+\end{spec}
 
 As we said in the beginning, the internal structure for lists and
 numbers do not harmonise well - how can we solve the problem that
@@ -494,7 +491,7 @@ interactive environment. %
 {v = (_x3:_x4:_x5)} False
 \end{code}
 
-Moeover, the expression |putHalve [(),()] v == [(),()] where v free|
+Moreover, the expression |putHalve [(),()] v == [(),()] where v free|
 evaluates to |{v = [()]} True|.
 
 The main difference to the first implementation is that length can
@@ -551,23 +548,42 @@ representation of lists. %
 
 \begin{code}
 putHalveBinaryList :: BinaryList a -> BinaryList a -> BinaryList a
-putHalveBinaryList xs' | lengthBList xs' == Pos IHi = xs' ++ [()]
+putHalveBinaryList xs' | lengthBList xs' == Pos IHi =
+  binaryListToList xs' ++ [()]
 \end{code}
 
-In Figure~\ref{fig:lengthBEval}, we show the evaluation steps for the expression
-|lengthBList v == Pos IHi where v free|. %
+The auxiliary functions |binaryListToList :: BinaryList a -> [a]|
+converts a given |BinaryList a| to a traditional list representation,
+|[a]|. %
+
+Once again, we test the get direction of the lens for a list of size
+one. %
+We reduce the query to the expression |lengthBList v == Pos IHi where
+v free|, which yields the following result. %
+
+\begin{spec}
+> lengthBList v == Pos IHi where v free
+{v = Empty} False
+{v = NonEmpty (LIHi _x2)} True
+{v = NonEmpty (LO _x2)} False
+{v = NonEmpty (LI _x2 _x3)} False
+\end{spec}
+
+The evaluation terminates after calculating four values to bound the
+free variables; a detailed evaluation of the expression is illustrated
+in Figure~\ref{fig:lengthBEval}. %
+In the end, the expression |get putHalveBinaryList [(),()]| yields
+|NonEmpty (LIHi ())|. %
 
 \numberson
 \numbersright
 \begin{figure}
 \begin{spec}
-lengthBList v == Pos IHi
-  where v free
+lengthBList v == Pos IHi where v free
 
 ==
 
-lengthBList (Empty ? NonEmpty xs) == Pos IHi
-  where xs free
+lengthBList (Empty ? NonEmpty xs) == Pos IHi where xs free
 
 ==
 
@@ -581,8 +597,7 @@ lengthBList Empty == Pos IHi ? lengthBList (NonEmpty xs) == Pos IHi
 
 ==
 
-Zero == Pos IHi ? Pos (lengthL xs) == Pos IHi
-  where xs free
+Zero == Pos IHi ? Pos (lengthL xs) == Pos IHi where xs free
 
 ==
 
@@ -602,24 +617,27 @@ False  ? (lengthL (LIHi _x2)
   where _x2,_x3 free
 
 ==
-\end{spec}
-\end{figure}
-\todo{Stupid floating figure!}
-\begin{figure}
-\ContinuedFloat
-\begin{spec}
+
 False  ? lengthL (LIHi _x2) == IHi
        ? (lengthL (LO _x2) ? lengthL (LI _x2 _x3)) == Pos IHi
   where _x2,_x3 free
 
 ==
-
-False ? IHi == IHi ? (O (lengthL _x2) ? I (lengthL _x2 _x3)) == Pos IHi
+\end{spec}
+\phantomcaption
+\end{figure}
+\begin{figure}
+\ContinuedFloat
+\begin{spec}
+False  ? IHi == IHi
+       ? (O (lengthL _x2) ? I (lengthL _x2 _x3)) == Pos IHi
   where _x2,_x3 free
 
 ==
 
-False ? True ? O (lengthL _x2) == IHi ? I (lengthL _x2 _x3) == Pos IHi
+False  ? True
+       ? O (lengthL _x2) == IHi
+       ? I (lengthL _x2 _x3) == Pos IHi
   where _x2,_x3 free
 
 ==
@@ -631,9 +649,6 @@ False ? True ? False ? False
 \end{figure}
 \numbersoff
 \numbersreset
-
-In the end, the expression |putHalveBinaryList v == [(),()] where v free|
-yields |{v = NonEmpty (LIHi ())} True|. %
 
 % \subsubsection{The Long and Short of It}
 
@@ -648,32 +663,116 @@ yields |{v = NonEmpty (LIHi ())} True|. %
 
 This thesis addresses the topic of bidirectional programming and
 lenses in particular. %
-The topic is not new in the area of computer science in general nor in
-research of programming languages. %
+The topic is new neither in the area of computer science in general
+nor in research fields of programming languages. %
 However, we gain a new view on lenses by using a functional logic
 programming language like Curry. %
+
 Related approaches concentrate on defining a new infrastructure that
 fits bidirectional programming perfectly -- programming languages like
-Boomerang and VDL -- or aims one specific domain -- lenses for
+Boomerang and VDL -- or targets a specific domain -- lenses for
 relations, strings or trees. %
-The advantage of using an exisiting programming language is that the
-programmer is in a familiar setting and we can have a wide range of
-lens definitions that are not limited to a specific context. %
+In this thesis, we do not create a new programming language, but use
+Curry and exploit its capabilities regarding nondeterminism and the
+built-in search to gain a new bidirectionalisation approach for
+lenses. %
+Due to its similarities to Haskell, our approach in Curry affords a
+familiar setting for programmers of both languages. %
+Furthermore, we can have a wide range of lens definitions that are not
+limited to a specific context, but use all facets of the underlying
+language like algebraic data types, higher-order functions, recursion
+and also existing libraries. %
 
 There exists also promising and well-studied work on
-bidirectionalisation techniques that
+bidirectionalisation techniques for get-based lenses that can be used
+in Haskell. %
+% These approaches define get-based lenses to bidirectionalise a
+% suitable put function. %
+In this thesis, we decided against this traditional approach and adopt
+the idea of put-based lenses. %
+Whereas the get-based approach lacks an unique bidirectionalisation of
+a suitable put function, we have the possibility to formulate a
+sophisticated update strategy in the put-based approach. %
+We have implemente two libraries for put-based lenses: one library
+pursues a combinatorial approach; the other library follows the idea
+of semantic bidirectionalisation in the broadest sense and generates a
+corresponding get function on the fly. %
+Though the combinatorial approach guarantees well-behavedness of the
+underlying lenses, we prefer the usage of the second library for two
+reason. %
+Firstly, we are not limited to use a predefined set of combinators. %
+Secondly, we had a hard time to get our head around defining more
+complex lenses; the adopted interface was not very intuitive to use in
+practice. %
 
-\begin{itemize}
-\item side-product: reactivation of EasyTest, test library for lens
-  laws, automated test generator
-\item WUILenses
-\item printer-parser
-\item two small libraries for lenses
-\item 
-\end{itemize}
+Moreover, we developed a new notion of nondeterministic lenses and
+adopted the existing lens laws to be suitable for a nondeterministic
+setting. %
+In our opinion, nondeterministic lenses enhance the application of
+bidirectional programming to new areas that were not applicable
+before. %
+We implemented prototypal lenses to unify the specification of
+pretty-printers and parsers. %
+On top of these printer-parsers, we developed lenses to facilitate a
+layout-preserving replacement for a given pretty-printer
+specification. %
+
+Furthermore, we successfully integrated lenses into a framework for
+web-oriented user interfaces. %
+In our opinion, lenses perfectly fit the setting of mapping data base
+entities to user interfaces for two reasons. %
+Firstly, these mappings usually project from database entities to
+user interfaces, which is an simple and common application for
+lenses. %
+Secondly, possible performance issues of lenses have a less impact in
+the context of web development, where performance is usually effected
+by a communication overhead. %
+
+Another well-suited application for lenses are record type
+declarations. %
+We proposed a concept for transforming record type declarations in
+Curry into a set of lenses. %
+We define a lens for each field of the given record in order to
+provide a selector and an update function, i.e., using get and put,
+respectively. %
+
+As a side-product of testing our implementation, we reactivated the
+testing framework @EasyTest@. %
+We developed our own testing interface for lens laws to generate
+testing values based on @EasyTest@ as well as an automated test
+generator. %
+
 \section{Outlook}
-\begin{itemize}
-\item static analysis for laws \cite{validityCheck}
-\item record transformation for KiCS2
-\item bidirectionalisation of corresponding get function
-\end{itemize}
+
+Unfortunately, our preferred put-based lens library does not guarantee
+well-behavedness by construction. %
+This lack of well-behavedness has to be tackled in the future. %
+We started by defining a test-suite that generates test cases for all
+lens definitions of a given module, but the tests still have to be run
+manually. %
+It would be more applicable to have static analyses as a replacement
+for manual tests. %
+\cite{validityCheck} propose two algorithms to check the two essential
+laws for put-based lenses, PutDet and PutStab, statically. %
+However, they define these algorithms on top of a simple, self-defined
+language for lenses. %
+This language allows only put definitions that are affine and in
+treeless form, thus, we cannot directly apply their results in
+Curry. %
+Nevertheless, we think that their work is a good starting point to get
+ideas for statical analyses in the context of put-based lenses. %
+
+Due to the limited time of the work on this thesis, we had to lower
+our sights regarding record transformations. %
+In this thesis we only proposed a series of transformations on record
+type declarations to generate lenses as convenient getter and setter
+functions instead of the current implementation with syntactical
+constructs. %
+We have also implemented a prototype that works on the internal
+FlatCurry representation of Curry programs as proof of concept. %
+However, we would like to integrate these transformations into the
+KiCS2 compiler and provide a simple lens library with a handful of
+primitives. %
+For the purpose of these field accessors, it suffices to implement a
+simple representation of lenses as a pair of getter and setter
+function. %
