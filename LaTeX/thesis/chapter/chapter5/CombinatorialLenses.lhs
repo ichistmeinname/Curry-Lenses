@@ -71,7 +71,7 @@ after definition, but every time we modify one of the lens
 components. %
 As an example, let us make a slight modification to the put function
 and define a lens |fstInc|, which, additionally, increments
-its second component in the put direction. %
+its first component in the put direction. %
 
 \phantomsection
 \begin{spec}
@@ -79,7 +79,7 @@ fstInc :: (sub Lens Pair) (a,Int) a
 fstInc = (get', put')
    where
     get' (x,_) = x
-    put' (_,y) x = (x,y+1)
+    put' (_,y) x = (x+1,y)
 \end{spec}
 \label{ex:fstInc}
 
@@ -89,26 +89,25 @@ affect the second component. %
 
 \begin{spec}
 (sub get Pair) fstInc ((sub put Pair) fstInc (1,2) 13)
-> 13
+> 14
 
 (sub put Pair) fstInc (1,2) ((sub get Pair) fstInc (1,2))
-> (1,3)
+> (2,2)
 \end{spec}
 
 The first expression checks the behaviour of the PutGet law, which
-seems fine, because the modification that we make with the put
-function can still be retraced with the get function. %
-However, the second expression behaves rather strangely with respect to
-the GetPut law. %
-Technically, we do not change the given source at all, but the updated
-source |(1,3)| differs from the original source |(1,2)|, because of
-the integrated side-effect of the put function that updates the second
-component as well. %
-
-In the end, this simple approach is not satisfactory at all. %
-On the one hand, it does not \emph{feel} bidirectional at all, because
-we still maintain two unidirectional functions in disguise, which are combined
-into one data structure. %
+seems does not behave as expected; the second expression behaves
+rather strangely with respect to the GetPut law. %
+A very simple change breaks both laws, because we forgot to consider
+both functions. %
+We can easily fix this bug by changing the right-hand side of the get
+direction to |x - 1|. %
+However, this simple approach is not satisfactory at all. %
+On the one hand, it does not \emph{feel} bidirectional, because we
+still maintain two unidirectional functions in disguise. %
+On the other hand, we do not want to check the lens laws for every
+lens we define and every time again when we make changes to existing
+definition. %
 
 \subsection{Implementation}
 In order to provide a more user-friendly library with less maintenance
@@ -654,6 +653,8 @@ Our modification still tolerates some invalide dates, e.g. |Date 2
 reader. %
 
 This schema can be used for all kind of algebraic data types. %
-We provide some more of our examples in Appendix~\ref{a:combExamples}
-and will discuss some more lenses in Section~\ref{sec:wui}. %
-
+We provide some more examples in Appendix~\ref{a:combExamples} and
+discuss an integration of our combinatorial lenses in the existing
+Curry library
+@WUI@\footnote{\url{http://www-ps.informatik.uni-kiel.de/kics2/lib/CDOC/WUI.html}}
+in Appendix~\ref{a:wui}. %
