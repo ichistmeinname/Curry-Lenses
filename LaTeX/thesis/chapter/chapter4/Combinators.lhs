@@ -276,18 +276,18 @@ The put-based language is built upon a handful of combinators, which
 are inspired by the combinators of Foster et al., e.g., identity and
 constant lens as well as lenses for filter, composition, products,
 sums and conditionals. %
-The language assures well-behavedness \todo{This is not an existing
-  word.} by construction, that is, all combinators, including
-composition, form well-behaved lenses and, thus, the composition of
-predefined combinators form well-behaved lenses as well. %
+The language assures well-behavedness by construction, that is, all
+combinators, including composition, form well-behaved lenses and,
+thus, the composition of predefined combinators form well-behaved
+lenses as well. %
 Additionally, the Haskell library provides functions to define custom
 lenses. %
 Due to the lack of statical checks concerning well-behavedness, the
 user can use the function |checkGetPut| and |checkPutGet|\footnote{In
   the associated paper, Fisher et al. use the name |enforceGetPut|
   instead.} to check for the corresponding lens laws at runtime. %
-For simplicty reasons, we refrain from defining these check
-functions and focus on the lens combinators instead. %
+For simplicty reasons, we refrain from defining these check functions
+and focus on the lens combinators instead. %
 
 We can rebuild the example given above in terms of the put-based
 language. %
