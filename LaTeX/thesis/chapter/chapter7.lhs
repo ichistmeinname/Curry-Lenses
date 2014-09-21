@@ -1,19 +1,114 @@
-\chapter{Conclusion}
+\chapter{Conclusion}\label{ch:conclusion}
+Last but not least, we conclude this thesis with a summary of our work
+and our accomplished results. %
+We also give an outlook on future work. %
+The future work that we have in mind includes further research on
+Curry's built-in search component and further improvements of our lens
+implementation. %
+Additionally, we propose the integration of lenses in the KiCS2
+compiler in the context of record type declarations and the
+reimplementation of the
+@WUI@\footnote{\url{http://www-ps.informatik.uni-kiel.de/kics2/lib/CDOC/WUI.html}}
+library. %
 
+\section{Summary and Results}
 
-\section{Challenges}\label{sec:chall}
+This thesis addresses the topic of bidirectional programming and
+lenses in particular. %
+The topic is new neither in the area of computer science in general
+nor in research fields of programming languages. %
+However, we gain a new view on lenses by using a functional logic
+programming language like Curry. %
+
+Related approaches concentrate on defining a new infrastructure that
+fits bidirectional programming perfectly -- programming languages like
+Boomerang and VDL -- or targets a specific domain -- lenses for
+relations, strings or trees. %
+In this thesis, we do not create a new programming language, but use
+Curry and exploit its capabilities regarding nondeterminism and the
+built-in search to gain a new bidirectionalisation approach for
+lenses. %
+Due to its similarities to Haskell, our approach in Curry affords a
+familiar setting for programmers of both languages. %
+Furthermore, we can have a wide range of lens definitions that are not
+limited to a specific context, but use all facets of the underlying
+language like algebraic data types, higher-order functions, recursion
+and also existing libraries. %
+
+There exists also promising and well-studied work on
+bidirectionalisation techniques for get-based lenses that can be used
+in Haskell. %
+% These approaches define get-based lenses to bidirectionalise a
+% suitable put function. %
+In this thesis, we decided against this traditional approach and adopt
+the idea of put-based lenses. %
+Whereas the get-based approach lacks an unique bidirectionalisation of
+a suitable put function, we have the possibility to formulate a
+sophisticated update strategy in the put-based approach. %
+We have implemente two libraries for put-based lenses: one library
+pursues a combinatorial approach; the other library follows the idea
+of semantic bidirectionalisation in the broadest sense and generates a
+corresponding get function on the fly. %
+Though the combinatorial approach guarantees well-behavedness of the
+underlying lenses, we prefer the usage of the second library for two
+reason. %
+Firstly, we are not limited to use a predefined set of combinators. %
+Secondly, we had a hard time to get our head around defining more
+complex lenses; the adopted interface was not very intuitive to use in
+practice. %
+
+Moreover, we developed a new notion of nondeterministic lenses and
+adopted the existing lens laws to be suitable for a nondeterministic
+setting. %
+In our opinion, nondeterministic lenses enhance the application of
+bidirectional programming to new areas that were not applicable
+before. %
+We implemented prototypal lenses to unify the specification of
+pretty-printers and parsers. %
+On top of these printer-parsers, we developed lenses to facilitate a
+layout-preserving replacement for a given pretty-printer
+specification. %
+
+Another well-suited application for lenses are record type
+declarations. %
+We proposed a concept for transforming record type declarations in
+Curry into a set of lenses. %
+We define a lens for each field of the given record in order to
+provide a selector and an update function, i.e., using get and put,
+respectively. %
+
+As a side-product of testing our implementation, we reactivated the
+testing framework @EasyTest@. %
+We developed our own testing interface for lens laws to generate
+testing values based on @EasyTest@ as well as an automated test
+generator. %
+
+\section{Future Directions}
+
+We have several topics for future work in mind. %
+Firstly, due to our heavily usage of Curry's built-in search, we ran
+into some complications for function definitions that are too
+strict. %
+These compilcations are not lens-specific but a general problem worth
+investigating. %
+Secondly, we discuss future work in the context of lenses that include
+enhancements and further applications. %
+
+\subsection{Strictness Problems When Searching For Solutions}
 
 During the testing phase of our put-based lens libraries, we ran into
 complications due to Curry's internal structure of |Int| values in
-combination with the built-in search mechanism. %
+combination with the built-in search mechanism with regard to
+strictness. %
 In the following, we give a detailed insight of Curry's built-in
 search capabilities with an example and the consequential problems. %
-We also present two approaches to solve the upcoming
-problem for the exemplary lens definition. %
+We also present two approaches to solve the upcoming problem for the
+exemplary lens definition. %
+However, we think it would be an interesting topic own its to
+investigate functions definition that are too strict to be applicable
+for the built-in search component. %
 
-\subsection{Curry's built-in search abilities}
-
-In this section we work with the put-based lens library that we
+In the following, we work with the put-based lens library that we
 presented in Section~\ref{sec:putImpl}. %
 As a quick reminder: we have the following interface for put-based
 lenses that generate a corresponding |get|-function. %
@@ -659,91 +754,8 @@ False ? True ? False ? False
 % We encoutered a problem with more lens definitions, but we limit the
 % number of examples in order to go into more detail. %
 
-\section{Summary and Results}
 
-This thesis addresses the topic of bidirectional programming and
-lenses in particular. %
-The topic is new neither in the area of computer science in general
-nor in research fields of programming languages. %
-However, we gain a new view on lenses by using a functional logic
-programming language like Curry. %
-
-Related approaches concentrate on defining a new infrastructure that
-fits bidirectional programming perfectly -- programming languages like
-Boomerang and VDL -- or targets a specific domain -- lenses for
-relations, strings or trees. %
-In this thesis, we do not create a new programming language, but use
-Curry and exploit its capabilities regarding nondeterminism and the
-built-in search to gain a new bidirectionalisation approach for
-lenses. %
-Due to its similarities to Haskell, our approach in Curry affords a
-familiar setting for programmers of both languages. %
-Furthermore, we can have a wide range of lens definitions that are not
-limited to a specific context, but use all facets of the underlying
-language like algebraic data types, higher-order functions, recursion
-and also existing libraries. %
-
-There exists also promising and well-studied work on
-bidirectionalisation techniques for get-based lenses that can be used
-in Haskell. %
-% These approaches define get-based lenses to bidirectionalise a
-% suitable put function. %
-In this thesis, we decided against this traditional approach and adopt
-the idea of put-based lenses. %
-Whereas the get-based approach lacks an unique bidirectionalisation of
-a suitable put function, we have the possibility to formulate a
-sophisticated update strategy in the put-based approach. %
-We have implemente two libraries for put-based lenses: one library
-pursues a combinatorial approach; the other library follows the idea
-of semantic bidirectionalisation in the broadest sense and generates a
-corresponding get function on the fly. %
-Though the combinatorial approach guarantees well-behavedness of the
-underlying lenses, we prefer the usage of the second library for two
-reason. %
-Firstly, we are not limited to use a predefined set of combinators. %
-Secondly, we had a hard time to get our head around defining more
-complex lenses; the adopted interface was not very intuitive to use in
-practice. %
-
-Moreover, we developed a new notion of nondeterministic lenses and
-adopted the existing lens laws to be suitable for a nondeterministic
-setting. %
-In our opinion, nondeterministic lenses enhance the application of
-bidirectional programming to new areas that were not applicable
-before. %
-We implemented prototypal lenses to unify the specification of
-pretty-printers and parsers. %
-On top of these printer-parsers, we developed lenses to facilitate a
-layout-preserving replacement for a given pretty-printer
-specification. %
-
-Furthermore, we successfully integrated lenses into a framework for
-web-oriented user interfaces. %
-In our opinion, lenses perfectly fit the setting of mapping data base
-entities to user interfaces for two reasons. %
-Firstly, these mappings usually project from database entities to
-user interfaces, which is an simple and common application for
-lenses. %
-Secondly, possible performance issues of lenses have a less impact in
-the context of web development, where performance is usually effected
-by a communication overhead. %
-
-Another well-suited application for lenses are record type
-declarations. %
-We proposed a concept for transforming record type declarations in
-Curry into a set of lenses. %
-We define a lens for each field of the given record in order to
-provide a selector and an update function, i.e., using get and put,
-respectively. %
-
-As a side-product of testing our implementation, we reactivated the
-testing framework @EasyTest@. %
-We developed our own testing interface for lens laws to generate
-testing values based on @EasyTest@ as well as an automated test
-generator. %
-
-\section{Outlook}
-
+\subsection{Further Directions}
 Unfortunately, our preferred put-based lens library does not guarantee
 well-behavedness by construction. %
 This lack of well-behavedness has to be tackled in the future. %
@@ -776,3 +788,25 @@ primitives. %
 For the purpose of these field accessors, it suffices to implement a
 simple representation of lenses as a pair of getter and setter
 function. %
+
+Last but not least, we think that the work of \cite{webLenses}
+regarding lenses in the context of web development could be very
+applicable for Curry. %
+In our opinion, lenses perfectly fit the setting of mapping data base
+entities to user interfaces for two reasons. %
+Firstly, these mappings usually project from database entities to user
+interfaces, which is an simple and common application for lenses. %
+Secondly, possible performance issues of lenses have a less impact in
+the context of web development, where performance is usually effected
+by a communication overhead. %
+Curry already provides a library called @WUI@ to specify web user
+interfaces that was implemented by \cite{wui}. %
+On top of that, the
+\emph{Spicey}\footnote{\url{http://www.informatik.uni-kiel.de/~pakcs/spicey/}}
+framework can generate an initial setup of a web-based system from an
+entity-relationship description of the underlying data. %
+We have already reimplemented the @WUI@ library to use lenses and
+changed the \emph{Blog example} provided by Spicey to use our
+reimplementation. %
+As a future work, we propose to integrate the lens component into the
+@WUI@ specification and the Spicey framework in particular. %
