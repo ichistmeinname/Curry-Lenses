@@ -38,11 +38,11 @@ The following equation postulates this round-tripping rule. %
 %
 In certain scenarios, the \emph{Parse-Print} rule is a desirable
 requirement. %
-For example, when we choose a format for the data that is unambiguous,
+For example, if we choose a format for the data that is unambiguous,
 both round-tripping rules together form the requirements for a correct
 implementation. %
 |Show| and |Read| instances for data structures in Haskell also form
-the identity this round-tripping rules. %
+these round-tripping rules. %
 On the other hand, in many scenarios regarding data acquisition, users
 handle data manipulation, update, and sometimes even input manually. %
 Especially in the field of programming languages, users write the code
@@ -56,7 +56,7 @@ In the following, we present different approaches to combine the
 definition of printers and parsers into one function. %
 We can achieve this combination in the setting of lenses: we define a
 lens for printing in the put and parsing in get direction. %
-In addition, we provide a handfull of combinators to simplify the
+In addition, we provide a handful of combinators to simplify the
 definition of such \emph{printer-parser} for arbitrary data
 structures. %
 
@@ -79,7 +79,7 @@ used data structure that varies with the different implementations: %
 As the running example for each implementation we use a standard
 example in the context of parsers as well as printers: arithmetic
 expressions. %
-Therefor, we give the definition of a algebraic datatype for
+Therefor, we give the definition of an algebraic data type for
 arithmetic expressions first. %
 
 \begin{spec}
@@ -121,8 +121,8 @@ digit :: PPrinter Int
 digit _ (d,str') | d <= 9 && d >= 0 = show d ++ str'
 \end{spec}
 
-We ignore the given string and replace it with the representation of
-the given digit and adding the remaining string at the end of the
+We ignore the given string, replace it with the representation of
+the given digit, and add the remaining string at the end of the
 resulting string. %
 Since the type of the data is not restricted to digits only, we
 include a check if the range of the given |Int| value is between |0|
@@ -154,7 +154,7 @@ printer-parser. %
   newString = pB str (expr2,str')
 \end{spec}
 
-In order to get a better understanding of this composition, we expend
+In order to get a better understanding of this composition, we expand
 the type of the result, i.e., |PPrinter (a,b)| becomes |String ->
 (a,b) -> String)|. %
 This observation leads to the four given arguments: the two
@@ -218,7 +218,7 @@ ppExpr str (BinOp op e1 e2,str') =
 \end{spec}
 
 In the case of a given |Num|-constructor, we use the primitive |digit|
-and, thus, limiting the identifiers of the arithmetic expressions to
+and, thus, limit the identifiers of the arithmetic expressions to
 |Int| values between |0| and |9|.\footnote{We make this limitation
   due to simplicity reasons, we could easily write a version that
   prints an |Int| value instead.} %
@@ -235,7 +235,7 @@ The inner pair consists of the operator and the first arithmetic
 expression. %
 Then, this pair is injected as the first component of the outer pair
 because of the second usage of |<>|. %
-The part of the second component of this outer is assigned to the
+The part of the second component of this outer pair is assigned to the
 second argument of the binary operator. %
 In order to test this lens definition, we have to define the
 printer-parser for operators of type |Op| first. %
@@ -250,7 +250,7 @@ isOp :: Char -> Bool
 isOp c = any (== c) "+*-/"
 \end{spec}
 
-We use the obvious symbols as a string representatives for the
+We use the obvious symbols as string representatives for the
 arithmetic operators. %
 Note, we use |fromJust|\footnote{
 |fromJust :: Maybe a -> a|\\
@@ -296,7 +296,7 @@ Because of this restriction, we cannot parse a numeric value like
 |"42"|. %
 Thus, the last expression |pParse ppExpr "42"| fails with the remark
 that the given string did not parse completely. %
-Without investing this failing expression in too much detail, we can
+Without investigating this failing expression in too much detail, we can
 take a quick look at the parsing result. %
 The type of |ppExpr| is |PPrinter Expr|, that is, the function
 |ppExpr| is a lens function. %
@@ -323,9 +323,9 @@ the function throws an exception. %
 
 In order to continue on \emph{pretty}-printing arithmetic expression,
 we have to rewrite the second case of our |ppExpr| definition. %
-Obviously, a pretty representation of arithmetic expression consists
-of whitespace between each token. %
-For the purpose of adding whitespace to the string representation, we
+Obviously, a pretty representation of arithmetic expression needs a
+whitespace character between each token. %
+For the purpose of adding whitespaces to the string representation, we
 integrate the function |whitespace'| into our definition of |ppExpr|
 from above. %
 In the end, we add a whitespace after the binary operator and the
@@ -342,12 +342,12 @@ increased usage of the composition combinator, this definition looks
 rather cumbersome and complicated. %
 In particular, the whitespaces we add in the definition are ignored in
 the data that is given in form of a deeply nested pair. %
-The definition above uses a anonymous free variable, which is bound to
+The definition above uses an anonymous free variable, which is bound to
 a whitespace character when actually calling this function. %
 The variable is bound to a whitespace, because a whitespace is the
 only valid value, such that the |whitespace'| function yields a
 result. %
-Instead of using anonymous free variable, we can explicitly assign
+Instead of using an anonymous free variable, we can explicitly assign
 whitespace characters as arguments. %
 
 In the case of an injected prettiness factor like additional
@@ -398,12 +398,12 @@ ppExpr str (BinOp op e1 e2,str') =
 \end{spec}
 
 In order to assure that our reimplementation produces prettier string
-representations, we run our examples from above, again. %
-Furthermore, the string representation are supposed to be parseable as
+representations, we run our examples from above again. %
+Furthermore, the string representations are supposed to be parsable as
 well. %
 Thus, we also give some examples for parsing valid string
 representations of arithmetic expressions as well as some cases, where
-our parses does not yield a completely parsed string. %
+our parser does not yield a completely parsed string. %
 
 \begin{spec}
 > pPrint ppExpr (BinOp Plus (Num 2) (Num 3))
@@ -418,11 +418,11 @@ BinOp Plus (BinOp Plus (Num 2) (Num 3)) (Num 4)
 > get ppExpr "+ 2 34"
 (BinOp Plus (Num 2) (Num 3),"4")
 
-> get ppExpr2 "+ 23 4"
+> get ppExpr "+ 23 4"
 -- no result
 \end{spec}
 
-The second and third example shows a successful parse for a simple and
+The second and third example show a successful parse for a simple and
 a nested arithmetic expression, respectively. %
 Next, we reuse the example from above that includes a
 number with two digits as second argument for |Plus|, thus, leading to a
@@ -451,7 +451,7 @@ yield a partial result with a remaining string. %
 As a main disadvantage of this approach, we cannot ignore redundant
 parts in the parsing direction. %
 If these redundancies do not appear in the pretty-printer's definition,
-we do note have the option to parse them anyway. %
+we do not have the option to parse them anyway. %
 We have already mentioned an original precedent in the introduction
 of this section: optional whitespaces as delimiter between tokens. %
 In order to make this case more clear, we define a printer-parser for
@@ -535,7 +535,7 @@ Fortunately, the integration of redundant whitespaces works like a
 charm. %
 However, there must be a downside of this implementation, otherwise we
 would not discuss it under the used subtitle. %
-In the beginning, we said that we cannot parse redundancies that are
+In the beginning we said that we cannot parse redundancies that are
 not included in the printer-parser's definition. %
 In our case, we have added these redundancies and, thus, can parse
 them in a convenient way. %
@@ -573,11 +573,11 @@ our problem. %
 Quotient lenses are well-behaved bidirectional transformations that
 allow the programmer to specify equivalence relations on his data to
 process. %
-They authors have added an implementation of quotient lenses to the
+The authors have added an implementation of quotient lenses to the
 Boomerang language. %
 Thus, the specific usage of quotient lenses is not applicable for our
 implementation and in the context of our study cases, we did not have
-the time to implement our own version quotient lenses. %
+the time to implement our own version of quotient lenses. %
 
 Furthermore, the definitions for the pretty-printer have to be more
 sophisticated than usual. %
@@ -595,7 +595,7 @@ pretty-printing and parsing in Appendix \ref{a:ppInfix}. %
 
 \subsection{Replace-Parser}
 
-In a second approach, we want to tackle the disadvantage of
+In a second approach, we want to tackle the disadvantages of
 printer-parsers concerning redundancies and optional parsing rules. %
 These disadvantage arises from the operational, state-free approach of
 our first implementation. %
@@ -603,7 +603,7 @@ The design of printer-parsers provides the definition of
 pretty-printers and implicates a corresponding parser. %
 Unfortunately, the corresponding parser is only suited for the
 pretty-printed string representation. %
-In the previous subsection, we gave a exemplary definition to parse a
+In the previous subsection, we gave an exemplary definition to parse a
 variable amount of whitespaces, which was unsatisfactory. %
 The defined lens can be used in the parsing direction, but behaves
 heavily nondeterministic when pretty-printing a value. %
@@ -708,7 +708,7 @@ Replaced "5"
 New "5"
 \end{spec}
 
-In the examples, want to replace a digit character with |'5'|. %
+In the examples, we want to replace a digit character with |'5'|. %
 The first one succeeds with an replacement, because the given string
 consists of a digit as well. %
 In the second case, we ignore the input because it does not harmonise
@@ -767,7 +767,7 @@ whitespace str ((),str') = charP (== ' ') str (' ',str')
 \end{spec}
 
 % Furthermore, we need composing combinators like |<>|, |<<<|, |>>>| and
-% |<|>| to build more complex replace-parses with primitives as basis. %
+% |<|>| to build more complex replace-parsers with primitives as basis. %
 % We start with the alternative combinator, |<|>|, because of its simple
 % implementation. %
 
@@ -792,7 +792,7 @@ whitespace str ((),str') = charP (== ' ') str (' ',str')
 
 \subsubsection*{Composition}
 Moreover, we want to compose several primitives to build new
-replace-parses. %
+replace-parsers. %
 For that purpose, we introduce the composition combinator |(<>)|, and
 its descendants |(<<<)| and |(>>>)| in order to ignore the left and right
 result, respectively. %
@@ -830,7 +830,7 @@ unwrap (New v)      = v
 unwrap (Replaced v) = v
 \end{spec}
 
-As an important part of the second case, we use a the function
+As an important part of the second case, we use the function
 |strict| to ensure that the given replace-parser performs a replacement. %
 
 \begin{spec}
@@ -945,7 +945,7 @@ hence, leading to a failing parsings action on every input string. %
 Last but not least, we use the same implementation to handle the
 operators of an arithmetic expression like for the
 printer-parser.\footnote{In fact, if it were not for the delimiting
-  whitespaces, we could have use the exact same implementation as
+  whitespaces, we could have used the exact same implementation as
   before, but using a different type signature.} %
 
 \subsubsection*{Poor Performance}
@@ -953,7 +953,7 @@ The more interesting part is the behaviour of our given
 implementation. %
 We have already seen a handful of examples as a motivation for the
 idea of replace-parsers in the beginning of this subsection. %
-Nonetheless, we want give some more examples to highlight the improvement in
+Nonetheless, we want to give some more examples to highlight the improvement in
 contrast to the previous implementation. %
 
 \begin{spec}
@@ -972,7 +972,7 @@ replacing the given string with a new value. %
 For each whitespace, we introduce an additional combinator, |(<<<)|,
 that splits the input string into two halves. %
 In the end, the longer the input string and the more composition
-combinators we use, the more splitting combination arise and the
+combinators we use, the more splitting combinations arise and the
 number of splits increases, respectively. %
 That is, the nondeterministic search for a suitable splitting
 increases fast and causes a bad performance. %
@@ -1075,7 +1075,7 @@ direction as well. %
 type PReplace a = String -> (a,String) -> (String,String,String)
 \end{spec}
 
-We chose a triple as result of our replace-parser. %
+We choose a triple as result of our replace-parser. %
 The first component represents the string of a successful replacement
 or pretty-print, whereas the other two components are remaining
 strings. %
@@ -1120,16 +1120,16 @@ replace-parser on the input string, the corresponding value and the
 result of the second parser. %
 The important difference is that we can actually use the remaining
 string of the first replace-parser as argument to the second one. %
-Unfortunately, we loose performance by concatenating both remaining
+Unfortunately, we lose performance by concatenating both remaining
 strings for the resulting tuple. %
 However, this concatenation is rather a technicality than a huge
-problem; we can easily rewrite the code to by means of |foldr|, i.e.,
+problem; we can easily rewrite the code using |foldr|, i.e.,
 |str1' ++ str2'| becomes |foldr (:) str2' str1'|. %
 The additional check on a non-empty string can be seen as an
 equivalent to the usage of |strict| in the previous implementation. %
 When composing two replace-parsers, we want to make sure that both
 actually consume any input. %
-However there is one exception: if the given replace-parses does not
+However, there is one exception: if the given replace-parsers does not
 care about its input, we do not want the composition to fail. %
 Therefor, we use |pure|, the primitive replace-parser that succeeds on
 every input, in order to handle the special case of a non-consuming
@@ -1139,8 +1139,9 @@ In order to use the definition of |rpExpr| that we have given above,
 we still need to define |whitespaces|. %
 The key for a modified definition of |whitespaces| is a combination of
 |pure| and the alternative combinator |(<||>)|. %
-In Curry, we can define the alternative combinator by means of |(?)|
-and nondeterministically choose one of the given replace-parsers. %
+In Curry, we can define the alternative combinator using the choice
+operator, |?|, and nondeterministically choose one of the given
+replace-parsers. %
 
 \begin{spec}
 (<||>) :: PReplace a -> PReplace a -> PReplace a
@@ -1181,7 +1182,7 @@ In Figure~\ref{fig:replaceBetter}, we show the measured execution time
 for the same expressions that we ran for the previous
 implementation. %
 The results include two additional test expressions in order to show
-that the expected run-time with respect to the number of used
+that the expected run time with respect to the number of used
 combinators is nearly linear. %
 
 \begin{figure}
@@ -1228,16 +1229,16 @@ misspellings and likewise parse errors. %
 Other related work includes the idea of \cite{invertibleSyntax}, who
 propose a new interface to describe parser and pretty-printer in a
 single program. %
-They provide a type class |Syntax delta| that include common parser
+They provide a type class |Syntax delta| that includes common parser
 functions like |(<$$>)|,|(<*>)|\footnote{Due to the usage of
   pretty-printers, the composition combinator forms a pair like in our
   implementation, instead of using the traditional composition
   semantic of parsers.}, |(<||>)|, |pure| and |empty|. %
-In order to define parsers and pretty-printers, the programmes defines
+In order to define parsers and pretty-printers, the programmer defines
 an instance for the |Syntax| typeclass. %
 In the end, the implemented instance decides if the combinator behaves
 like a pretty-printer or a parser. %
-This approach has similiarties to using a pair of functions to
+This approach has similarties to using a pair of functions to
 represent lenses: we still have to define and maintain both sides of
 the implementation. %
 Thus, we see an advantage of our implementation in comparison to the
@@ -1249,7 +1250,7 @@ system that can be used to define pretty-printers and gain a
 corresponding parser. %
 FlipPr produces a CFG parser that is consistent with the given
 definition of the pretty-printer. %
-Their advantage in comparision to bidirectional approaches is that
+Their advantage in comparison to bidirectional approaches is that
 they can outsource their parsing algorithms to parser generators and
 reuse efficient implementations of exisiting pretty-printer
 libraries. %

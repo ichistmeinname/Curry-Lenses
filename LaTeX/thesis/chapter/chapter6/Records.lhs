@@ -19,10 +19,12 @@ define types similar to data type declarations as records in
 Haskell. %
 In the remainder of this section, we call these definitions record
 types. %
-As an explanatory definition of a record types, we define |Person|, a
-data structure that two fields, a first and a last name, and both are
-fields represented as |String|s. %
-Fields of the same type can be grouped like in the following example.
+As an explanatory definition of a record types, we define a data
+structure with two fields named |Person|. %
+A |Person| has a first and a last name, both are represented as
+|String|s. %
+Fields of the same type can be grouped like in the following
+example. %
 
 \begin{code}
   type Person = { first, last :: String }
@@ -352,7 +354,7 @@ As in the current transformation of record types, we generate a data
 type declaration corresponding to the record type: one value
 constructor with the same name as the record type and each field is of
 the record type is an argument of the value constructor. %
-The arrangement of arguments are adopted from the record
+The arrangement of arguments is adopted from the record
 declaration; in the process, we desugar grouped fields and write every
 pair of fields and type declaration consecutively. %
 In the following, we call the desugared version of a record type
