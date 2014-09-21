@@ -1,4 +1,4 @@
-\chapter[About Bidirectional Transformations]{About Lenses and Other Bidirectional Shenanigans}\label{ch:BiTrans}
+\chapter[About Bidirectional Transformations]{About Lenses and Other Bidirectional Shenanigans}\label{ch:biTrans}
 
 Many approaches in the context of data synchronisation and data
 transformation are error-prone and cumbersome to maintain. %

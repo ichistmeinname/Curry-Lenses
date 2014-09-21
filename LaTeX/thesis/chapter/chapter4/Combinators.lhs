@@ -1,4 +1,4 @@
-\section{Combinatorial lenses}\label{sec:comb}
+\section{Combinatorial Lenses}\label{sec:comb}
 The first combinatorial technique is the pioneer work by
 \cite{biTCombinators}, who designed a domain-specific programming
 language to define bidirectional transformations on tree-structured

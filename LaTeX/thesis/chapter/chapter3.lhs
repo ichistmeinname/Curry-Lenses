@@ -1,4 +1,4 @@
-\chapter{Introduction to Curry}
+\chapter{Introduction to Curry}\label{ch:curry}
 
 The main implementations that we present in this thesis are programmed
 with Curry. %

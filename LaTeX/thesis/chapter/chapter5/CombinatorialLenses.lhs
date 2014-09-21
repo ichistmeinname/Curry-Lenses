@@ -652,9 +652,5 @@ Our modification still tolerates some invalide dates, e.g. |Date 2
 31|, but for simplicity reasons we leave further adjustments to the
 reader. %
 
-This schema can be used for all kind of algebraic data types. %
-We provide some more examples in Appendix~\ref{a:combExamples} and
-discuss an integration of our combinatorial lenses in the existing
-Curry library
-@WUI@\footnote{\url{http://www-ps.informatik.uni-kiel.de/kics2/lib/CDOC/WUI.html}}
-in Appendix~\ref{a:wui}. %
+This schema can be used for all kind of algebraic data types; we
+provide some more examples in Appendix~\ref{a:combExamples}. %
