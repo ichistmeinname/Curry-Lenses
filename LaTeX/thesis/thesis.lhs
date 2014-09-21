@@ -28,20 +28,6 @@
 %format *> = ">>>"
 %format <* = "<<<"
 
-\begin{document}
-
-% Römische Nummerierung für Sonderseiten, wie Verzeichnisse und Anhang
-\pagenumbering{Roman}
-
-% Titelblatt
-%include extras/frontpage.lhs
-% Table of Contents, Figures, etc
-% Kopfzeile links Kapitel, rechts leer
-\renewcommand{\chaptermark}[1]{\markboth{\thechapter\ #1}{}}
-\ihead{\leftmark}
-\ohead{}
-%include extras/tables.lhs
-
 % neue Umgebungen
 % \newtheoremstyle{break}
 %   {7pt}{10pt}%
@@ -51,6 +37,28 @@
 % \theoremstyle{break}
 \newtheorem{tf}{Transformation}
 \newtheorem{ex}{Example}
+
+
+\begin{document}
+
+% Römische Nummerierung für Sonderseiten, wie Verzeichnisse und Anhang
+\pagenumbering{Roman}
+
+% Titelblatt
+%include extras/frontpage.lhs
+
+% Eidesstattliche Erklärung
+%include extras/eidesstattliche.lhs
+
+% Abstract
+%include extras/abstract.lhs
+
+% Table of Contents, Figures, etc
+% Kopfzeile links Kapitel, rechts leer
+\renewcommand{\chaptermark}[1]{\markboth{\thechapter\ #1}{}}
+\ihead{\leftmark}
+\ohead{}
+%include extras/tables.lhs
 
 % Merke mir die römische Seitenzahl in 'roemisch' und setzte Nummeriernung 
 % auf arabisch für die eigentlichen Kapitel
@@ -78,8 +86,5 @@
 \bibliography{lenses}
 
 %include extras/appendix.lhs
-
-% Eidesstattliche Erklärung
-% \input{extras/eidesstattliche}
 
 \end{document}

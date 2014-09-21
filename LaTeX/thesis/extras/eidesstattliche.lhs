@@ -1,12 +1,13 @@
-% Die eidesstattliche Erklärung mit Unterschrift
-\chapter*{Erklärung der Urheberschaft}
+% Die eidesstattliche Erklaerung mit Unterschrift
+\chapter*{Erkl\"arung der Urheberschaft}
 
-Ich erkläre hiermit an Eides statt, dass ich die vorliegende Arbeit
+Ich erkl\"are hiermit an Eides statt, dass ich die vorliegende Arbeit
 ohne Hilfe Dritter und ohne Benutzung anderer als der angegebenen
 Hilfsmittel angefertigt habe; die aus fremden Quellen direkt oder
-indirekt übernommenen Gedanken sind als solche kenntlich gemacht. Die
-Arbeit wurde bisher in gleicher oder ähnlicher Form in keiner anderen
-Prüfungsbehörde vorgelegt und auch noch nicht veröffentlicht.
+indirekt \"ubernommenen Gedanken sind als solche kenntlich gemacht. %
+Die Arbeit wurde bisher in gleicher oder \"ahnlicher Form in keiner
+anderen Pr\"ufungsbeh\"orde vorgelegt und auch noch nicht
+ver\"offentlicht.
 
 
 \vspace{4cm}

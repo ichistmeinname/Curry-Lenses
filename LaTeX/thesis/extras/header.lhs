@@ -12,7 +12,7 @@
 %
 % Paket für Übersetzungen ins Deutsche
 %
-% \usepackage[english,ngerman]{babel}
+%\usepackage[english,ngerman]{babel}
 
 %
 % figures over several pages
@@ -32,7 +32,7 @@
 % Pakete um Latin1 Zeichnensätze verwenden zu können und die dazu
 % passenden Schriften.
 %
-\usepackage[latin1]{inputenc}
+\usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 
 %
