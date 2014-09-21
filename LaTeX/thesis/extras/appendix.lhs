@@ -104,9 +104,9 @@ ppExpr' str t@(Num _,_)       = ppTerm str t
 ppTerm :: PPrinter Expr
 ppTerm str f@(BinOp op e1 e2, str')
   | op == Mult || op == Div =
-    ((ppFactor <<< whitespace)
+    ((ppFactor <* whitespace)
       <> ppMultDiv
-      <> (whitespace >>> ppTerm)) str (((e1,op),e2),str')
+      <> (whitespace *> ppTerm)) str (((e1,op),e2),str')
   | otherwise               = ppFactor str f
 ppTerm str f@(Num _,_)      = ppFactor str f
 
@@ -145,8 +145,3 @@ expressions for printing and parsing. %
 > pParse ppExpr' "1 + 3 * (4 - 9)"
 (BinOp Plus (Num 1) (BinOp Mult (Num 3) (BinOp Minus (Num 4) (Num 9))))
 \end{spec}
-
-\chapter{Combinatorial WUILenses}\label{a:wui}
-\cite{webLenses}
-\cite{wui}
-\cite{spicey}
