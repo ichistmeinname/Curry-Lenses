@@ -380,7 +380,7 @@ putDiv :: Int -> Lens Int Int
 putDiv x y z | y == 0 = failed
              | r >= 0 && r < y && x == y*z + r = y where r free
 
--- With additional rule for `Nothing` the lens becomes non-deterministic
+-- With additional rule for `Nothing` the lens becomes nondeterministic
 putFromMaybe :: Lens a (Maybe a)
 -- putFromMaybe v Nothing  = v
 putFromMaybe _ (Just x) = x
