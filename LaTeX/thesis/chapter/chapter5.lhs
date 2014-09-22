@@ -2,8 +2,8 @@
 
 In this chapter, we discuss two implementations of lenses in the
 functional logic programming language Curry: a combinatorial approach
-that focuses on the put function, and a put-based implementation build
-upon Curry's built-in search abilities. %
+that focuses on the put function, and a put-based implementation using
+Curry's built-in search abilities. %
 Moreover, we present \emph{nondeterministic lenses}, a conservative
 extension that arises naturally in the setting of functional logic
 programming with Curry. %
@@ -17,15 +17,15 @@ a lens when using this library. %
 For the Curry implementation, we adapt the underlying monadic approach
 by using Curry's built-in nondeterminism as the update strategy. %
 
-As the second implementation, we discuss a very simple libraryy that
+As the second implementation, we discuss a very simple library that
 builds lenses only with the help of a put definition that does not
 uses the combinatorial approach. %
 In order to use lenses in the get direction, the library offers
 a general get function based on the given put definition and the lens
 laws. %
-In addition, we discuss a potential get-based approach that follows
+We discuss a potential get-based approach that follows
 the same idea as our implementation, argue about its disadvantages,
-and present solutions in related work. %
+and present related work. %
 
 In the context of nondeterministic lenses, we present adapted versions
 of the classical lens laws as well as a handful of lens definitions
