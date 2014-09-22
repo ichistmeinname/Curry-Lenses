@@ -2,7 +2,7 @@
 Last but not least, we conclude this thesis with a summary of our work
 and our accomplished results. %
 We also give an outlook on future work. %
-The future work that we have in mind includes further research on
+Upcoming challenges include further research on
 Curry's built-in search component and further improvements of our lens
 implementation. %
 Additionally, we propose the integration of lenses in the KiCS2
@@ -15,43 +15,40 @@ library. %
 
 This thesis addresses the topic of bidirectional programming and
 lenses in particular. %
-The topic is new neither in the area of computer science in general
-nor in research fields of programming languages. %
-However, we gain a new view on lenses by using a functional logic
+Even though this topic has been investigated in great detail in the
+past, we gain a new view on lenses by using a functional logic
 programming language like Curry. %
 
 Related approaches concentrate on defining a new infrastructure that
 fits bidirectional programming perfectly -- programming languages like
 Boomerang and VDL -- or targets a specific domain -- lenses for
-relations, strings or trees. %
+relations, strings, or trees. %
 In this thesis, we do not create a new programming language, but use
-Curry and exploit its capabilities regarding nondeterminism and the
+Curry and leverage its capabilities regarding nondeterminism and the
 built-in search to gain a new bidirectionalisation approach for
 lenses. %
 Due to its similarities to Haskell, our approach in Curry affords a
 familiar setting for programmers of both languages. %
 Furthermore, we can have a wide range of lens definitions that are not
 limited to a specific context, but use all facets of the underlying
-language like algebraic data types, higher-order functions, recursion
+language like algebraic data types, higher-order functions, recursion,
 and also existing libraries. %
 
-There exists also promising and well-studied work on
+There also exists promising and well-studied work on
 bidirectionalisation techniques for get-based lenses that can be used
 in Haskell. %
-% These approaches define get-based lenses to bidirectionalise a
-% suitable put function. %
-In this thesis, we decided against this traditional approach and adopt
-the idea of put-based lenses. %
+In this thesis, we decide not to follows this traditional approach and
+adopt the idea of put-based lenses. %
 Whereas the get-based approach lacks an unique bidirectionalisation of
 a suitable put function, we have the possibility to formulate a
 sophisticated update strategy in the put-based approach. %
-We have implemente two libraries for put-based lenses: one library
+We have implemented two libraries for put-based lenses: one library
 pursues a combinatorial approach; the other library follows the idea
 of semantic bidirectionalisation in the broadest sense and generates a
 corresponding get function on the fly. %
 Though the combinatorial approach guarantees well-behavedness of the
 underlying lenses, we prefer the usage of the second library for two
-reason. %
+reasons. %
 Firstly, we are not limited to use a predefined set of combinators. %
 Secondly, we had a hard time to get our head around defining more
 complex lenses; the adopted interface was not very intuitive to use in
@@ -86,10 +83,10 @@ generator. %
 \section{Future Directions}
 
 We have several topics for future work in mind. %
-Firstly, due to our heavily usage of Curry's built-in search, we ran
+Firstly, due to our heavy usage of Curry's built-in search, we ran
 into some complications for function definitions that are too
 strict. %
-These compilcations are not lens-specific but a general problem worth
+These compilcations are not lens-specific, but a general problem worth
 investigating. %
 Secondly, we discuss future work in the context of lenses that include
 enhancements and further applications. %
@@ -104,12 +101,12 @@ In the following, we give a detailed insight of Curry's built-in
 search capabilities with an example and the consequential problems. %
 We also present two approaches to solve the upcoming problem for the
 exemplary lens definition. %
-However, we think it would be an interesting topic own its to
-investigate functions definition that are too strict to be applicable
+However, we think it would be an interesting topic of its own to
+investigate function definitions that are too strict to be applicable
 for the built-in search component. %
 
 In the following, we work with the put-based lens library that we
-presented in Section~\ref{sec:putImpl}. %
+presented in Section~\ref{sec:implPut}. %
 As a quick reminder: we have the following interface for put-based
 lenses that generate a corresponding |get|-function. %
 
@@ -142,19 +139,19 @@ Valid view lists have half the length of the source list, if
 otherwise, the function yields |failed|, i.e., no result is
 produced. %
 
-
-In the following, our aim is to generate a get function for
+In the following, our goal is to generate a get function for
 |putHalve|. %
-The wished |get| function is equivalent to the following definition
-|halve|. %
+The desired |get| function is equivalent to the following definition
+of |halve|. %
 
 \begin{code}
 halve :: [a] -> [a]
 halve xs = take (length xs `div` s) xs
 \end{code}
 
-With help of our interface, we can derive a corresponding get function
-by simply calling |get| with |putHalve| and our source value. %
+With the help of our interface, we can derive a corresponding get
+function by simply calling |get| with |putHalve| and our source
+value. %
 
 \begin{code}
 getHalve = get putHalve
@@ -172,7 +169,7 @@ This effect is triggered by the usage of |length|. %
 The free variable |v| corresponds to |xs'| in the definition of
 |putHalve|, i.e., the system guesses values for |xs'|. %
 In order to be more precise, the system needs to guess lists of type
-|()| for |xs'| and check if their length is the same as |length
+|()| for |xs'| and checks if their length is the same as |length
 [(),()] `div` 2|. %
 
 In order to focus on the cause of the problem., we can simplify our definition of
@@ -183,19 +180,19 @@ putHalveSimple :: [a] -> [a]
 putHalveSimple xs' | length xs' == 1 = xs' ++ drop 1 [(),()]
 \end{code}
 
-Curry uses binary numbers as representation for numbers plus
-additional information about the algebraic sign and to represent |0|
+Curry uses binary numbers as representation for numbers, plus
+additional information about the algebraic sign, also to represent |0|
 as well. %
 The data structure |Nat| defines constructors for binary numbers and
-|BinInt| is the overall representation wrapping the binary numbers. %
+|BinInt| is the overall representation, wrapping the binary numbers. %
 
 \begin{code}
 data BinInt = Neg Nat | Zero | Pos Nat
 data Nat = IHi | O Nat | I Nat
 \end{code}
 
-If we now replace the usage of |Int| values with the internal
-representation with |BinInt|, we end up with the following function. %
+If we replace the usage of |Int| values with the internal
+representation of |BinInt|, we end up with the following function. %
 
 \begin{code}
 putHalveSimple :: [a] -> [a]
