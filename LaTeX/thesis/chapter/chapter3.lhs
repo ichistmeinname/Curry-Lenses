@@ -13,7 +13,7 @@ Haskell~\citep{haskell98}, and created by an international development
 team to provide an environment, mostly for research and teaching. %
 In the following, we assume the reader is au fait with Haskell,
 especially its syntax and its type system as well as general
-functional concepts like algebraic datatypes, polymorphism,
+functional concepts like algebraic data types, polymorphism,
 higher-order functions and lazy evaluation. %
 Hence, we focus on features that are specific to Curry. %
 Besides the mentioned functional features, Curry also provides

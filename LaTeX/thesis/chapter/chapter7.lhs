@@ -414,8 +414,8 @@ subsections. %
 
 \subsubsection*{Approach One: |Nat|}
 
-We exchange the usage of |BinInt| by |Nat| to see, if this little
-change will do the difference. %
+As the very first approach, we exchange the usage of |BinInt| by |Nat|
+to see, if this little change will make a difference. %
 
 \begin{code}
 lengthNat :: [a] -> Nat
@@ -486,7 +486,7 @@ variable. %
 
 \subsubsection*{Approach Two: Peano Numbers}
 
-As a first attempt, we use an alternative data structure with an unary
+As a second attempt, we use an alternative data structure with an unary
 representation for numbers: peano numbers. %
 
 \begin{code}
@@ -591,7 +591,7 @@ Hence, the expression fails and the evaluation terminates. %
 
 \subsubsection*{Approach Three: Binary List Representation}
 
-The second approach is to choose another list representation. %
+The third approach is to choose another list representation. %
 In particular, we are interested in a representation that behaves well
 with the internal |BinInt| data structure. %
 Therefor, we use the following definition of binary lists. %
@@ -783,7 +783,7 @@ function. %
 Last but not least, we think that the work of \cite{webLenses}
 regarding lenses in the context of web development could be very
 applicable for Curry. %
-In our opinion, lenses perfectly fit the setting of mapping data base
+In our opinion, lenses perfectly fit the setting of mapping database
 entities to user interfaces for two reasons. %
 Firstly, these mappings usually project from database entities to user
 interfaces, which is an simple and common application for lenses. %

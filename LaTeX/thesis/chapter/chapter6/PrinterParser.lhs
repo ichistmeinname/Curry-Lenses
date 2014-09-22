@@ -230,7 +230,7 @@ arguments. %
 The arguments of a binary operator are arithmetic expressions, thus,
 we print the arguments in a recursive manner. %
 Due the two consecutive uses of the composition combinator, |<>|, the
-data has to be provided in form of a nested pair. %
+data have to be provided in form of a nested pair. %
 The inner pair consists of the operator and the first arithmetic
 expression. %
 Then, this pair is injected as the first component of the outer pair
@@ -340,8 +340,8 @@ ppExpr str (BinOp op e1 e2,str') =
 Unfortunately, due to the integration of whitespace and the related
 increased usage of the composition combinator, this definition looks
 rather cumbersome and complicated. %
-In particular, the whitespaces we add in the definition are ignored in
-the data that is given in form of a deeply nested pair. %
+In particular, the whitespaces, which we add in the definition, are ignored in
+the data that are given in form of a deeply nested pair. %
 The definition above uses an anonymous free variable, which is bound to
 a whitespace character when actually calling this function. %
 The variable is bound to a whitespace, because a whitespace is the
@@ -516,8 +516,8 @@ ppExprSpaces str (Num v,str')           = digit str (v,str')
 \end{spec}
 
 Since we do not care about the number of trailing whitespaces after an
-operator and its expressions, respectively, we use an anonymus free
-variable as input data. %
+operator and its expressions, respectively, we use an anonymous free
+variable as input. %
 This free variable can be bound to any number of |Unit| elements in
 order to parse all occurring whitespaces. %
 As a first example, we can parse trailing whitespaces after the binary
@@ -571,8 +571,8 @@ values fits the specification of the pretty-printer. %
 The work of \cite{quotientLenses} sounds promising as a solution to
 our problem. %
 Quotient lenses are well-behaved bidirectional transformations that
-allow the programmer to specify equivalence relations on his data to
-process. %
+allow the programmer to specify equivalence relations on the data he
+wants process. %
 The authors have added an implementation of quotient lenses to the
 Boomerang language. %
 Thus, the specific usage of quotient lenses is not applicable for our

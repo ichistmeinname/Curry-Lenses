@@ -409,7 +409,7 @@ of type |PutLens a c|. %
 In order to see the composition operator in action, we need a second
 lens to connect two lenses in series. %
 As a more useful example, we first define an algebraic
-datatype for a contact, like in an address book. %
+data type for a contact, like in an address book. %
 The context consists of an address and information about the contact's
 name, i.e., its first and last name. %
 

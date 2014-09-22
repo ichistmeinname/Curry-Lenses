@@ -201,10 +201,10 @@ get getF val = getF val
 \end{code}
 
 As we have seen above, it is easy to compose getters for nested record
-values; with the new defined |get| function, we can access a field of a
-record value as follows\footnote{As we stated before, KICS2 translated
-  a record type into a data type declaration, that is, the REPL
-  uses this translated data type when printing a record value}. %
+values; with the new defined |get| function, we can access a field of
+a record value as follows\footnote{As we stated before, KiCS2
+  translates a record type into a data type declaration, that is, the
+  REPL uses this translated data type when printing a record value}. %
 
 \begin{spec}
 personGet :: Get Contact Person

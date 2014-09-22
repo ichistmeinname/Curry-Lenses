@@ -546,8 +546,8 @@ class Pack delta alpha | alpha -> delta where
 The type variable |delta| represents the type of the concrete data
 structure, whereas |alpha| is the type of the abstracted value. %
 The last type variable |mu| is the used monad, which tracks the
-transformation on values of the concrete structure called; this
-tracking data is called observation history. %
+transformation on values of the concrete structure called; these
+tracking data are called observation histories. %
 The additional type class |Pack delta alpha| constructs labels to
 track information regarding the location of values within the concrete
 structure. %
