@@ -3,7 +3,8 @@ The first combinatorial technique is the pioneer work by
 \cite{biTCombinators}, who designed a domain-specific programming
 language to define bidirectional transformations on tree-structured
 data. %
-Foster et al. formulate fundamental laws concerning lenses\footnote{We already presented these laws in Section \ref{subsec:lensesLaws}, in
+Foster \etal{} formulate fundamental laws concerning lenses\footnote{We
+  already presented these laws in Section \ref{subsec:lensesLaws}, in
   particular, PutGet, GetPut and PutPut.}, combine these laws with the
 intuitive behaviour of lenses, and use fundamental tools from domain
 theory to also define lenses by recursion; they lay the focus of the
@@ -17,11 +18,11 @@ The authors state close connections with topics from the database
 community: lenses are a well-known abstraction in databases concerning
 tables and queries, and the \emph{update translation under a constant
   complement} introduced by \cite{viewUpdate} tackles problems
-concerning definedness \todo{precision?} and continuity, whereas the
+concerning precision and continuity, whereas the
 property of well-behaved lenses corresponds to \emph{update
   translators}\todo{citation}. %
 
-In their publication, Foster et al. define a handful of primitive lens
+In their publication, Foster \etal{} define a handful of primitive lens
 combinators for trees, and the combination of these primitive lenses
 results in a powerful abstraction to describe transformations. %
 The most important primitives are the composition, identity and
@@ -50,11 +51,11 @@ World")| in Haskell. %
 
 As an example, we define a lens that yields the first component of a
 pair, like the one we defined above. %
-Foster et al. use $(\nearrow: S \Leftrightarrow V) \times S \rightarrow
+Foster \etal{} use $(\nearrow: S \Leftrightarrow V) \times S \rightarrow
 V$ and $\searrow:~ (S \Leftrightarrow V) \times (S,V) \rightarrow S$ as
 representation for get and put functions, respectively, where $S
 \Leftrightarrow V$ is a lens with a source of type $S$ and a view of
-type $V$.\footnote{Foster et al. use $C$ and $V$ as representative for
+type $V$.\footnote{Foster \etal{} use $C$ and $V$ as representative for
   the concrete and abstract value, respectively.} %
 We can use the predefined tree combinator |filter p d| to keep
 particular children of the tree, where |p| describes the set of names
@@ -96,7 +97,7 @@ component of our pair to |13|, i.e., apply the put function. %
   \right\}
 \end{align*}
 
-The work of Foster et al. origins in the Harmony
+The work of Foster \etal{} origins in the Harmony
 project\footnote{\url{https://alliance.seas.upenn.edu/~harmony/old/}}
 \citeyearpar{relationalLenses,harmonyOverview,harmonyManual}, a
 generic framework to synchronise tree-structured data; an ongoing
@@ -129,10 +130,10 @@ instead. %
 It seems quite obvious that both, the forward and the backward
 function of a bidirectional transformation, can be used for
 bidirectionalisation. %
-Nevertheless, so far, the current techniques pursue the idea of Foster
-et al. %
+Nevertheless, so far, the current techniques pursue the idea of
+Foster et al. %
 
-In the work of Fisher et al., it becomes apparent that typical
+In the work of Fisher \etal{}, it becomes apparent that typical
 problems of get definitions are the ambiguity of the derived put
 functions. %
 That is, in several cases it exists more than one appropriate put
@@ -142,7 +143,7 @@ when the defined get function is not injective; we will discuss
 this topic in more detail in Section~\ref{sec:implPut}. %
 This ambiguity can be eliminated when we define the put direction
 instead. %
-Fisher et al. show in their work that the corresponding get function
+Fisher \etal{} show in their work that the corresponding get function
 for a defined put function is unique if certain requirements apply
 to the put function. %
 They prepare their theorem with some transformations on the
@@ -218,13 +219,13 @@ surjective function |f :: A -> B| if and only if it exists a function
 Actually, this equation only holds for total put functions, because
 the equation requires to be fulfilled for all values |s| of the
 resulting type |S|. %
-Fisher et al. lay out idempotence of |`put` v| for all views |v| as
+Fisher \etal{} lay out idempotence of |`put` v| for all views |v| as
 additional requirement for well-behaved lenses. %
 \[\tag{PutTwice}
   |s'| \in |put s v| \Rightarrow |s'| = |put s' v|
 \]
 
-Furthermore, Fisher et al. verified that there is only one get
+Furthermore, Fisher \etal{} verified that there is only one get
 function for an arbitrary put function, which obeys \emph{PutInj}
 and \emph{PutTwice}\footnote{In later work of \cite{validityCheck}
   these both properties are called \emph{PutDetermination} and
@@ -273,7 +274,7 @@ type LensPG s v = LensPG_ Identity s v
 \end{spec}
 
 The put-based language is built upon a handful of combinators, which
-are inspired by the combinators of Foster et al., e.g., identity and
+are inspired by the combinators of Foster \etal{}, e.g., identity and
 constant lens as well as lenses for filter, composition, products,
 sums and conditionals. %
 The language assures well-behavedness by construction, that is, all
@@ -284,9 +285,9 @@ Additionally, the Haskell library provides functions to define custom
 lenses. %
 Due to the lack of statical checks concerning well-behavedness, the
 user can use the function |checkGetPut| and |checkPutGet|\footnote{In
-  the associated paper, Fisher et al. use the name |enforceGetPut|
+  the associated paper, Fisher \etal{} use the name |enforceGetPut|
   instead.} to check for the corresponding lens laws at runtime. %
-For simplicty reasons, we refrain from defining these check functions
+For simplicity reasons, we refrain from defining these check functions
 and focus on the lens combinators instead. %
 
 We can rebuild the example given above in terms of the put-based

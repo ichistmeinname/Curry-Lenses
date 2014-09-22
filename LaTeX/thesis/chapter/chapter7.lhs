@@ -1,3 +1,4 @@
+%format "///" = "\vdots"
 \chapter{Conclusion}\label{ch:conclusion}
 Last but not least, we conclude this thesis with a summary of our work
 and our accomplished results. %
@@ -86,7 +87,7 @@ We have several topics for future work in mind. %
 Firstly, due to our heavy usage of Curry's built-in search, we ran
 into some complications for function definitions that are too
 strict. %
-These compilcations are not lens-specific, but a general problem worth
+These complications are not lens-specific, but a general problem worth
 investigating. %
 Secondly, we discuss future work in the context of lenses that include
 enhancements and further applications. %
@@ -342,45 +343,35 @@ Figure~\ref{fig:lengthEval}. %
 \numbersright
 \begin{figure}
 \begin{spec}
-length v == Pos IHi
-  where v free
+length v == Pos IHi where v free
 
 ==
 
-length ([] ? _x2:xs) == Pos IHi
-  where _x2,xs free
+length ([] ? _x2:xs) == Pos IHi where _x2,xs free
 
 ==
 
-(length [] ? length _x2:xs) == Pos IHi
-  where _x2, xs free
+(length [] ? length _x2:xs) == Pos IHi where _x2, xs free
 
 ==
 
-length [] == Pos IHi ? length _x2:xs == Pos IHi
-  where
-_x2,xs free
+length [] == Pos IHi ? length _x2:xs == Pos IHi where _x2,xs free
 
 ==
 
-Zero == Pos IHi ? length _x2:xs == Pos IHi
-  where _x2,xs
-free
+Zero == Pos IHi ? length _x2:xs == Pos IHi where _x2,xs free
 
 ==
 
-False ? length _x2:xs == Pos IHi
-  where _x2,xs free
+False ? length _x2:xs == Pos IHi where _x2,xs free
 
 ==
 
-False ? inc (length xs) == Pos IHi
-  where xs free
+False ? inc (length xs) == Pos IHi where xs free
 
 ==
 
-False ? inc (length [] ? length _x4:ys) == Pos IHi
-  where _x4,ys free
+False ? inc (length [] ? length _x4:ys) == Pos IHi  where _x4,ys free
 
 ==
 
@@ -389,7 +380,7 @@ False ? inc length [] == Pos IHi  ? inc (length _x4:ys) == Pos IHi
 
 ==
 
-...
+///
 \end{spec}
 \caption{Guessing a list with size one}
 \label{fig:lengthEval}
@@ -421,70 +412,79 @@ numbers do not harmonise well - how can we solve the problem that
 We will present two different approaches in the following two
 subsections. %
 
-% Beforehand, we exchange the usage of |BinInt| by |Nat| to see, if this
-% little change will do the difference. %
-% Up to now, it seems that the built-in search cannot terminate, because
-% the |Pos| constructor takes too long to be propagated. %
+\subsubsection*{Approach One: |Nat|}
 
-% \begin{code}
-% lengthNat :: [a] -> Nat
-% lengthNat [_]      = IHi
-% lengthNat (_:y:ys) = succ (lengthNat (y:ys))
-% \end{code}
+We exchange the usage of |BinInt| by |Nat| to see, if this little
+change will do the difference. %
 
-% \begin{figure}
-% \begin{spec}
-% lengthNat v == IHI
-%   where v free
+\begin{code}
+lengthNat :: [a] -> Nat
+lengthNat [_]      = IHi
+lengthNat (_:y:ys) = succ (lengthNat (y:ys))
+\end{code}
 
-% -->
+Up to now, it seems that the built-in search cannot terminate, because
+the |Pos| constructor takes too long to be propagated. %
+We test the expression |lengthNat v == IHI where v free| and give the
+evaluation steps in Figure~\ref{fig:lengthEvalNat}. %
 
-% lengthNat ([] ? _x2:xs) == IHi
-%   where _x2,xs free
+\begin{figure}
+\begin{spec}
+lengthNat v == IHI where v free
 
-% -->
+==
 
-% (lengthNat [] ? lengthNat (_x2:xs)) == IHi
-%   where _x2,xs free
+lengthNat ([] ? _x2:xs) == IHi where _x2,xs free
 
-% -->
+==
 
-% lengthNat [] == IHi ? lengthNat (_x2:xs) == IHi
-%   where _x2,xs
-% free
+(lengthNat [] ? lengthNat (_x2:xs)) == IHi where _x2,xs free
 
-% -->
+==
 
-% False ? lengthNat (_x2:xs) == IHi
-%   where _x2,xs free
+lengthNat [] == IHi ? lengthNat (_x2:xs) == IHi where _x2,xs free
 
-% -->
+==
 
-% False ? lengthNat (_x2:([] ? (_x4:ys))) == IHI
-%   where _x2,_x4,ys free
+False ? lengthNat (_x2:xs) == IHi where _x2,xs free
 
-% --> .. -->
+==
 
-% False ? lengthNat [_x2] == IHI ? lengthNat (_x2:_x4:ys) == IHi
-%   where _x2 _x4,ys
+False ? lengthNat (_x2:([] ? (_x4:ys))) == IHI where _x2,_x4,ys free
 
-% -->
+==
 
-% False ? IHi == IHi ? succ (lengthNat (_x4:ys)) == IHi
-%   where _x4,ys free
+///
 
-% -->
+==
 
-% False ? True ? succ (lengthNat (_x4:([] ? (_x6:zs)))) == IHi
-%   where _x4,_x6,zs
+False ? lengthNat [_x2] == IHI ? lengthNat (_x2:_x4:ys) == IHi
+  where _x2 _x4,ys
 
-% -->
+==
 
-% ...
-% \end{spec}
-% \end{figure}
+False ? IHi == IHi ? succ (lengthNat (_x4:ys)) == IHi
+  where _x4,ys free
 
-\subsubsection*{Approach One: Peano numbers}
+==
+
+False ? True ? succ (lengthNat (_x4:([] ? (_x6:zs)))) == IHi
+  where _x4,_x6,zs
+
+==
+
+///
+\end{spec}
+\caption{Guessing a list with size one with natural numbers}
+\label{fig:lengthEvalNat}
+\end{figure}
+
+However, the expression does not terminate for |Nat| values either. %
+We have to think of more sophisticated changes to successfully
+evaluate the expression and to get actual bindings for the free
+variable. %
+
+\subsubsection*{Approach Two: Peano Numbers}
 
 As a first attempt, we use an alternative data structure with an unary
 representation for numbers: peano numbers. %
@@ -520,18 +520,15 @@ Z where v free | in Figure~\ref{fig:lengthPEval}. %
 \numbersright
 \begin{figure}
 \begin{spec}
-lengthPeano v == S Z
-  where v free
+lengthPeano v == S Z where v free
 
 ==
 
-lengthPeano ([] ? _x3:xs) == S Z
-  where _x3,xs free
+lengthPeano ([] ? _x3:xs) == S Z where _x3,xs free
 
 ==
 
-(lengthPeano [] ? lengthPeano (_x3:xs)) == S Z
-  where _x3,xs free
+(lengthPeano [] ? lengthPeano (_x3:xs)) == S Z where _x3,xs free
 
 ==
 
@@ -540,13 +537,11 @@ lengthPeano [] == S Z ? lengthPeano (_x3:xs) == S Z
 
 ==
 
-Z == S Z ? S (lengthPeano xs) == S Z
-  where xs free
+Z == S Z ? S (lengthPeano xs) == S Z where xs free
 
 ==
 
-Z == S Z ? lengthPeano xs == Z
-  where xs free
+Z == S Z ? lengthPeano xs == Z where xs free
 
 ==
 
@@ -560,8 +555,7 @@ False ? lengthPeano [] == Z ? lengthPeano (_x4:_x5) == Z
 
 ==
 
-False ? Z == Z ? S (lengthPeano _x5) == S
-  where _x5 free
+False ? Z == Z ? S (lengthPeano _x5) == S where _x5 free
 
 ==
 
@@ -595,7 +589,7 @@ further guesses for free variables are necessary, because the partial
 evaluation of |S n| can never be evaluated to |Z|. %
 Hence, the expression fails and the evaluation terminates. %
 
-\subsubsection*{Approach Two: Binary List Representation}
+\subsubsection*{Approach Three: Binary List Representation}
 
 The second approach is to choose another list representation. %
 In particular, we are interested in a representation that behaves well

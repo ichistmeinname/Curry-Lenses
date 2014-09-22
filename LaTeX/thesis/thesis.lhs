@@ -39,6 +39,9 @@
 \newtheorem{ex}{Example}
 
 
+% et al. Befehl
+\newcommand{\etal}[1]{et al.\@@}
+
 \begin{document}
 
 % Römische Nummerierung für Sonderseiten, wie Verzeichnisse und Anhang
@@ -72,8 +75,8 @@
 \ihead{\leftmark}
 \ohead{\rightmark}
 %include chapter/chapter1.lhs
-%include chapter/chapter2.lhs
 %include chapter/chapter3.lhs
+%include chapter/chapter2.lhs
 %include chapter/chapter4.lhs
 %include chapter/chapter5.lhs
 %include chapter/chapter6.lhs

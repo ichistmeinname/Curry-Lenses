@@ -9,10 +9,11 @@
 	%pointlessnumbers,%     Nummern ohne abschließenden Punkt
 	10pt
 ]{scrreprt}
+
 %
 % Paket für Übersetzungen ins Deutsche
 %
-%\usepackage[english,ngerman]{babel}
+\usepackage[english]{babel}
 
 %
 % figures over several pages

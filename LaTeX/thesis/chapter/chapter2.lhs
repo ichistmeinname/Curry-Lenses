@@ -89,7 +89,7 @@ Lenses are one of the most popular forms in bidirectional
 programming. %
 A statement about the status quo of bidirectional programming is
 postponed to Chapter~\ref{ch:impl} and Section~\ref{sec:implPut},
-where we discusess several implementation approaches. %
+where we discusses several implementation approaches. %
 Another good source for further reading is the paper
 by~\cite{biPApproaches} that contrasts three different approaches of
 bidirectional programming. %
@@ -171,7 +171,7 @@ the given pair of source and view. %
 
 In a symmetric setting, each structure |A| and |B| contains
 information that is not present in the other. %
-That is, we can also update both strucutres which leads two put
+That is, we can also update both structures which leads two put
 functions: |putl :: B -> A -> B| to update |B| and a put function
 |putr :: A -> B -> A| to update |A|. %
 
@@ -180,7 +180,7 @@ will be propagated back to the source; this restricted view implies
 that the given source does not change in the meantime. %
 That is, the example above is a representative for an asymmetric
 lens. %
-In comparision to the bijective setting, the |put| function take the
+In comparison to the bijective setting, the |put| function take the
 initial source as argument to synchronise the updated view with that
 source. %
 This additional argument leads to a slight change in the type of the
@@ -478,7 +478,7 @@ In our case, the second put application to the source list
 is [1,2,3], which differs from the result with consecutive put
 calls. %
 
-Nevertheless, the PutPut law can be applicabale for a number of
+Nevertheless, the PutPut law can be applicable for a number of
 convenient lens definitions. %
 For example, the lens consisting of |head| and |replaceHead| obeys the
 PutPut law. %

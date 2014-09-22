@@ -8,7 +8,7 @@ compiles to Haskell as presented by \cite{kics2}. %
 We also use KiCS2's interactive environment to evaluate our
 examples. %
 
-Curry is a functional logic programming language similiar to
+Curry is a functional logic programming language similar to
 Haskell~\citep{haskell98}, and created by an international development
 team to provide an environment, mostly for research and teaching. %
 In the following, we assume the reader is au fait with Haskell,
@@ -164,7 +164,7 @@ In order to evaluate the given expression, Curry's built-in search
 system generates a series of lists. %
 Similar to the evaluation of a nondeterministic expression, we get a
 series of results. %
-The first component of the result is the binding of the occuring free
+The first component of the result is the binding of the occurring free
 variables -- surrounded by curly brackets. %
 The evaluated expression is the second component. %
 In our example, Curry generates a series of lists starting with the
@@ -173,7 +173,7 @@ We do not go into further detail here, and postpone further
 explanations to Section~\ref{sec:chall}.
 
 The important message to get across here is that we can use Curry's
-built-in search capabilites in combination with free variables to use
+built-in search capabilities in combination with free variables to use
 \emph{generate-and-test} methods in function definitions. %
 For example, we can give an additional implementation of |last| by
 using free variables. %
@@ -190,7 +190,7 @@ Anonymous free variables are a syntactical abbreviation for |let x
 free in x|. %
 If we do not use the binding of the free variable in the remainder of
 our expression, we can declare it anonymously. %
-The idea of the implemention is to generate the given list in two
+The idea of the implementation is to generate the given list in two
 steps: an anonymous list for the prefix and a single element to
 concatenate at the end of the list. %
 Thus, we have the last element at our fingertips and can easily yield

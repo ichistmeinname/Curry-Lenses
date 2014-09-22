@@ -30,7 +30,7 @@ authors also worked out a combined approach, which yields results at least as go
 as the better one of the two techniques. %
 
 \subsection{Syntactic Bidirectionalisation}\label{subsec:biSyn}
-Matsuda et al. introduce a general first-order functional language
+Matsuda \etal{} introduce a general first-order functional language
 called \emph{VDL}. %
 Their language has two syntactical restrictions, which we have to keep in
 mind when talking about derivable functions: defined functions have to
@@ -47,9 +47,9 @@ The presented derivation algorithm
 is based on a similar approach in the field of databases, but follows
 a syntactical approach, whereas the original idea is a rather semantic process. %
 As a first step, VDL derives a \emph{view complement function} $f^c: S
-\rightarrow V'$ for a get\footnote{Matsuda et. al call |get| functions
+\rightarrow V'$ for a get\footnote{Matsuda \etal{} call |get| functions
   view functions instead.} function $f: S \rightarrow V$. %
-Matsuda et. al require the view complement function $f^c$ to be
+Matsuda \etal{} require the view complement function $f^c$ to be
 injective when paired with the view function $f$, i.e., $(f \triangle
 f^c)$ is injective for a get function $f$ and its complement $f^c$. %
 
@@ -355,12 +355,12 @@ type classes, or depend on different type classes than |Eq| and
 |Ord|. %
 Instead of three single functions, like in Voigtl\"ander's work, Wang
 and Najd define a function
-%format (sup a n) = "\bar{" a "}^{" n "}"
+% format (sup a n) = "\bar{" a "}^{" n "}"
 \[
-|bffBy  :: (forall a. (sup a n) -> [a] -> [a]) -> (sup a n -> Bool) -> (sup i n -> Bool) -> ([a] -> [a] -> [a])|
+|bffBy :: (forall a. (sup a n) -> [a] -> [a]) -> (sup a n -> Bool) ->
+(sup i n -> Bool) -> ([a] -> [a] -> [a])|
 \]
-\todo{search for better alternatives regarding overline and bar} that
-takes an observer function as second argument that gives rise to
+that takes an observer function as second argument that gives rise to
 equivalence properties of the elements; the third argument is an
 observer function for the simulated source.\footnote{In their paper,
   Wang and Najd define a more general observer functions |obs :: sup x

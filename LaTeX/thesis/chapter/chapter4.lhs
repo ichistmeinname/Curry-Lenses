@@ -1,8 +1,7 @@
 \chapter{Different Implementation Approaches}\label{ch:impl}
 
-\todo{rephrase} Bidirectional programming is a rising topic in the
-field of computer science, and many different approaches exist to
-tackle the problem. %
+Bidirectional programming is a rising topic in the field of computer
+science, and many different approaches exist to tackle the problem. %
 These approaches come from different disciplines of computer science
 like databases, graph transformation, programming languages and
 interface design. %
@@ -25,7 +24,7 @@ The remainder of the chapter introduces combinatorial and
 bidirectionalisation approaches for lenses. %
 The former approach has two subcategories, because the implementation
 can either focus on defining a |get| function or a |put| function;
-such a subdivision was not investiged for the bidirectionalisation of
+such a subdivision was not investigated for the bidirectionalisation of
 lenses yet.  In this context, we will discuss advantages and
 disadvantages of defining a get function and present a first proposal
 by \cite{putCombinators} to set the focus on the |put| function. %

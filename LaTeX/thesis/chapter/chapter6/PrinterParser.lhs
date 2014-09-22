@@ -1000,7 +1000,7 @@ nesting for recursive calls and executes in |2| milliseconds. %
 In the following, we show a series of graphs to illustrate the
 performance issue.\footnote{We tested the performance with KiCS2 and
   the |+time| flag; the testing device was a MacBook Air with Mac OS
-  10.9.4 as operation aystem, |4| GB memory and a |1.8| GHz Intel Core
+  10.9.4 as operation system, |4| GB memory and a |1.8| GHz Intel Core
   i5 as processor.} %
 Both graphs have the same labels: the x-axis represents the number of
 combinators used in an expression; the y-axis indicates the execution
@@ -1198,7 +1198,7 @@ combinators is nearly linear. %
 In this section we presented the usage of lenses for a new approach to
 specify printers and parsers in one definition. %
 The resulting performance is still in need of improvement, but the
-implementation is sufficent for a first prototype. %
+implementation is sufficient for a first prototype. %
 This approach is a big selling point for nondeterministic lenses. %
 The nondeterministic parsing direction helps us to achieve a
 meaningful lens definition in both the get and the put direction. %
@@ -1210,17 +1210,17 @@ specification with the help of lenses. %
 The approach is followed by \cite{parsing1} and \cite{parsing2},
 respectively. %
 The first publication is a conglomerate of case studies in the field
-of bidirectionalisation that also includes a section about printers and
-parsers. %
-The second publication focuses on parsing and unparsing, in which the
-authors illustrate a megamodel of parsing. %
+of bidirectionalisation that also includes a section about printers
+and parsers. %
+The second publication focuses on parsing and \emph{unparsing}, in
+which the authors illustrate a megamodel of parsing. %
 This megamodel includes all different artefacts and the corresponding
 mappings of one artefact to another. %
 As a result of this investigation, he applies different
 bidirectionalisation techniques in order to implement parsing and
 unparsing in the meta-programming language
 Rascal~\citeyearpar{rascal}. %
-The mappings include similiar features that are available in our
+The mappings include similar features that are available in our
 implementation: layout-preservation, parsing, unparsing and
 redundancies in the parsing direction. %
 In addition, the authors discuss a feature to automatically correct
