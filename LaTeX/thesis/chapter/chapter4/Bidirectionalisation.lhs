@@ -225,7 +225,7 @@ polymorphic get function and yields the appropriate put function. %
 In contrast to the syntactic approach we studied before, the resulting
 put is a functional value which is semantically equivalent to a
 syntactical derived put function. %
-The advantage is that we have less language restrictions, we can use
+The advantage is that we have fewer language restrictions, we can use
 Haskell as our language of choice instead of a sublanguage; the |bff|
 function takes any Haskell function of appropriate type as its
 argument. %
