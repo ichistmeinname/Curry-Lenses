@@ -232,7 +232,7 @@ for a three-valued list etc. %
 In order to take this investigation
 one step ahead, we need to look at the definition of |inc|, where only
 lines 5 and 6 are of further interest. %
-We give the evaluation of zero to two consecutive |inc| function call
+We give the evaluation of zero to two consecutive |inc| function calls
 in Figure~\ref{fig:incEval}. %
 \numberson
 \numbersright
@@ -241,7 +241,7 @@ in Figure~\ref{fig:incEval}. %
 \def\commentbegin{\quad\{\ }
 \def\commentend{\}}
 
-\begin{figure}
+\begin{figure}[p]
 (1)
 \begin{spec}
 Zero == Pos IHi
@@ -266,7 +266,7 @@ True
 
 (3)
 \begin{spec}
-inc (inc Zero)) == Pos IHi
+inc (inc Zero) == Pos IHi
 
 ==
 
@@ -323,11 +323,11 @@ False
 The attentive reader may have already noticed that the definition of
 |inc| is strict in its first argument and does not propagate its
 constructor. %
-The successor function, |succ|, on binary numbers is also strict. %
+The successor function on binary numbers, |succ|, is also strict. %
 Unfortunately, the |length| function cannot be implemented in a way
 that is sufficient to propagate a constructor, because it is
 problematic to map the empty list to a value of type |Nat|. %
-We discuss the problem concerning |Nat| in more detail later. %
+We discuss the problem concerning |Nat| in further detail later. %
 
 In the end, the |length| function evaluates the whole list to determine
 its length, which leads to non-evaluation when guessing a list with a
@@ -341,7 +341,7 @@ Figure~\ref{fig:lengthEval}. %
 
 \numberson
 \numbersright
-\begin{figure}
+\begin{figure}[p]
 \begin{spec}
 length v == Pos IHi where v free
 
@@ -406,7 +406,7 @@ environment of KiCS2. %
 ...
 \end{spec}
 
-As we said in the beginning, the internal structure for lists and
+As we have seen in the beginning, the internal structure for lists and
 numbers do not harmonise well - how can we solve the problem that
 |putHalve| does not terminate with the current implementation? %
 We will present two different approaches in the following two
@@ -428,7 +428,7 @@ the |Pos| constructor takes too long to be propagated. %
 We test the expression |lengthNat v == IHI where v free| and give the
 evaluation steps in Figure~\ref{fig:lengthEvalNat}. %
 
-\begin{figure}
+\begin{figure}[p]
 \begin{spec}
 lengthNat v == IHI where v free
 
@@ -504,7 +504,7 @@ successor constructor |S Peano|. %
 The corresponding length function, |lengthPeano| introduces an
 |S|-constructor for every element of the list and yields |Zero| for an
 empty list. %
-Let us now take a look at the simplified implementation of
+Let us take a look at the simplified implementation of
 |putHalvePeano|, which uses peano numbers instead of |Int| values. %
 
 \begin{code}
@@ -512,13 +512,13 @@ putHalvePeano :: [a] -> [a]
 putHalvePeano xs' | lengthPeano xs' == S Z = xs' ++ [()]
 \end{code}
 
-We show the evaluation steps of the the expression |lengthPeano v == S
+We present the evaluation steps of the the expression |lengthPeano v == S
 Z where v free | in Figure~\ref{fig:lengthPEval}. %
 
 \phantomsection
 \numberson
 \numbersright
-\begin{figure}
+\begin{figure}[p]
 \begin{spec}
 lengthPeano v == S Z where v free
 
@@ -580,9 +580,9 @@ interactive environment. %
 Moreover, the expression |putHalve [(),()] v == [(),()] where v free|
 evaluates to |{v = [()]} True|.
 
-The main difference to the first implementation is that length can
+The main difference to the first implementation is that |lengthPeano| can
 propagate the constructor at the front of the remaining evaluation. %
-That is, the nested |?|-operators only occur as the argument of a
+With that, the nested |?|-operators only occur as the argument of a
 sequence of |S|-constructors, which leads to a terminating search. %
 Line 25-28 of the example in Figure~\ref{fig:lengthPEval} show that no
 further guesses for free variables are necessary, because the partial
@@ -594,14 +594,14 @@ Hence, the expression fails and the evaluation terminates. %
 The third approach is to choose another list representation. %
 In particular, we are interested in a representation that behaves well
 with the internal |BinInt| data structure. %
-Therefor, we use the following definition of binary lists. %
+Therefore, we use the following definition of binary lists. %
 
 \begin{code}
 data L a = LIHi a | LO (L (a,a)) | LI (L (a,a)) a
 data BinaryList a = Empty | NonEmpty (L a)
 \end{code}
 
-We define the data structure for non-empty lists that corresponds to
+We define a data structure for non-empty lists that corresponds to
 binary numbers. %
 |LIHi a| is a list with one element, |LO (L (a,a))| represents a list
 with at least two elements, and |LI (L (a,a)) a| is the constructor
@@ -626,8 +626,8 @@ With the given type |BinaryList| we have a special constructor for
 non-empty lists with an inner representation.  Therefore, we can
 propagate |Pos| for a non-empty list without evaluating the actual
 inner list that |NonEmpty| is holding. %
-The list structure reflects which |Nat|-constructor to use, so that
-the constructor is again propagated to the front of the expression. %
+The list structure reflects which |Nat|-constructor to use, such that
+the constructor is propagated to the front of the expression, again. %
 
 We define a corresponding version |putHalveBinaryList| with our new
 representation of lists. %
@@ -655,7 +655,7 @@ v free|, which yields the following result. %
 {v = NonEmpty (LI _x2 _x3)} False
 \end{spec}
 
-The evaluation terminates after calculating four values to bound the
+The evaluation terminates after calculating four values to bind the
 free variables; a detailed evaluation of the expression is illustrated
 in Figure~\ref{fig:lengthBEval}. %
 In the end, the expression |get putHalveBinaryList [(),()]| yields
@@ -753,7 +753,7 @@ This lack of well-behavedness has to be tackled in the future. %
 We started by defining a test-suite that generates test cases for all
 lens definitions of a given module, but the tests still have to be run
 manually. %
-It would be more applicable to have static analyses as a replacement
+It would be useful to have static analyses as a replacement
 for manual tests. %
 \cite{validityCheck} propose two algorithms to check the two essential
 laws for put-based lenses, PutDet and PutStab, statically. %
@@ -765,9 +765,9 @@ Curry. %
 Nevertheless, we think that their work is a good starting point to get
 ideas for statical analyses in the context of put-based lenses. %
 
-Due to the limited time of the work on this thesis, we had to lower
+Due to the scope of this thesis, we had to lower
 our sights regarding record transformations. %
-In this thesis we only proposed a series of transformations on record
+In this thesis, we proposed a series of transformations on record
 type declarations to generate lenses as convenient getter and setter
 functions instead of the current implementation with syntactical
 constructs. %
@@ -778,7 +778,7 @@ KiCS2 compiler and provide a simple lens library with a handful of
 primitives. %
 For the purpose of these field accessors, it suffices to implement a
 simple representation of lenses as a pair of getter and setter
-function. %
+functions. %
 
 Last but not least, we think that the work of \cite{webLenses}
 regarding lenses in the context of web development could be very
@@ -786,12 +786,12 @@ applicable for Curry. %
 In our opinion, lenses perfectly fit the setting of mapping database
 entities to user interfaces for two reasons. %
 Firstly, these mappings usually project from database entities to user
-interfaces, which is an simple and common application for lenses. %
-Secondly, possible performance issues of lenses have a less impact in
-the context of web development, where performance is usually effected
-by a communication overhead. %
+interfaces, which is a simple and common application for lenses. %
+Secondly, possible performance issues of lenses have a smaller impact
+in the context of web development, where performance is usually
+affected by a communication overhead. %
 Curry already provides a library called @WUI@ to specify web user
-interfaces that was implemented by \cite{wui}. %
+interfaces; it was implemented by \cite{wui}. %
 On top of that, the
 \emph{Spicey}\footnote{\url{http://www.informatik.uni-kiel.de/~pakcs/spicey/}}
 framework can generate an initial setup of a web-based system from an
