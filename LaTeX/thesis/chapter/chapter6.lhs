@@ -16,7 +16,7 @@ structures to model the printer-parser. %
 % ignore the given input. %
 % Additionally, we can parse a pretty-printed string with the get
 % direction of the lens. %
-Furthermore, we give two additional approaches to solve emerging
+Then, we give two additional approaches to solve emerging
 problems and disadvantages of the naive implementation. %
 % These approaches follow a slightly different semantic that allows to
 % replace a given string with respect to its layout instead of simply
