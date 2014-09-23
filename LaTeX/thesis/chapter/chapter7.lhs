@@ -241,8 +241,20 @@ in Figure~\ref{fig:incEval}. %
 \def\commentbegin{\quad\{\ }
 \def\commentend{\}}
 
-\begin{figure}[p]
+The attentive reader may have already noticed that the definition of
+|inc| is strict in its first argument and does not propagate its
+constructor. %
+The successor function on binary numbers, |succ|, is also strict. %
+Unfortunately, the |length| function cannot be implemented in a way
+that is sufficient to propagate a constructor, because it is
+problematic to map the empty list to a value of type |Nat|. %
+We discuss the problem concerning |Nat| in further detail later. %
+%
+\begin{figure}[h!]
+\begin{minipage}{0.12\textwidth}
 (1)
+\end{minipage}
+\begin{minipage}{0.85\textwidth}
 \begin{spec}
 Zero == Pos IHi
 
@@ -250,8 +262,11 @@ Zero == Pos IHi
 
  False
 \end{spec}
-
+\end{minipage}
+\begin{minipage}{0.12\textwidth}
 (2)
+\end{minipage}
+\begin{minipage}{0.85\textwidth}
 \begin{spec}
 inc (Zero) == Pos IHi
 
@@ -263,8 +278,11 @@ Pos IHi == Pos IHi
 
 True
 \end{spec}
-
+\end{minipage}
+\begin{minipage}{0.14\textwidth}
 (3)
+\end{minipage}
+\begin{minipage}{0.85\textwidth}
 \begin{spec}
 inc (inc Zero) == Pos IHi
 
@@ -284,50 +302,13 @@ Pos (O IHi) == Pos IHi
 
 False
 \end{spec}
-
-% (4)
-% \begin{spec}
-% inc (inc (inc Zero))) == Pos IHi
-
-% ==
-
-% inc (inc (Pos IHi)) == Pos IHi
-
-% ==
-
-% inc (Pos (succ IHi)) == Pos IHi
-
-% ==
-
-% Pos (succ (succ IHi)) == Pos IHi
-
-% ==
-
-% Pos (succ (O IHi)) == Pos IHi
-
-% ==
-
-% Pos (I IHi) == Pos IHi
-
-% ==
-
-% False
-% \end{spec}
+\end{minipage}
 \caption{Evaluation of |inc| for an increasing number of function
   calls}
 \label{fig:incEval}
 \end{figure}
 \numbersoff
 \numbersreset
-
-The attentive reader may have already noticed that the definition of
-|inc| is strict in its first argument and does not propagate its
-constructor. %
-The successor function on binary numbers, |succ|, is also strict. %
-Unfortunately, the |length| function cannot be implemented in a way
-that is sufficient to propagate a constructor, because it is
-problematic to map the empty list to a value of type |Nat|. %
-We discuss the problem concerning |Nat| in further detail later. %
 
 In the end, the |length| function evaluates the whole list to determine
 its length, which leads to non-evaluation when guessing a list with a
@@ -339,9 +320,13 @@ free variables. %
 We illustrate the built-in search of our example in
 Figure~\ref{fig:lengthEval}. %
 
+For every free variable of type |[a]| both constructors are possible
+values, therefore, both expressions are introduced with the
+|?|-operator. %
+%
 \numberson
 \numbersright
-\begin{figure}[p]
+\begin{figure}[h!]
 \begin{spec}
 length v == Pos IHi where v free
 
@@ -388,11 +373,7 @@ False ? inc length [] == Pos IHi  ? inc (length _x4:ys) == Pos IHi
 \numbersreset
 \numbersoff
 
-For every free variable of type |[a]| both constructors are possible
-values, therefore, both expressions are introduced with the
-|?|-operator. %
-
-In the end, the built-in search collects all possible values and works
+The built-in search collects all possible values and works
 henceforth with a set of values, i.e., every list of the resulting set
 is used for further function calls.
 For our example, we get the following results in the interactive
@@ -403,7 +384,7 @@ environment of KiCS2. %
 {v = []} False
 {v = [_x2]} True
 {v = [_x2,_x4]} False
-...
+///
 \end{spec}
 
 As we have seen in the beginning, the internal structure for lists and
@@ -412,7 +393,7 @@ numbers do not harmonise well - how can we solve the problem that
 We will present two different approaches in the following two
 subsections. %
 
-\subsubsection*{Approach One: |Nat|}
+\subsubsection*{Approach One: Natural Numbers}
 
 As the very first approach, we exchange the usage of |BinInt| by |Nat|
 to see, if this little change will make a difference. %
@@ -490,7 +471,8 @@ As a second attempt, we use an alternative data structure with an unary
 representation for numbers: peano numbers. %
 
 \begin{code}
-data Peano = Zero | S Peano
+data Peano  = Zero
+            | S Peano
 
 lengthPeano :: [a] -> Peano
 lengthPeano = foldr (const S) Z
@@ -661,9 +643,18 @@ in Figure~\ref{fig:lengthBEval}. %
 In the end, the expression |get putHalveBinaryList [(),()]| yields
 |NonEmpty (LIHi ())|. %
 
+% \subsubsection{The Long and Short of It}
+
+% The usage of free variables and Curry's built-in search have a wide
+% range of applications. %
+% Unfortunately, the overall environment of Curry is still in a
+% experimental stage; 
+% We encoutered a problem with more lens definitions, but we limit the
+% number of examples in order to go into more detail. %
+
 \numberson
 \numbersright
-\begin{figure}
+\begin{figure}[h!]
 \begin{spec}
 lengthBList v == Pos IHi where v free
 
@@ -696,7 +687,12 @@ False ? (lengthL (LIHI _x2 ? LO _x2 ? LI _x2 _x3) == Pos IHi
   where _x2,_x3 free
 
 ==
-
+\end{spec}
+\phantomcaption
+\end{figure}
+\begin{figure}[h!]
+\ContinuedFloat
+\begin{spec}
 False  ? (lengthL (LIHi _x2)
        ? lengthL (LO _x2)
        ? lengthL (LI _x2 y)) == Pos IHi
@@ -709,12 +705,6 @@ False  ? lengthL (LIHi _x2) == IHi
   where _x2,_x3 free
 
 ==
-\end{spec}
-\phantomcaption
-\end{figure}
-\begin{figure}
-\ContinuedFloat
-\begin{spec}
 False  ? IHi == IHi
        ? (O (lengthL _x2) ? I (lengthL _x2 _x3)) == Pos IHi
   where _x2,_x3 free
@@ -735,16 +725,6 @@ False ? True ? False ? False
 \end{figure}
 \numbersoff
 \numbersreset
-
-% \subsubsection{The Long and Short of It}
-
-% The usage of free variables and Curry's built-in search have a wide
-% range of applications. %
-% Unfortunately, the overall environment of Curry is still in a
-% experimental stage; 
-% We encoutered a problem with more lens definitions, but we limit the
-% number of examples in order to go into more detail. %
-
 
 \subsection{Further Directions}
 Unfortunately, our preferred put-based lens library does not guarantee
