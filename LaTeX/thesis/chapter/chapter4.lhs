@@ -12,8 +12,8 @@ The main two techniques to work with bidirectional transformations are
 combinatorial languages and bidirectionalisation. %
 Most commonly, a combinatorial language is defined as a DSL in a
 general purpose programming language or as a new programming language,
-and provides a set of primitives, which can be combined to define
-complex structures. %
+and provides a set of primitives, which the user combines to define
+more complex structures. %
 The definitions of these primitives mostly consist of both functions,
 the get and the appropriate put function. %
 In contrast to this approach, the bidirectionalisation technique takes

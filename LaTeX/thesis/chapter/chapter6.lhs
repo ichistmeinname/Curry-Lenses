@@ -35,7 +35,7 @@ a special record selector in combination with labels instead of a
 function to project a particular field. %
 We define an exemplary module and give its generated
 counterpart. %
-Finally, we conclude with the definition of the underlying transformations to
+At last, we conclude with the definition of the underlying transformations to
 generate the appropriate lenses for a record data type. %
 
 

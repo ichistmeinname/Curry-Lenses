@@ -4,13 +4,13 @@ We discussed two different approaches on combinatorial
 frameworks for lenses in Section~\ref{sec:comb} to provide an insight
 of recent implementations. %
 The combinatorial library for Curry is based on
-the approach of Fisher \etal{}, who published the Haskell library
+the approach of Fischer \etal{}, who published the Haskell library
 \texttt{putlenses} as a result of their work on lenses. %
 In the remaining section, we discuss the underlying implementation and
 give additional comments on its original counterpart. %
 Additionally, we present some of the most important combinators as
 representatives. %
-Last, we give some exemplary lens definitions to show
+At last, we give some exemplary lens definitions to show
 the usage of the library, and the definition of classical lens
 examples with the available combinators. %
 
@@ -42,8 +42,8 @@ and put component of the pair with helper functions |sub get Pair| and
 |sub put Pair|, respectively. %
 Next, we define a simple lens with a pair of arbitrary type as source
 that projects its first component in the get direction and updates the
-first component in the put direction; the update does not effect the
-second component. %
+first component in the put direction. %
+The update does not effect the second component. %
 
 \begin{spec}
 (sub fst Pair) :: (sub Lens Pair) (a,b) a
@@ -55,11 +55,11 @@ second component. %
     put' (_,y) z = (z,y)
 \end{spec}
 
-The definition of this lens is straight-forward, however, while we we
+The definition of this lens is straight-forward, however, while we
 gain from simplicity, we lose in accuracy and maintainability. %
 First of all, the given definition does not automatically form a
 well-behaved lens, because we did not consider the lens laws
-yet.\footnote{In fact, we know from Section~\ref{sec:lenses} that this
+yet.\footnote{We know, however, from Section~\ref{sec:lenses} that this
   exemplary lens definition is well-behaved.} %
 Second, if we modify one of the two functions, we have to make sure
 that the other one still harmonises with our modifications. %
@@ -75,7 +75,7 @@ component in the put direction. %
 
 \phantomsection
 \begin{spec}
-fstInc :: (sub Lens Pair) (a,Int) a
+fstInc :: (sub Lens Pair) (Int,a) 
 fstInc = (get', put')
    where
     get' (x,_) = x
@@ -84,8 +84,8 @@ fstInc = (get', put')
 \label{ex:fstInc}
 
 We have only made slight changes to the put function, which only
-affect the second component. %
-It would be interesting to check if the lens law still hold after our
+affect the first component. %
+It would be interesting to check if the lens laws still hold after our
 modifications. %
 
 \begin{spec}
@@ -104,17 +104,17 @@ both functions. %
 We can easily fix this bug by changing the right-hand side of the get
 direction to |x - 1|. %
 However, this simple approach is not satisfactory at all. %
-On the one hand, it does not \emph{feel} bidirectional, because we
+First, it does not \emph{feel} bidirectional, because we
 still maintain two unidirectional functions in disguise. %
-On the other hand, we do not want to check the lens laws for every
-lens we define and every time again when we make changes to existing
-definition. %
+Second, we want to check the lens laws neither for every
+new lens defined nor every time again we make changes to existing
+definitions. %
 
 \subsection{Implementation}
 In order to provide a more user-friendly library with less maintenance
 effort, the library needs a rich set of combinators, which are already
 well-behaved. %
-Then, the user builds his own lenses with the help of these
+Then, the user builds her own lenses with the help of these
 combinators without considering any laws, but only with her
 implementation in mind. %
 
@@ -184,10 +184,10 @@ s -> w|. %
 For the put direction we have to play a bit more with the available
 functions and take a closer look at their type signatures. %
 In addition to the get functions we discussed before, we have two put
-functions, |(sub put l1) :: s -> v -> s| and |(sub put l2) :: v -> w
--> v|, a source of type |s|, an updated view of type |w|, and the
-resulting put function is supposed to be of type |sub put (l1+l2) :: s
--> w -> s|. %
+functions, |(sub put l1) :: Maybe s -> v -> s| and |(sub put l2) ::
+Maybe v -> w -> v|, a source of type |s|, an updated view of type |w|,
+and the resulting put function is supposed to be of type |sub put
+(l1+l2) :: Maybe s -> w -> s|. %
 If there is no source available, i.e., the value of the source is
 |Nothing|, we can apply the two put functions consecutively, in which
 |sub put l2| is applied to the source and the given view, and |sub put
@@ -201,10 +201,9 @@ We can easily make the distinction if a put function failed or not. %
 As a last step, the source is updated with the resulting inner
 structure from the previous step using |sub put l1|. %
 
-The composition of two lenses is a powerful instrument, that is
-assuming there exist primitive combinators to compose. %
-We present some primitive combinators more briefly than the previous
-description and emphasise examples of these combinators in action. %
+In the following, we present some primitive combinators more briefly
+than the previous description and emphasise examples of these
+combinators in action. %
 
 \subsubsection*{Basics: Identity and Filter}
 The identity combinator yields its source in the get direction and
@@ -272,11 +271,11 @@ We criticised the use of |fstInc| as a lens, because it does not obey
 the lens laws, in particular, the GetPut law. %
 This observation implies that the given implementation of |addFst|
 does not take any validation checks into account either. %
-In the original implementation, Fisher \etal{} ensure well-behavedness
+In the original implementation, Fischer \etal{} ensure well-behavedness
 by using an auxiliary function |enforceGetPut| to resolve the
 irregularity. %
 As a second option, they suggest to adjust the implementation of the
-get function to yield undefined for every source that does not fulfil
+get function to yield |undefined| for every source that does not fulfil
 the GetPut law. %
 For our implementation, we chose the latter solution, because
 the manual correction increases the range of valid lenses, whereas the
@@ -294,7 +293,7 @@ enforceGetPut (Lens putL getL) = Lens put' getL
  where
   put' ms v = case ms of
     Just v' | getL v' == Just v  -> v'
-    _                            -> putNew
+    _                            -> putL
 \end{spec}
 
 If the updated view is equal to the current view, we do not make any
@@ -359,7 +358,7 @@ dive into programming our own lenses so far. %
 When defining lenses, the user has to build his lens by composing the
 combinators of the library. %
 As a first simple example, we define our running example, |fst|, by
-the means of |addFst|. %
+the means of |addSnd|. %
 
 \begin{spec}
 (sub fst comb) :: Lens (a,b) a
@@ -367,9 +366,9 @@ the means of |addFst|. %
 \end{spec}
 
 If there is no source available, we cannot do anything meaningful
-without losing generality~--~we could yield the view instead. %
-Consequently, both components of the given source pair must be of the
-same type; thus, the lens just fails. %
+without losing generality~--~we could only yield the view instead. %
+However, we do not want to restrict the types of source and view to
+match, thus, the lens fails if no source is available. %
 Otherwise, we simply select the second component of the given pair and
 add it to the updated view to form a pair again. %
 The usage of |addSnd| indicates that we inject the value as second
@@ -400,7 +399,7 @@ put direction only. %
 As we discussed in Section~\ref{bi:fisher}, it may be more
 conventional and intuitive, but the put functions that we defined for
 the library have a unique corresponding get function, because all put
-functions comply with the requirements stated by Fisher \etal{}. \\
+functions comply with the requirements stated by Fischer \etal{}. \\
 
 The library consists of several combinators that work on sums and
 products; but what about built-in data types or user-defined
@@ -436,7 +435,7 @@ can be represented with |Right| instead of |Just|. %
 As a second example, we discuss how to use the available combinators
 to build lenses for lists. %
 First of all, we need to think about a representation for lists by
-means of sum or product types, for this, we recall the definition of
+means of sum or product types; for this, we recall the definition of
 lists in Curry. %
 
 \begin{spec}
@@ -488,7 +487,7 @@ isomorphism between the list data type and the rewritten structure
 based on sums and products. %
 
 \begin{spec}
-inList :: Lens [a] (Either () (a,[a]))
+inList :: Lens [a] (List a)
 inList = isoLens inn out
  where
   inn = either (\ () -> []) (\ (x,xs) -> x:xs)
@@ -524,7 +523,7 @@ list, and to replace the given list by a new one. %
 \end{spec}
 
 Unfortunately, we cannot transform the empty list into a
-representation with product only for two reasons. %
+representation that consists only of products for two reasons. %
 Firstly, the used combinator |injR| only selects |Right| values and
 the empty list is represented as |Left ()|. %
 Secondly, product types are not suitable to model failure values like

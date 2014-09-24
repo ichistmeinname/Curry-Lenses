@@ -1,5 +1,8 @@
 \chapter{Introduction to Curry}\label{ch:curry}
-
+\epigraph{\itshape{``You want to seduce people into using your language. The more it 
+looks and behaves like something they know, the more likely they are 
+to use it.''}}{\textsc{Simon Peyton Jones}}
+%
 The main implementations we present in this thesis are programmed
 with Curry. %
 All programs are compiled with KiCS2\footnote{In particular, we use
@@ -29,7 +32,7 @@ appear in the remainder of this thesis. %
  
 In Curry, we define a function with a set of rules. %
 As an example, we define a function to yield the first and the last
-element of a list, respectively. %
+element of a list, respectively, as follows. %
 
 \begin{spec}
 head :: [a] -> a
@@ -62,7 +65,7 @@ In the case of the first rule, we can apply the right-hand side and
 yield |10| as result. %
 For the second rule, we make an additional function call to the
 remaining list. %
-However, the expression |last []| does not match for any rule and
+However, the expression |last []| does not match any rule and
 silently fails. %
 Thus, the expression |last [10]| evaluates to |10|, because a failure
 does not yield any result. %
@@ -140,7 +143,7 @@ member'' = foldr1 (?)
 The first example unifies the original rules into one rule by using
 the choice operator. %
 Finally, we beautify this implementation and use |foldr1| instead of
-an explicite recursive definition in the second example. %
+an explicit recursive definition in the second example. %
 
 \section{Free Variables}
 The second logic feature of Curry that we want to discuss in greater
@@ -161,7 +164,7 @@ For instance, assume that we have the first part of a list --
 The free variable |xs| is denoted as such with the keyword |free| and
 has the same scope as locally defined functions. %
 In order to evaluate the given expression, Curry's built-in search
-system generates a series of lists. %
+system generates a series of lists for |xs|. %
 Similar to the evaluation of a nondeterministic expression, we get a
 series of results. %
 The first component of the result is the binding of the occurring free
@@ -170,7 +173,7 @@ The evaluated expression is the second component. %
 In our example, Curry generates a series of lists starting with the
 empty list and stopping for lists that have three or more elements. %
 We do not go into further detail here, and postpone further
-explanations to Section~\ref{sec:chall}.
+explanations to Section~\ref{subsec:strict}. %
 
 The important message to get across here is that we can use Curry's
 built-in search capabilities in combination with free variables to use
@@ -185,7 +188,7 @@ last' xs | _ ++ [y] == xs = y
 \end{spec}
 
 In this example, we use an anonymous free variable, declared with an
-underscore, |_|. %
+underscore ``|_|''. %
 Anonymous free variables are a syntactical abbreviation for |let x
 free in x|. %
 If we do not use the binding of the free variable in the remainder of

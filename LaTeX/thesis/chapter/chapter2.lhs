@@ -1,29 +1,28 @@
-\chapter[About Bidirectional Transformations]{About Lenses and Other Bidirectional Shenanigans}\label{ch:biTrans}
-
+\chapter[About Bidirectional Transformations]{About Lenses and Other Bidirectional Transformations}\label{ch:biTrans}
+\epigraph{\itshape{``He who moves not forward goes backward.''}}
+{\textsc{Johann Wolfgang von Goethe},\\\textit{Herman and Dorothea}}
+%
 Many approaches in the context of data synchronisation and data
 transformation are error-prone and cumbersome to maintain. %
-Typical examples for such problems are widespread and can be found in
-several areas of Computer Science: printer and
-parsers that harmonise in a meaningful way (see
-Section~\ref{sec:printerParser}); tight connection between user
-interfaces and the underlying data~\citep{constraintMaintainers};
-serialisation or synchronisation
-processes, e.g. transforming Safari's bookmarks to be suitable for
-Firefox~\citep{boomerang}\todo{check reference again}. %
-
+Typical examples for such approaches are widespread and can be found
+in several areas of computer science: printers and parsers that
+harmonise in a meaningful way (see Section~\ref{sec:printerParser});
+connection between user interfaces and the underlying
+data~\citep{constraintMaintainers}; serialisation or synchronisation
+processes, e.g., transforming Safari's bookmarks to be suitable for
+Firefox~\citep{biTCombinators}. %
 We believe that in many cases the application of bidirectional
 programming avoids the problems mentioned and is more suitable than
-unidirectional programming. \\%
+unidirectional programming. %
 
-In this chapter we introduce the notion of bidirectional
-transformations and give the necessary fundamentals to dive deeper
-into the topic of bidirectional programming. %
-The first section covers the first attempt of bidirectional
-programming and its origin from databases. %
+In this chapter, we introduce the notion of bidirectional
+transformations and a more general concept called \emph{lenses}. %
+The first section covers bidirectional programming and its origin from
+databases. %
 Furthermore, we discuss the basic functionality of bidirectional
 transformations. %
 In the subsequent section we talk about a generalisation named
-lenses. %
+\emph{lenses}. %
 The most important part of this section involves the underlying laws
 that apply to lenses as well as examples to get a better intuition of
 the usage of lenses. %
@@ -63,8 +62,8 @@ community. %
 
 So, what is the new, challenging feature of bidirectional programming
 keeping researchers busy? %
-A bidirectional transformations does not consist of two functions like
-in the unidirectional way, but of one function that can be read
+A bidirectional transformation does not consist of two functions like
+in the unidirectional way, but of one function that can be read both
 forwards and backwards. %
 We distinguish between a forward function |get :: A
 -> B| and a backward function |put :: B -> A|; |A| is most commonly
@@ -84,7 +83,7 @@ transformation functions in Figure~\ref{fig:bijective}. %
 \end{figure}%
 
 In the next section, we discuss a more general approach of
-bidirectional transformation calles lenses. %
+bidirectional transformation called lenses. %
 Lenses are one of the most popular forms in bidirectional
 programming. %
 A statement about the status quo of bidirectional programming is
@@ -95,14 +94,14 @@ by~\cite{biPApproaches} that contrasts three different approaches of
 bidirectional programming. %
 
 \section{Lenses}\label{sec:lenses}
-Lenses describe bidirectional transformations, which originate in
+Lenses describe bidirectional transformations, which originate from
 databases as introduced by \cite{viewUpdate}. %
 In the setting of lenses, the |get| function describes a
 transformation from |A| to |B|. %
 In most applications |A| is a product type and |B| is one component of
 that product. %
-Thus, the get direction of a lens discards information when projecting
-from|A| to |B| %
+Thus, the |get| direction of a lens discards information when projecting
+from |A| to |B|. %
 On the other hand, the |put| function synchronises a given,
 potentially updated, view with respect to the original source. %
 Figure~\ref{fig:bit} illustrates the discussed situation of an updated
@@ -128,26 +127,27 @@ namely |fst|. %
 
 \begin{code}
 (sub fst get) :: (String,Integer) -> String
-(sub fst get) (str,int) = str
+(sub fst get) (str,_) = str
 \end{code}
 
 Our function |sub fst get| yields the first component of a pair with
 no further changes or adjustments to the value; this definition is
 equivalent to |fst|. %
-The put function has the type |put :: (String,Integer) -> String ->
+The put function has the type |(sub fst put) :: (String,Integer) -> String ->
 (String,Integer)|; we define a function that sets the first component
 of a pair with a given string without further ado. %
 
 \begin{code}
 (sub fst put) :: (String,Integer) -> String -> (String,Integer)
-(sub fst put) (str,int) newStr = (newStr,int)
+(sub fst put) (_,int) newStr = (newStr,int)
 \end{code}
 
-In order to see the get and put function of such a lens in action, we
+In order to see the |get| and |put| function of such a lens in action, we
 give two exemplary expressions. %
 
 \begin{spec}
-> (sub fst put) ("foo",42) "bar" ("bar",42)
+> (sub fst put) ("foo",42) "bar"
+("bar",42)
 > (sub fst get) ("bar",42)
 "bar"
 \end{spec}
@@ -171,7 +171,7 @@ the given pair of source and view. %
 
 In a symmetric setting, each structure |A| and |B| contains
 information that is not present in the other. %
-That is, we can also update both structures which leads two put
+That is, we can update both structures which leads to two put
 functions: |putl :: B -> A -> B| to update |B| and a put function
 |putr :: A -> B -> A| to update |A|. %
 
@@ -288,14 +288,14 @@ bidirectional programming and lenses, a lens is called
 \subsection{Partial Lenses}\label{subsec:partialLenses}
 More and more frameworks for bidirectional transformations and
 bidirectional programming languages, respectively, endorse a weaker
-notion of the presented \emph{PutGet} and \emph{GetPut} law. %
+notion of the presented \emph{PutGet} and \emph{GetPut} laws. %
 In our current notion of the laws, we only consider total |get| and
 total |put| functions. %
 In practice, most of the time we want to be able to work with
 functions that are not total. %
 For example, the classical function |head :: [a] -> a| to select the
-first element of the list is only partial, because we cannot select
-an element for the empty list. %
+first element of a list is only partial, because we cannot select
+an element for an empty list. %
 We can define a lens that uses |head| as definition for its get
 direction. %
 In order to form a lens, we need a put function as well: the put
@@ -338,9 +338,9 @@ lens definition is reasonable in regard to the lens laws. %
 The first two test expressions show the behaviour of |head|;
 it becomes apparent that |head| never yields an empty list as
 result. %
-Thus, the GetPut law obviously holds for all possible values. %
+Thus, the PutGet law obviously holds for all possible values. %
 The last expression is an example with a non-empty lists, where the
-PutGet holds as well. %
+GetPut holds as well. %
 However, the get direction of the just defined lens, i.e. |head|, is
 not defined for empty lists. %
 Thus, the given lens does not fulfil the GetPut law for empty lists. %
@@ -352,7 +352,7 @@ Thus, the given lens does not fulfil the GetPut law for empty lists. %
 
 In order to use partial lenses like proposed by~\cite{biTProperties},
 we need to adjust the lens laws by means of partiality. %
-In the following, the expression $|(f x)|\downarrow$ is satisfied, if
+In the following, the condition $|(f x)|\downarrow$ is satisfied if
 the function $f$ yields a result for the argument $x$. %
 We define the partial version of \emph{PutGet} and \emph{GetPut} in
 terms of inference rules. %
@@ -377,11 +377,11 @@ the given source first.
 "head is undefined for empty lists"
 \end{spec}
 
-Since this is not the case, we do not apply the put direction, because
-the condition only needs to be satisfied, if the first application
-yields a valid result. %
-Thus, the lens consisting of |head| and |replaceHead|
-is a valid lens with respect to both the PutGet and Partial-GetPut law. %
+Since this is not the case, we do not apply the put direction; the
+condition only needs to be satisfied if the first application yields a
+valid result. %
+Thus, the lens consisting of |head| and |replaceHead| is a valid lens
+with respect to both the PutGet and Partial-GetPut law. %
 
 As a second example, we define a lens with a put function that is
 similar to the well-known function |take :: Int -> [a] -> [a]| and a
@@ -389,46 +389,46 @@ corresponding get function, which behaves like the function |length ::
 [a] -> Int| in Haskell and Curry, respectively. %
 
 \begin{spec}
-take []      _  = []
-take (x:xs)  n
+take' []      _  = []
+take' (x:xs)  n
    | n == 0     = []
-   | n > 0      = x : take xs (n-1)
-take _       _  = error "take: negative value"
+   | n > 0      = x : take' xs (n-1)
+   | otherwise = error "take': negative value"
 
 length []      = 0
 length (x:xs)  = 1 + length xs
 \end{spec}
 
-As a minor adjustment, we define |sub put take| on positive |Integer|
-values only to harmonise better with |sub get length|. %
-Similar to before, we can observe that |sub get length| only yields
-positive |Integer| values as result, thus, the GetPut law holds
-trivially for non-empty and empty lists. %
+As a minor adjustment, we define |take'| on positive |Integer| values
+only to better harmonise with |length|. %
+Similar to before, we can observe that |length| only yields positive
+|Integer| values as result, thus, the GetPut law holds trivially for
+non-empty and empty lists. %
 
 \begin{spec}
 > length [1,2,3,4]
 4
 
-> take [1,2,3,4,5] 3
+> take' [1,2,3,4,5] 3
 [1,2,3]
 
-> take [1,2,3,4] (length [1,2,3,4])
+> take' [1,2,3,4] (length [1,2,3,4])
 [1,2,3,4]
 
-> take [] (length [])
+> take' [] (length [])
 []
 \end{spec}
 
-Due to the partial definition of |take|, the defined lens does
+Due to the partial definition of |take'|, the defined lens does
 not fulfil the PutGet law as we can see from the following
 expressions. %
 
 \begin{spec}
-> length (take (-3) [1,2,3])
-"take: negative value"
+> length (take' [1,2,3] (-3))
+"take': negative value"
 
-> take (-1) []
-"take: negative value"
+> take [] (-1)
+"take': negative value"
 \end{spec}
 
 Nevertheless, our second example is a valid lens with respect to GetPut and
@@ -445,11 +445,13 @@ That is, we can formulate this law with the following equation.  %
 |put (put s v) v' = put s v'|
 \end{equation}
 %
-In most applications, the PutPut law does not play an important role,
+Lenses that fulfil all three laws -- GetPut, PutGet, and PutPut -- are
+called \emph{very well-behaved}. %
+The PutPut law, however, does not play an important role in most applications,
 because the preconditions are too strong. %
 That is, plenty of constructive well-behaved lenses are not very
 well-behaved. %
-For example the last lens we defined changes the source list dependent
+For example, the last lens we defined changes the source list dependent
 on the given view element. %
 Thus, two consecutive calls to the put function with different view
 values yield different results. %
@@ -465,14 +467,14 @@ values yield different results. %
 [1]
 \end{spec}
 
-In the test expression, we start with the list |[1,2,3,4,5]| and
+In the first expression, we start with the list |[1,2,3,4,5]| and
 reduce it to just the first element, i.e., |take [1,2,3,4,5] 1| yields
 [1]. %
 The second application of put reduces the list to the first three
 elements; since the list only contains one element, we get |[1]| as
 result again. %
-The PutPut law states that two consecutive calls have the same effect
-as just the latter one. %
+The PutPut law states that two consecutive calls should have the same
+effect as just the latter one. %
 In our case, the second put application to the source list
 |[1,2,3,4,5]| yields the first three elements, i.e. the resulting list
 is [1,2,3], which differs from the result with consecutive put
@@ -489,7 +491,6 @@ two consecutive |replaceHead| actions, only the latter matters. %
 > replaceHead (replaceHead [1,2,3,4] 13) 42
 [42,2,3,4]
 \end{spec}
-
 % \subsection{Algebraic properties}\label{subsec:lensesAlgebraic}
 % \todo{Limitations concerning injectivity of get-functions!}
 

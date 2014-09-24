@@ -92,7 +92,7 @@ investigating. %
 Secondly, we discuss future work in the context of lenses that include
 enhancements and further applications. %
 
-\subsection{Strictness Problems When Searching For Solutions}
+\subsection{Strictness Problems When Searching For Solutions}\label{subsec:strict}
 
 During the testing phase of our put-based lens libraries, we ran into
 complications due to Curry's internal structure of |Int| values in

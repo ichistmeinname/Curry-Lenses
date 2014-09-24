@@ -8,12 +8,20 @@
 	%footsepline,%         Linie vor Fusszeile
 	%pointlessnumbers,%     Nummern ohne abschließenden Punkt
 	10pt
-]{scrreprt}
+]{scrbook}
 
 %
 % Paket für Übersetzungen ins Deutsche
 %
 \usepackage[english]{babel}
+
+%
+% for citations to start a chapter
+%
+\usepackage{epigraph}
+\renewcommand{\epigraphsize}{\small}
+\setlength\beforeepigraphskip{-0.5cm}
+\setlength\epigraphwidth{8cm}
 
 %
 % figures over several pages
