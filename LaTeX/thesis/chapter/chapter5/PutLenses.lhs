@@ -1,6 +1,6 @@
 \section{Put-Lenses Library}\label{sec:implPut}
 In contradiction to most of the work in the area of bidirectional
-programming, Fisher \etal{} set their focus on defining the put
+programming, Fischer \etal{} set their focus on defining the put
 direction instead of a get function. %
 With this approach, they want to avoid a whole range of functions that
 are not suited for the get direction because of the ambiguity of their
@@ -29,10 +29,6 @@ type (sub Lens get) s v = s -> v
 
 (sub get get) :: (sub Lens get) s v -> s -> v
 (sub get get) = id
-
-(sub put get) :: (sub Lens get) s v -> s -> v -> s
-(sub put get) lens s v | (sub get get) s' == v = s'
-   where s' free
 \end{spec}
 
 We define a type synonym for lenses that is equivalent to the
@@ -54,9 +50,15 @@ round-tripping laws to be well-behaved: GetPut and PutGet. %
 That is, we can define the put definition by means of the get
 definition with respect to the PutGet law. %
 
-In order to see this implementation in action, we take look at our
-running example in the setting of get-based lenses: we define |fst|
-by means of get-based lenses. %
+\begin{spec}
+(sub put get) :: (sub Lens get) s v -> s -> v -> s
+(sub put get) lens s v | (sub get get) s' == v = s'
+   where s' free
+\end{spec}
+
+In order to see this implementation in action, we take a look at our
+running example in the setting of get-based lenses: we define |fst| by
+means of get-based lenses. %
 
 \begin{spec}
 (sub fst get) :: (sub Lens get) (a,b) a
@@ -92,12 +94,12 @@ After all, we do not have any information about the second component
 of the given pair, because the definition of |sub fst get| takes only
 the first component into consideration. %
 In many cases, the discarded original source leads to an ambiguous put
-function; in particular, the above implementation is only applicable
-in case of injective get functions. %
-Why do we need injective functions for this setting? %
-An injective function represents a one-to-one mapping, it preserves
-distinctness; that is, there are no two elements of the source domain
-that map to the same element in the codomain. %
+function. %
+In particular, the above implementation is only applicable in case of
+injective get function: an injective function represents a one-to-one
+mapping, it preserves distinctness. %
+That is, there are no two elements of the source domain that map to
+the same element in the codomain. %
 In the case of our example lens |sub fst get|, there are several
 source pairs that yield the same result; in fact, every pair with the
 same first component yields the same view. %
@@ -116,41 +118,41 @@ same first component yields the same view. %
 The fact that |sub fst get| is not injective leads to an ambiguity
 issue and, hence, to a non-constructive put function. %
 
-In order to make the point more clear, we discuss a second lens
-definition that is not injective. %
-The common function |head| that projects the first element of the list
-yields the same element for lists that start with the same element. %
-That is, we can define a get-based lens that behaves exactly as |head|
-in the get direction. %
+% In order to make the point more clear, we discuss a second lens
+% definition that is not injective. %
+% The common function |head| that projects the first element of the list
+% yields the same element for lists that start with the same element. %
+% That is, we can define a get-based lens that behaves exactly as |head|
+% in the get direction. %
 
-\begin{spec}
-(sub head get):: LensGet [a] a
-(sub head get) (x:_) = x
-\end{spec}
+% \begin{spec}
+% (sub head get):: LensGet [a] a
+% (sub head get) (x:_) = x
+% \end{spec}
 
-As a side-effect, the definition of |sub head get| looks a lot like
-|sub fst get|; they even behave similarly. %
+% As a side-effect, the definition of |sub head get| looks a lot like
+% |sub fst get|; they even behave similarly. %
 
-\begin{spec}
-> get (sub head get) [1..5]
-1
+% \begin{spec}
+% > get (sub head get) [1..5]
+% 1
 
-> put (sub head get) [1..5] 13
-(13:_x8)
-\end{spec}
+% > put (sub head get) [1..5] 13
+% (13:_x8)
+% \end{spec}
 
-The get direction behaves flawlessly, however, the problem lies in the
-put function, again. %
-In this case, the put function introduces a free variable in the
-resulting list: the first element of the list is specified to the
-given view, namely |13|, but the remaining list is unspecified. %
-The lack of a one-to-one correspondence between a given list and the
-resulting value when applying |sub head get| to that list leads to a
-free variable, which can be instantiated to any list and still fits
-the requirements of the used lens. %
+% The get direction behaves flawlessly, however, the problem lies in the
+% put function, again. %
+% In this case, the put function introduces a free variable in the
+% resulting list: the first element of the list is specified to the
+% given view, namely |13|, but the remaining list is unspecified. %
+% The lack of a one-to-one correspondence between a given list and the
+% resulting value when applying |sub head get| to that list leads to a
+% free variable, which can be instantiated to any list and still fits
+% the requirements of the used lens. %
 
-How do get-based lens definitions look like that are applicable to our
-implementation approach? %
+So, how do get-based lens definitions look like that are applicable to
+our implementation approach? %
 As a main requirement, we need to define injective get functions. %
 The first observation, which we made in the context of the previous
 two lens definitions, is that we cannot ignore any part of the given
@@ -182,8 +184,8 @@ The behaviour of the lens is rather simple, but in this case it is
 injective. %
 The aim of this definition is to show that most get functions are not
 of real use for defining a lens library for two reasons. %
-On one hand, they are non-injective and, thus, do not have a uniquely
-defined corresponding put function. %
+On one hand, they may be non-injective and, thus, do not have a
+uniquely defined corresponding put function. %
 On the other hand, if the definition is injective, its behaviour is
 rather simple and not very useful. %
 We presented typical lenses like |sub head get| and |sub head fst|,
@@ -318,8 +320,8 @@ type PutLens s v = s -> v -> s
 (sub put put) = id
 
 (sub get put) :: PutLens s v -> s -> v
-(sub get put) lens s | (sub put put) lens s v' == s = v'
-   where v' free
+(sub get put) lens s | (sub put put) lens s v == s = v
+   where v free
 \end{spec}
 
 The idea of the definition of |sub get put| is symmetric to |sub put
@@ -362,13 +364,13 @@ put) (13,2)|. %
 \def\commentbegin{\quad\{\ } \def\commentend{\}}
 \begin{spec}
   (sub get put) (sub fst put) (13,2)
-== {- (1) evaluate |(sub get put)|; replace guard of definition with if-then-else expression -}
+== {- (1) evaluate |(sub get put)|; replace guard with if-then-else expression -}
   if (sub put put) (sub fst put) (13,2) v' == (13,2) then v' else failed
     where v' free
 == {- (2) evaluate (sub put put) to |id| and apply |id| it the given arguments-}
   if (sub fst put) (13,2) v' == (13,2) then v' else failed
     where v' free
-== {- (3) evaluate |(sub fst put) (13,2) v'| to |(v',2)|; the free variable is not bound yet-}
+== {- (3) evaluate |(sub fst put) (13,2) v'| to |(v',2)|; |v'| is still not bound yet-}
   if (v',2) == (13,2) then v' else failed
     where v' free
 == {- (4) in order to evaluate |(==)|, the free variable is bound to |13| -}
@@ -393,6 +395,10 @@ both expressions can be reduced to the same value; the second
 components of the two pairs are already equivalent, thus, the free
 variable |v'| needs to be bound to the first component of the right
 pair, i.e., |13|. %
+More precisely, Curry generates a series of numbers that fail the
+condition before the variable is finally bound to |13| -- we will
+discuss Curry's built-in search capabilities in further detail in
+Section~\ref{subsec:strict}. %
 
 The most important function the library contains in order to define
 useful lenses is the composition operator for lenses. %
@@ -400,10 +406,10 @@ As before, we define |(sub ((<.>)) put)| as composition of two lenses
 |l1 :: PutLens a b| and |l2 :: PutLens b c| to gain a resulting lens
 of type |PutLens a c|. %
 
-\begin{spec}
+\begin{spec}s
 (sub ((<.>)) put) :: PutLens a b -> PutLens b c -> PutLens a c
-(sub ((<.>)) put) lAB lBC sA vC = put lAB sA sB
-  where sB = put lBC ((sub get put) lAB sA) vC
+(sub ((<.>)) put) lAB lBC sA vC = (sub put put) lAB sA sB
+  where sB = (sub put put) lBC ((sub get put) lAB sA) vC
 \end{spec}
 
 In order to see the composition operator in action, we need a second
@@ -431,27 +437,28 @@ for the address. %
 The second lens, |name|, yields the name of a contact, which is
 represented as a pair. %
 We define a lens that operates directly on the first name of
-a contact and can compose |name| with |(sub fst put)|. %
+a contact by composing |name| with |(sub fst put)|. %
 
 \begin{spec}
 firstName :: PutLens Contact String
 firstName = nameLens <.> (sub fst put)
 \end{spec}
 
-We define exemplary values of type |Contact|, use both selectors to
-project, and change the name and address, respectively. %
+We define exemplary values of type |Contact| and use both selectors to
+project as well as to change the name and address. %
 
 \begin{spec}
 contact1 = Contact ("Bob","Dylan") "Folkstreet 13"
+contact2 = Contact name1 "Howard Lane 21"
 name1 = ("Haskell","Curry")
 
-> (sub put get) name contact1
-("Bob Dylan")
+> (sub get put) name contact2
+("Haskell", "Curry")
 
 > (sub put put) name contact1 name1
 Contact ("Haskell","Curry") "Folkstreet 13"
 
-> (sub put get) address contact1
+> (sub get put) address contact1
 "Folkstreet 13"
 
 > (sub put put) address contact1 "Folk Street 39"
@@ -465,7 +472,7 @@ lens. %
 
 \begin{spec}
 > (sub put put) firstName contact2 "Haskell B."
-Contact ("Haskell B.","Curry") "Leibniz Way 21"
+Contact ("Haskell B.","Curry") "Howard Lane 21"
 
 > (sub get put) firstName contact1
 "Bob"
@@ -489,13 +496,14 @@ We have already discussed this modification in Section \ref{bi:fisher}
 and introduced the laws \emph{PutInj} and \emph{PutTwice}. %
 The implementation of our testing library is built on an old version
 of
-EasyCheck\footnote{http://www-ps.informatik.uni-kiel.de/currywiki/tools/easycheck}. %
+EasyCheck\footnote{\url{http://www-ps.informatik.uni-kiel.de/currywiki/tools/easycheck}}. %
 EasyCheck is a lightweight library for specification-based testing in
 Curry, which is implemented by \cite{easyCheck}.\footnote{The
   implementation of EasyCheck is highly motivated by the work of
-  \cite{quickCheck}, who introduced QuickCheck, a testing library for
-  Haskell that has achieved a very good reputation in the Haskell
-  community and is still excessively used.} %
+  \cite{quickCheck}, who introduced QuickCheck. %
+  QuickCheck is a testing library for Haskell, which has achieved a
+  very good reputation in the Haskell community and is still
+  excessively used.} %
 In a nutshell, the library provides functions to define specifications
 and tests theses specifications by enumerating possible values that
 obey the given type dependencies. %
@@ -515,13 +523,13 @@ lenses. %
 First of all, the library consists of functions |checkGetPut| and
 |checkPutGet| to test the traditional two round-tripping rules and an
 additional testing function |checkPutPut| for the PutPut law. %
-For the purpose of put-based properties, as proposed by Fisher \etal{},
+For the purpose of put-based properties, as proposed by Fischer \etal{},
 the library provides testing functions |checkPutDet| and
 |checkPutStab|. %
 In addition, all five properties can be tested in the context of list
 with a specifically defined version, e.g., |checkListGetPut| and
 |checkListPutDet|.\footnote{We include a function for this special
-  case, because it is explicitly recommended in the paper of Fisher et
+  case, because it is explicitly recommended in the paper of Fischer et
   al. to use an additional function to exclude the empty list as value.} %
 
 Unfortunately, the library does not prevent the user to define

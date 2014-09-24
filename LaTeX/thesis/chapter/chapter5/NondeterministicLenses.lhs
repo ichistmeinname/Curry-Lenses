@@ -11,7 +11,7 @@ nondeterministically. %
 
 \begin{spec}
 contactSample :: Contact
-contactSample = Contact ("John","Doe") address1
+contactSample = Contact ("John","Sample") address1
 
 address1 :: Address
 address1 = "Any Street 213"
@@ -20,8 +20,10 @@ address1 = "Working Avenue 17"
 
 That is, we have two rules for the definition of John's address: one
 rule for his home address and one to contact him at work. %
-If we execute |contactSample| in the interactive environment of KiCS2, we
-get the following two results. %
+If we execute |contactSample| in the interactive environment of KiCS2,
+we get the following two results. %
+Note, we use |get| and |put| as selector and update function of lenses
+instead of the subscripted variant of the previous section. %
 
 \begin{spec}
 > contactSample
@@ -43,17 +45,18 @@ because we ignore the current address. %
 Contact ("John","Sample") "Sesame Street 123"
 \end{spec}
 
-The order of the nondeterministic results depends on the rules of the
-definition. %
+The order of the nondeterministic results depends on the order of the
+rules of the definition. %
 The the first rule of |address1| defines the private and the second
 rule the working address, thus, leading to the order when evaluating
 |contactSample|. %
 
-Note, |address1| is not a nondeterministic get function. %
-The nondeterministic behaviour is introduced by the definition of
-|address1|, which we use in our exemplary expressions to gain
-nondeterministic results in the get direction, but deterministic values
-for the put function.\footnote{However, we give a lens with a
+Note, that |address| is not a lens definition with a nondeterministic
+get function, but the nondeterministic behaviour is introduced by the
+definition of |address1|. %
+We use |address1| in our exemplary expressions to gain
+nondeterministic results in the get direction, but deterministic
+values for the put function.\footnote{However, we give a lens with a
   nondeterministic get function in the next subsection.} %
 
 % Let us use the setting of contacts of the previous section as
@@ -157,24 +160,33 @@ nondeterministically. %
 \subsection{Extended Laws}
 
 The attentive reader might wonder why we use a lens definition that we
-explicitly expose as incorrect before. %
-Consequently, the question arises of how does this
-nondeterministic behaviour interact with well-behavedness and the lens
+explicitly exposed as incorrect before. %
+Consequently, the question arises of how this
+nondeterministic behaviour interacts with well-behavedness and the lens
 laws, respectively. %
 Therefore, we discuss the definition of laws for nondeterministic
 lenses. %
 
-In the following equations, we state the adapted laws for
-well-behaved and very well-behaved nondeterministic lenses. %
- %
+% In the following equations, we state the adapted laws for
+% well-behaved and very well-behaved nondeterministic lenses. %
+%  %
+% \begin{align*}
+% |get (put s v)| =~& |v| \tag{PutGet}\\
+% |put s (get s)| =~& |s| \tag{GetPut}\\
+% \end{align*}
+% %
+% Again, the attentive reader might get suspicious. %
+% The given laws consist of exactly the same equations that we have
+% introduced in Section~\ref{sec:lenses}. %
+
+As a reminder, we recapitulate the lens laws. %
+
 \begin{align*}
 |get (put s v)| =~& |v| \tag{PutGet}\\
 |put s (get s)| =~& |s| \tag{GetPut}\\
+|put (put s v) v'| =~& |put s v'| \tag{PutPut}\\
 \end{align*}
-%
-Again, the attentive reader might get suspicious. %
-The given laws consist of exactly the same equations that we have
-introduced in Section~\ref{sec:lenses}. %
+
 The main idea of the adopted laws is to change the semantics of the
 equational operator instead of modifying the equation itself. %
 In a nondeterministic setting, expressions evaluate to a set of
@@ -187,16 +199,16 @@ operator in terms of sets. %
 In particular, we want the smaller set to be a subset of the greater
 one. %
 We can specify the lens laws in a nondeterministic context with the
-following equations, which are also applicable for singleton lists,
+following equations, which are also applicable for singleton sets,
 i.e. for deterministic values. %
 %
 \begin{align*}
-|v| \subseteq~& |get (put s v)| \tag{PutGet}\\
-|s| \subseteq~& |put s (get s)| \tag{GetPut}\\
+|v| \subseteq~& |get (put s v)| \tag{PutGet-Nondet}\\
+|s| \subseteq~& |put s (get s)| \tag{GetPut-Nondet}\\
 \end{align*}
 %
-For the PutGet law, we want the value that we put into the source to
-be one of the elements that we can get out of the source. %
+For the PutGet law, we demand the value that we put into the source to
+be one of the elements that we can get out of the modified source. %
 We can state a similar requirement for GetPut: if we get a value out
 of a source and put it back again, the resulting set of sources should
 at least contain the initial source. %
@@ -207,7 +219,7 @@ Instead, we postpone a detailed example for the PutPut law to the next
 subsection. %
 %
 \begin{align*}
-|put s v'| \subseteq~& |put (put s v) v'| \tag{PutPut}
+|put s v'| \subseteq~& |put (put s v) v'| \tag{PutPut-Nondet}
 \end{align*}
 %
 
@@ -220,6 +232,7 @@ nondeterministic value. %
 Thus, the put action yields a nondeterministic result as well. %
 Fortunately, the resulting set is a superset of the modified view. %
 
+%format _supseteq_ = "\supseteq"
 \begin{spec}
 put address person1 (get address person1)
 ==
@@ -238,7 +251,6 @@ result regardless of the address's value. %
 The new semantics holds trivially, because we work only on
 singletons. %
 
-%format _supseteq_ = "\supseteq"
 \begin{spec}
 get address (put address "Sesame Street 123")
 ==
@@ -298,7 +310,7 @@ Our next example behaves nondeterministically in both directions. %
 
 \begin{spec}
 replace :: Lens [a] a
-replace (x:xs) y = y:xs ? x : putReplace xs y
+replace (x:xs) y = y:xs ? x : replace xs y
 \end{spec}
 
 We define |replace| to nondeterministically replace an element of a
@@ -309,7 +321,7 @@ permutations of a list. %
 However, |insert| is not an applicable example, because the get
 function fails for every input value. %
 We take a quick look at the implementation to figure out why |insert|
-is suitable as a lens. %
+is not suitable as a lens. %
 
 \begin{spec}
 insert :: Lens [a] a
@@ -357,7 +369,7 @@ exemplary expressions. %
 [1,2,5]
 \end{spec}
 
-If we check PutPut law for |replace|, we get highly nondeterministic
+If we check the PutPut law for |replace|, we get highly nondeterministic
 results. %
 The first application of put yields nondeterministic values and a
 consecutive call to put is applied to all these results. %
@@ -392,26 +404,34 @@ follows. %
 
 \begin{spec}
 replace' :: [a] -> a -> [[a]]
-replace' []     _ = []
-replace' (x:xs) y = y:xs : map (x:) (replace' xs y)
+replace' []      _ = []
+replace' (x:xs)  y = y:xs : map (x:) (replace' xs y)
 \end{spec}
 
 As a consequence, the type of the modified implementation is not
 applicable for lenses -- the first argument and the result have to be
-of the same type. \\%
+of the same type. %
 
 Our second example of nondeterministic lenses is the definition of a
 pretty-printer with a corresponding parser in the get direction. %
-The lens for so-called \emph{printer-parsers} can have a
+We introduce this concept of so-called \emph{printer-parsers} in detail in
+Section~\ref{sec:printerParser}. %
+The lens for printer-parsers can have a
 nondeterministic get function to model traditional parser structures
 with a list of results. % %
 That is, when we parse a string, we yield all corresponding results
 nondeterministically. %
-We discuss this implementation in detail in
-Section~\ref{sec:printerParser}. %
-Nevertheless, we want to give some motivating examples beforehand,
-because the used example in that section is not ambiguous and yields a
-deterministic result for the parsing direction. %
+
+Later, we introduce printer-parsers with a handful of examples on
+arithmetic expressions with a prefix notation. %
+We decided to use prefix notation, because the corresponding
+definitions are simple and easy to follow. %
+The string representation of these arithmetic expression are, however,
+not ambiguous and yield a deterministic result for the parsing
+direction. %
+Therefore, we want to use an example for arithmetic expressions with
+infix notation in advance in order to provide another nondeterministic
+lens definition. %
 
 The following example uses arithmetic expressions that are defined as
 follows. %
@@ -422,7 +442,7 @@ data Expr     = BinOp Op Expr Expr
 data Op       = Plus | Mult | Div | Minus
 \end{spec}
 
-Let us assume, we have a lens |ppExpr'| to parse and pretty-print
+Let us assume that we have a lens |ppExpr'| to parse and pretty-print
 arithmetic expressions in infix notation. %
 Then, we can use the nondeterministic behaviour of the parsing
 direction to yield all possible results. %
@@ -450,9 +470,8 @@ parsing results. %
 ((Num 1)," - 2 * 3")
 \end{spec}
 
-However, if we add parentheses to the expression to multiply in
-the end --- multiplying |3| with |(1-2)|, the parsing result is
-deterministic. %
+However, we can disambiguate the expression by adding parentheses
+resulting in a deterministic the parsing result. %
 
 \begin{spec}
 > get ppExpr' "(1 - 2) * 3"

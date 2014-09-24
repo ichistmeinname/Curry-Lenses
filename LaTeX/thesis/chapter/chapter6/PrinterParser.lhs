@@ -49,7 +49,7 @@ Especially in the field of programming languages, users write the code
 that the parser consumes, whereas generated code may be part of many
 programs. %
 Therefore, most programming languages allow redundancies like spaces
-and braces, so that a parsed data structure corresponds to more than
+and parentheses, so that a parsed data structure corresponds to more than
 one string representation. \\%
 
 In the following, we present different approaches to combine the
@@ -74,13 +74,13 @@ implementations: %
 \item |digit :: X Int|
 \item |charP :: (Char -> Bool) -> X Char|
 % \item |many :: X a -> X [a]|
-\item |whitespace :: X ()|
+\item |space :: X ()|
 \end{itemize}
 
 As the running example for each implementation we use a standard
 example in the context of parsers as well as printers: arithmetic
 expressions. %
-Therefor, we give the definition of an algebraic data type for
+Therefore, we give the definition of an algebraic data type for
 arithmetic expressions first. %
 
 \begin{spec}
@@ -112,6 +112,29 @@ given data structure in put direction, respectively. %
 % We postpone the definitions of these functions, and give the
 % implementation of the provided combinators first. %
 
+\begin{spec}
+pParse :: PPrinter a -> String -> a
+pParse pp str = maybe err fst (find ((== "") . snd) values)
+ where
+  values = getND pp str
+  err    = error "no complete parse"
+
+pPrint :: PPrinter a -> a -> String
+pPrint pp val = pp "" (val,"")
+\end{spec}
+
+The definition of |pParse| first collects all results of the given
+printer-parser running in the get direction by using |getND|. %
+The auxiliary |getND| uses \emph{Set Functions} to yield a list of
+results instead of nondeterministic results. %
+In the end, |pParse| chooses the first result that has no remaining
+string, i.e., a result with a complete parse, and yields the parsed
+value. %
+If there are no complete parses, we throw an error. %
+
+The function |pPrint| applies the given printer-parser to the empty
+string as first argument to trigger a pretty-print. %
+
 \subsubsection*{Primitives}
 As first primitive printer-parser, we define |digit :: PPrinter Int| that
 pretty-prints a digit in the \emph{put}- and parses a digit in the
@@ -131,15 +154,15 @@ and |9|. %
 
 The primitive |charP| prints and parses only characters that fulfil
 a given predicate. %
-We can easily define a combinator that prints and parses a whitespace
+We can easily define a combinator that prints and parses a space
 character by means of |charP|. %
 
 \begin{spec}
 charP :: (Char -> Bool) -> PPrinter Char
 charP p _ (c,str') | p c = c : str'
 
-whitespace' :: PPrinter Char
-whitespace' = charP (== ' ') 
+space' :: PPrinter Char
+space' = charP (== ' ') 
 \end{spec}
 
 In order to define more meaningful printer-parsers, e.g., for the
@@ -174,7 +197,7 @@ primitives. %
 Furthermore, we provide a combinator to pretty-print one of two
 alternatives. %
 That is, we have two printer-parsers at hand and run the second one
-only, if the first one fails. %
+only if the first one fails. %
 
 \begin{spec}
 (<|>) :: PPrinter a -> PPrinter a -> PPrinter a
@@ -205,9 +228,9 @@ empty, we run the second one instead. %
 Next, we define the appropriate printer-parsers for the data structure
 of arithmetic expressions given above. %
 In order to define a printer-parser for our data structure |Expr|, we
-need to cover both representations of the definition. %
-An expression can be a number or a composition of two expressions with
-a binary operator. %
+need to cover both representations of the definition: an expression
+can be a number or a composition of two expressions with a binary
+operator. %
 For the purpose of simplicity, we implement the pretty-print of an
 arithmetic expression in prefix notation at first. %
 
@@ -248,7 +271,7 @@ ppOp str (op,str') = charP isOp str (fromJust opStr,str')
   opStr = lookup op [(Plus,'+'),(Minus,'-'),(Mult,'*'),(Div,'/')]
 
 isOp :: Char -> Bool
-isOp c = any (== c) "+*-/"
+isOp c = c `elem` "+*-/"
 \end{spec}
 
 We use the obvious symbols as string representatives for the
@@ -314,8 +337,8 @@ using the get direction of the lens definition. %
 In this case, the expression |get ppExpr "42"| is of type
 |(Expr,String)| and yields the parsed value and the remaining
 string. %
-As we will see later, the definition of |parse| distinguishes if the
-resulting remaining string is the empty string or not. %
+Remember, the definition of |pParse| distinguishes if the resulting
+remaining string is the empty string or not. %
 In case of a non-empty string, the parse could not be completed and
 the function throws an exception. %
 
@@ -325,37 +348,37 @@ the function throws an exception. %
 In order to continue on \emph{pretty}-printing arithmetic expression,
 we have to rewrite the second case of our |ppExpr| definition. %
 Obviously, a pretty representation of arithmetic expression needs a
-whitespace character between each token. %
-For the purpose of adding whitespaces to the string representation, we
-integrate the function |whitespace'| into our definition of |ppExpr|
+space character between each token. %
+For the purpose of adding space to the string representation, we
+integrate the function |space'| into our definition of |ppExpr|
 from above. %
-In the end, we add a whitespace after the binary operator and the
+In the end, we add a space after the binary operator and the
 first argument of that operator. %
 
 \begin{spec}
 ppExpr str (BinOp op e1 e2,str') =
-  ((ppOp <> whitespace') <> (ppExpr <> whitespace')
+  ((ppOp <> space') <> (ppExpr <> space')
                          <> ppExpr) str ((((op,_),(e1,_)),e2),str')
 \end{spec}
 
-Unfortunately, due to the integration of whitespace and the related
+Unfortunately, due to the integration of space and the related
 increased usage of the composition combinator, this definition looks
 rather cumbersome and complicated. %
-In particular, the whitespaces, which we add in the definition, are ignored in
+In particular, the space, which we add in the definition, are ignored in
 the data that are given in form of a deeply nested pair. %
 The definition above uses an anonymous free variable, which is bound to
-a whitespace character when actually calling this function. %
-The variable is bound to a whitespace, because a whitespace is the
-only valid value, such that the |whitespace'| function yields a
+a space character when actually calling this function. %
+The variable is bound to a space, because a space is the
+only valid value, such that the |space'| function yields a
 result. %
 Instead of using an anonymous free variable, we can explicitly assign
-whitespace characters as arguments. %
+space characters as arguments. %
 
 In the case of an injected prettiness factor like additional
-whitespaces, it would be convenient to provide a combinator to ignore
+spaces, it would be convenient to provide a combinator to ignore
 a printer-parser's result. %
 Those additional adjustments regarding the printed string mostly occur
-in the context of composing. %
+in the context of composition. %
 Thus, we define two additional composition functions to ignore the
 printer-parser to the right and to the left, respectively. %
 We can implement such a combinator by means of |(<>)|. %
@@ -378,15 +401,16 @@ The Unit type has only one valid value, thus, we can always pass along
 |()| as argument. %
 
 In order to use these combinators in our definition of |ppExpr|, we
-have to implement a whitespace printer-parser of type |PPrinter ()|. %
+have to implement a space printer-parser of type |PPrinter ()|. %
 
 \begin{spec}
-whitespace :: PPrinter () whitespace _ ((),str') = " " + str'
+space :: PPrinter ()
+space _ ((),str') = " " + str'
 \end{spec}
 
 Fortunately, the definition is straightforward: we ignore the given
 string and pattern match on the unit value in order to produce a
-whitespace in front of the remaining string, which is given as part of
+space in front of the remaining string, which is given as part of
 the input pair. %
 
 Last but not least, we can integrate the newly defined functions in
@@ -394,7 +418,7 @@ our definition of |ppExpr| to enhance the readability. %
 
 \begin{spec}
 ppExpr str (BinOp op e1 e2,str') =
-  ((ppOp <* whitespaces) <> (ppExpr <* whitespace)
+  ((ppOp <* space) <> (ppExpr <* space)
                            <> ppExpr) str (((op,e1),e2),str')
 \end{spec}
 
@@ -448,32 +472,32 @@ yield a partial result with a remaining string. %
 % print pp val = pp "" (val,"")
 % \end{spec}
 
-\subsubsection*{The Downside}
+\subsubsection*{Multiple Spaces}
 As a main disadvantage of this approach, we cannot ignore redundant
 parts in the parsing direction. %
 If these redundancies do not appear in the pretty-printer's definition,
 we do not have the option to parse them anyway. %
 We have already mentioned an original precedent in the introduction
-of this section: optional whitespaces as delimiter between tokens. %
+of this section: optional spaces as delimiter between tokens. %
 In order to make this case more clear, we define a printer-parser for
-one or more whitespaces. %
+one or more spaces. %
 
 \begin{spec}
-whitespaces1' :: PPrinter [()]
-whitespaces1' str (x:xs,str') =
-   (whitespace <> whitespaces') str ((x,xs),str')
-  where
-   whitespaces' str ([],str)     = str'
-   whitespaces' str (x:xs,str')  =
-     whitespace str (x,"") ++ whitespaces' str (x,str')
+spaces1' :: PPrinter [()]
+spaces1' str (x:xs,str') =
+   (space <> spaces') str ((x,xs),str')
+
+spaces' str ([],str)     = str'
+spaces' str (x:xs,str')  =
+  space str (x,"") ++ spaces' str (x,str')
 \end{spec}
 
-The function |whitespaces1'| pretty-prints a series of whitespace
+The function |spaces1'| pretty-prints a series of space
 depending on the length of the given list, which cannot be empty. %
-In contrast, the auxiliary function |whitespaces'| can pretty-print
-zero or many whitespaces. %
+In contrast, the auxiliary function |spaces'| can pretty-print
+zero or many spaces. %
 For the parsing direction, we want both functions to parse a series of
-whitespaces. %
+spaces. %
 A generalisation of these functions comes in handy to pretty-print a
 list of elements and to parse a series of characters or strings of the
 same category, respectively. %
@@ -492,24 +516,24 @@ many1 pp str (x:xs,str') = (pp <> many pp) str ((x,xs),str')
 \end{spec}
 
 With this definition at hand, we can define a modified version of
-|whitespaces|. %
+|spaces|. %
 
 \begin{spec}
-whitespaces :: PPrinter [()]
-whitespaces = many1 whitespace
+spaces :: PPrinter [()]
+spaces = many1 space
 \end{spec}
 
-Next, we integrate the additional trailing whitespaces into our
+Next, we integrate the additional trailing spaces into our
 printer-parser for arithmetic expression. %
 This integration implicates to change the usage of |(<*)| and |(*>)| to
 the traditional composition operator again. %
-We can only ignore data of type |Unit|, but |whitespaces| expects a
+We can only ignore data of type |Unit|, but |spaces| expects a
 list of |Unit|. %
 
 \begin{spec}
 ppExprSpaces :: PPrinter Expr
 ppExprSpaces str (BinOp op e1 e2,str')  =
-  ((ppOp <> whitespaces) <> (ppExprSpaces <> whitespaces)
+  ((ppOp <> spaces) <> (ppExprSpaces <> spaces)
                          <> ppExprSpaces) str (((opSpaces,e1Spaces),e2),str')
   where
    opSpaces = (op,_)
@@ -517,12 +541,12 @@ ppExprSpaces str (BinOp op e1 e2,str')  =
 ppExprSpaces str (Num v,str')           = digit str (v,str')
 \end{spec}
 
-Since we do not care about the number of trailing whitespaces after an
+Since we do not care about the number of trailing spaces after an
 operator and its expressions, respectively, we use an anonymous free
 variable as input. %
 This free variable can be bound to any number of |Unit| elements in
-order to parse all occurring whitespaces. %
-As a first example, we can parse trailing whitespaces after the binary
+order to parse all occurring spaces. %
+As a first example, we can parse trailing spaces after the binary
 operator as well as a pretty-printed version. %
 
 \begin{spec}
@@ -533,17 +557,19 @@ operator as well as a pretty-printed version. %
 (BinOp Plus (Num 1) (Num 2),"")
 \end{spec}
 
-Fortunately, the integration of redundant whitespaces works like a
+Fortunately, the integration of redundant spaces works like a
 charm. %
+
+\subsubsection*{The Downside}
 However, there is a downside to this solution. %
 In the beginning we said that we cannot parse redundancies that are
 not included in the printer-parser's definition. %
 In our case, we have added these redundancies and, thus, can parse
 them in a convenient way. %
 This observation leads to the question: how does this integration
-effect the pretty-print of the arithmetic expression?
+effect the pretty-printing of the arithmetic expression?
 In the pretty-printed version of an arithmetic expression, we do not
-allow any leading and trailing whitespaces. %
+allow any leading and trailing spaces. %
 Let us test the behaviour by pretty-printing the expression from
 above. %
 
@@ -559,11 +585,11 @@ above. %
 
 Unfortunately, this expression does not terminate, but yields all
 possible versions of string representatives. %
-Possible versions include a different number of trailing whitespace
+Possible versions include a different number of trailing space
 after the operator and the first argument of that operator. %
 This unsatisfactory result arises from the use of the free variables
 in the definition of |ppExprSpaces|. %
-We cannot fix the number of used whitespaces to one, the fact is that
+We cannot fix the number of used spaces to one, the fact is that
 the free variable is instantiated nondeterministically to a suitable
 value. %
 In our case, |[()]| is not the only suitable value, any list of |Unit|
@@ -576,9 +602,8 @@ allow the programmer to specify equivalence relations on the data he
 wants process. %
 The authors have added an implementation of quotient lenses to the
 Boomerang language. %
-Thus, the specific usage of quotient lenses is not applicable for our
-implementation and in the context of our study cases, we did not have
-the time to implement our own version of quotient lenses. %
+However, we did not have the time to implement our own version of
+quotient lenses to the context of our study case. %
 
 Furthermore, the definitions for the pretty-printer have to be more
 sophisticated than usual. %
@@ -605,7 +630,7 @@ pretty-printers and implicates a corresponding parser. %
 Unfortunately, the corresponding parser is only suited for the
 pretty-printed string representation. %
 In the previous subsection, we gave an exemplary definition to parse a
-variable amount of whitespaces, which was unsatisfactory. %
+variable amount of spaces, which was unsatisfactory. %
 The defined lens can be used in the parsing direction, but behaves
 heavily nondeterministic when pretty-printing a value. %
 One cause of the problem is that we cannot reason about single steps
@@ -636,7 +661,7 @@ preserve its layout. %
 If the given string is empty or does not fulfil the replace-parser's
 specification, we pretty-print the data structure at hand. %
 As an example: we have an arithmetic expression with more than one
-whitespace as delimiter for its arguments and update only the second
+space as delimiter for its arguments and update only the second
 argument. %
 
 \begin{spec}
@@ -656,7 +681,7 @@ arithmetic expression. %
 \end{spec}
 
 Indeed, the parsing direction works like a charm and ignores the
-redundant whitespaces. %
+redundant spaces. %
 As mentioned above, if the given string is empty, the replace-parser
 prints the given value in its prettiest version, i.e., as specified in
 the lens definition of |rpExpr|. %
@@ -755,15 +780,15 @@ primitives. %
 In the example, we used |charP| to replace and pretty-print a digit,
 we can enhance this expression to be applicable for actual |Int|
 values. %
-In addition, we can define a primitive to handle a whitespace. %
+In addition, we can define a primitive to handle a space. %
 
 \begin{spec}
 digit :: PReplace Int
 digit str (d,str')
   | 0 <= d && d <= 9 = (charP isDigit) str (intToDigit d,str')
 
-whitespace :: PReplace ()
-whitespace str ((),str') = charP (== ' ') str (' ',str')
+space :: PReplace ()
+space str ((),str') = charP (== ' ') str (' ',str')
 \end{spec}
 
 We use the auxiliary function |intToDigit :: Int -> Char| from the
@@ -799,7 +824,7 @@ greater than |9| is used converted into a character. %
 Moreover, we want to compose several primitives to build new
 replace-parsers. %
 For that purpose, we introduce the composition combinator |(<>)|, and
-its descendants |(<<<)| and |(>>>)| in order to ignore the left and right
+its descendants |(<*)| and |(*>)| in order to ignore the left and right
 result, respectively. %
 
 \begin{spec}
@@ -885,7 +910,7 @@ expressions. %
 \begin{spec}
 rpExpr :: PReplace Expr
 rpExpr str (BinOp op e1 e2,str')  =
-  ((rpOp <* whitespaces)  <> (rpExpr <* whitespaces)
+  ((rpOp <* spaces)  <> (rpExpr <* spaces)
                            <> rpExpr) str (((op,e1),e2),str')
 rpExpr str (Num v,str')           = digit str (v,str')
 \end{spec}
@@ -895,31 +920,31 @@ high resemblance to our version for printer-parsers. %
 This resemblance arises from the usage of the same set of primitives
 and combinators that can be used to define more complex function
 definitions. %
-The only difference is that we use |whitespaces| here. %
+The only difference is that we use |spaces| here. %
 Because of the underlying data structure of this approach, we can
 finally implement primitives to parse optional redundancies in the
 parsing direction without interfering with the pretty-printer. %
 
-The following code shows the implementation of |whitespaces| that
-pretty-prints exactly one whitespace, but can parse and replace
-several whitespaces. %
+The following code shows the implementation of |spaces| that
+pretty-prints exactly one space, but can parse and replace
+several spaces. %
 
 \begin{spec}
-whitespaces :: PReplace ()
-whitespaces input = case input of
-  ""  -> whitespace ""
-  _   -> (whitespace *> whitespaces') input
+spaces :: PReplace ()
+spaces input = case input of
+  ""  -> space ""
+  _   -> (space *> spaces') input
  where
-  whitespaces' input' ((),str') = case input' of
+  spaces' input' ((),str') = case input' of
     ""  -> pure input' ((),str')
-    _   -> (whitespace *> whitespaces') input' ((),str')
+    _   -> (space *> spaces') input' ((),str')
 \end{spec}
 
-In case of an empty input string, we pretty-print one whitespace. %
-Otherwise we read or replace as much whitespaces as possible until the
+In case of an empty input string, we pretty-print one space. %
+Otherwise we read or replace as much spaces as possible until the
 input string is empty. %
 If the input string is finally empty, the first rule of the local
-function |whitespaces'| is used to add the remaining string to the end
+function |spaces'| is used to add the remaining string to the end
 of the resulting string. %
 Here, we use the auxiliary function |pure| that ignores its input
 string as well as its value and yields the remaining string as a
@@ -943,13 +968,13 @@ the printer-parser, because we take advantage of the implementation of
 In the replace-parser's version of |(*>)|, we actually consume the
 input string. %
 Thus, we actually reach the point where we stop producing or reading
-whitespaces. %
+spaces. %
 In case of printer-parsers, the input string is ignored completely,
 hence, leading to a failing parsings action on every input string. %
 
 Last but not least, we use the same implementation to handle the
 operators of an arithmetic expression like for the printer-parser. %
-In fact, if it were not for the delimiting whitespaces, we could have
+In fact, if it were not for the delimiting spaces, we could have
 used the exact same implementation as before, but using a different
 type signature. %
 
@@ -972,9 +997,9 @@ contrast to the previous implementation. %
 Unfortunately, this approach comes with some disadvantages, too. %
 The second example indicates a performance problem due to the string
 splitting on combinators like |(<>)|,|(<*| and |(*>)|. %
-Collectively, there are four redundant whitespaces to consume when
+Collectively, there are four redundant spaces to consume when
 replacing the given string with a new value. %
-For each whitespace, we introduce an additional combinator, |(<<<)|,
+For each space, we introduce an additional combinator, |(<<<)|,
 that splits the input string into two halves. %
 In the end, the longer the input string and the more composition
 combinators we use, the more splitting combinations arise and the
@@ -1143,8 +1168,8 @@ every input, in order to handle the special case of a non-consuming
 replace-parser. %
 
 In order to use the definition of |rpExpr| that we have given above,
-we still need to define |whitespaces|. %
-The key for a modified definition of |whitespaces| is a combination of
+we still need to define |spaces|. %
+The key for a modified definition of |spaces| is a combination of
 |pure| and the alternative combinator |(<||>)|. %
 In Curry, we can define the alternative combinator using the choice
 operator, |?|, and nondeterministically choose one of the given
@@ -1162,24 +1187,24 @@ replace-parser for an empty string. %
 That is, pretty-printing is still deterministic and does not introduce
 a choice between the two given replace-parsers. %
 
-In the end, we can define |whitespaces| as follows. %
+In the end, we can define |spaces| as follows. %
 
 \begin{spec}
-whitespaces :: PReplace ()
-whitespaces input = case input of
-   ""  -> whitespace ""
-   _   -> ((whitespace *> whitespaces')) input
+spaces :: PReplace ()
+spaces input = case input of
+   ""  -> space ""
+   _   -> ((space *> spaces')) input
   where
-   whitespaces' :: PReplace ()
-   whitespaces' input' ((),str') = case input' of
+   spaces' :: PReplace ()
+   spaces' input' ((),str') = case input' of
       ""  -> pure "" ((),str')
-      _   -> ((whitespace *> whitespaces') <||> pure) input' ((),str')
+      _   -> ((space *> spaces') <||> pure) input' ((),str')
 \end{spec}
 
-The definition of |whitespaces'| benefits from the combination of the
+The definition of |spaces'| benefits from the combination of the
 alternative combinator and |pure|. %
 This combination allows us to consume an arbitrary number of
-whitespaces and stop whenever the |whitespace| parser fails. %
+spaces and stop whenever the |space| parser fails. %
 We also stop if the input string becomes empty, and yield a result to
 signal a successful consumption. %
 

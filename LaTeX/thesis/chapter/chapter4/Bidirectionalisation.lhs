@@ -18,49 +18,58 @@
 % \item combination of both \cite{synSemComb} $\checkmark$
 % \end{itemize}
 
-Bidirectionalisation is the process of transforming uni-directional
-into bidirectional functions. %
+Bidirectionalisation is the process of automatically transforming
+uni-directional into bidirectional functions. %
 In the following, we present two techniques to bidirectionalise a
 uni-directional get function: the first technique by \cite{viewComp}
 syntactically derives a put function for a given get function, whereas
 the second approach takes a more semantic approach to generate an
 appropriate put function at runtime. %
-Both techniques have their advantages and disadvantages, so that the
-authors also worked out a combined approach, which yields results at least as good
-as the better one of the two techniques. %
+Both techniques have their advantages and disadvantages, so the
+authors also worked out a combined approach, which yields results at
+least as good as either one of the two techniques. %
 
 \subsection{Syntactic Bidirectionalisation}\label{subsec:biSyn}
 Matsuda \etal{} introduce a general first-order functional language
 called \emph{VDL}. %
-Their language has two syntactical restrictions, which we have to keep in
-mind when talking about derivable functions: defined functions have to
-be affine and treeless. %
-A function definition is affine, if every variable on the left hand side
-is used at most once on the right hand side of the definition;
-treeless characterises function definitions without immediate data
+Their language has two syntactical restrictions, which we have to keep
+in mind when talking about derivable functions: defined functions have
+to be \emph{affine} and \emph{treeless}. %
+A function definition is affine if every variable on the left hand
+side is used at most once on the right hand side of the definition;
+treeless characterises function definitions without intermediate data
 structures. %
 Nevertheless, VDL allows function definitions using arbitrary
 algebraic data structures, e.g., lists and trees. %
-The user defined uni-directional get functions, and VDL automatically
+The user defines uni-directional get functions, and VDL automatically
 derives appropriate put functions. %
-The presented derivation algorithm
-is based on a similar approach in the field of databases, but follows
-a syntactical approach, whereas the original idea is a rather semantic process. %
+The presented derivation algorithm is based on a similar approach in
+the field of databases, but follows a syntactical approach. %
 As a first step, VDL derives a \emph{view complement function} $f^c: S
-\rightarrow V'$ for a get\footnote{Matsuda \etal{} call |get| functions
-  view functions instead.} function $f: S \rightarrow V$. %
+\rightarrow (S \without V)$ for a get\footnote{Matsuda \etal{} call
+  |get| functions view functions instead.} function $f: S \rightarrow
+V$. %
 Matsuda \etal{} require the view complement function $f^c$ to be
-injective when paired with the view function $f$, i.e., $(f \triangle
-f^c)$ is injective for a get function $f$ and its complement $f^c$. %
+injective when paired with the view function $f$, where a pair is
+denoted with $\triangle$. %
+That is, $(f \triangle f^c)$ is injective for a get function $f$ and
+its complement $f^c$. %
+As the last step, an inverse transformation is performed on the pair to
+obtain the put function. %
+The main idea of the view complement function $f^c$ is to preserve any
+information disregarded by the original function $f$, such that $f x$
+and $f^c x$ are sufficient to reconstruct the argument $x$. %
+For instance, if we consider $f : (A,B) -> A, f = fst$, $f^c : (A,B)
+-> B, f^c = snd$ serves as a valid view complement function. %
 
+The following equations illustrate the definitions given above. %
 \begin{align*}
   f:&~ S \rightarrow V \tag{get function}\\
   f^c:&~ S \rightarrow V' \tag{view complement function}\\
   f ~\triangle~ f^c:&~ S \rightarrow (V \times V'), \tag{tupled function}\\
-  (f ~\triangle~ f^c)&~ |valS| = |(f valS,g valS)|
+  (f ~\triangle~ f^c)&~ |valS| = |(f valS,f^c valS)|
 \end{align*}
-As last step, an inverse transformation is performed on the pair to
-obtain the put function. %
+
 \[\tag{derived put function}
   put_{<f,f^c>} (s,v) =  (f ~\triangle~ f^c)^{-1} (v,f^c s)
 \]

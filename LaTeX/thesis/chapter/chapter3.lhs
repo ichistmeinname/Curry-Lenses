@@ -147,7 +147,7 @@ an explicit recursive definition in the second example. %
 
 \section{Free Variables}
 The second logic feature of Curry that we want to discuss in greater
-detail is free variables. %
+detail is the usage of free variables. %
 Free variables are unbound variables that can be used as data
 generators. %
 For instance, assume that we have the first part of a list --

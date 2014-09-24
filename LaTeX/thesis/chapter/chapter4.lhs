@@ -3,22 +3,22 @@
 Bidirectional programming is a rising topic in the field of computer
 science, and many different approaches exist to tackle the problem. %
 These approaches come from different disciplines of computer science
-like databases, graph transformation, programming languages and
+such as databases, graph transformation, programming languages and
 interface design. %
-This section summarises the main two approaches and highlights
+This section summarises the two main approaches and highlights
 differences as well as some details. %
 
-The main two techniques to work with bidirectional transformations are
+The two main techniques to work with bidirectional transformations are
 combinatorial languages and bidirectionalisation. %
-Most commonly, a combinatorial language is defined as a DSL in a
-general purpose programming language or as a new programming language,
-and provides a set of primitives, which the user combines to define
-more complex structures. %
-The definitions of these primitives mostly consist of both functions,
-the get and the appropriate put function. %
-In contrast to this approach, the bidirectionalisation technique takes
-an uni-directional function and synthesises this function to a
-bidirectional one. %
+Most commonly, a combinatorial language is either defined as a DSL in
+a general purpose programming language or as a new programming
+language, and provides a set of primitives, which the user combines to
+define more complex structures. %
+The core primitive is a set of |(get,put)| function pairs for
+different lenses. %
+The two aproaches differ in what must be defined by the programmer:
+either both functions or one uni-directional function that is
+synthesised to to a bidirectional one. %
 
 The remainder of the chapter introduces combinatorial and
 bidirectionalisation approaches for lenses. %

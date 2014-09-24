@@ -17,11 +17,9 @@ The underlying type system, and with that the type safety, is the main
 contribution to the field of bidirectional programming. %
 The authors state close connections with topics from the database
 community: lenses are a well-known abstraction in databases concerning
-tables and queries, and the \emph{update translation under a constant
-  complement} introduced by \cite{viewUpdate} tackles problems
-concerning precision and continuity, whereas the property of
-well-behaved lenses corresponds to the idea of \emph{update
-  translators} by \cite{updateTranslator}. %
+tables and queries, the work of \cite{viewUpdate} tackles problems
+concerning precision and continuity, and the property of well-behaved
+lenses corresponds to ideas by \cite{updateTranslator}. %
 
 \subsection{Combinators for Tree-Structures}
 In their publication, Foster \etal{} define a handful of primitive lens
@@ -53,20 +51,25 @@ World")| in Curry. %
 
 As an example, we define a lens that yields the first component of a
 pair -- like the one we defined above. %
-Foster \etal{} use $(\nearrow: S \Leftrightarrow V) \times S
-\rightarrow V$ and $\searrow:~ (S \Leftrightarrow V) \times (S,V)
-\rightarrow S$ as representations for get and put functions,
-respectively, where $S \Leftrightarrow V$ is a lens with a source of
-type $S$ and a view of type $V$.\footnote{Foster \etal{} use $C$ and
-  $V$ as representative for the concrete and abstract value,
-  respectively.} %
-We can use the predefined tree combinator |filter p d| to keep
-particular children of the tree. %
+Foster \etal{} use $S \Leftrightarrow V$ as representation for a lens
+with a source of type $S$ and a view of type $V$.\footnote{In their
+  pair, Foster \etal{} use $C$ and $V$ as representative for the
+  concrete and abstract value, respectively.} % %
+The corresponding get and put function of a lens is defined as
+follows. %
+\[
+(\nearrow: S \Leftrightarrow V) \times S
+\rightarrow V\\
+\[\searrow:~ (S \Leftrightarrow V) \times (S,V)
+\rightarrow S
+\]
+They define a tree combinator |filter p d| to keep particular children
+of the tree. %
 The predicate |p| describes the set of names that we want to keep in
 the tree, and |d| is a default value for missing information in the
 put direction. %
 In order to distinguish between empty trees and empty sets, we
-represent the empty tree as |{}| and the empty set as $\emptyset$. %
+represent the empty tree as |{}|. %
 We define the following expression to extract the first component of a
 given pair. %
 %
@@ -103,12 +106,13 @@ change the first component of our pair to |13|. %
   \right\}
 \end{align*}
 
-The work of Foster \etal{} origins in the Harmony
+The work of Foster \etal{} originates in the Harmony
 project\footnote{\url{https://alliance.seas.upenn.edu/~harmony/old/}}
 \citeyearpar{relationalLenses,harmonyOverview,harmonyManual}, a
 generic framework to synchronise tree-structured data. %
-An ongoing example throughout their work is the synchronisation of
-different browser bookmarks, calendar and address book formats. %
+One example used repeatedly throughout their work is the
+synchronisation of different browser bookmarks, calendar and address
+book formats. %
 They continued their work on lenses with a project called
 Boomerang\footnote{\url{https://alliance.seas.upenn.edu/~harmony/}}
 \citeyearpar{boomerang} that focuses on string data instead of
@@ -141,21 +145,20 @@ problems of get definitions are the ambiguity of the derived put
 functions. %
 That is, in several cases there exists more than one appropriate put
 function to correspond with the get definition. %
-These problems concerning ambiguity arrive
-when the defined get function is not injective; we will discuss
-this topic in more detail in Section~\ref{sec:implPut}. %
+These problems concerning ambiguity arise when the defined get
+function is not injective; we will discuss this topic in more detail
+in Section~\ref{sec:implPut}. %
 This ambiguity can be eliminated when we define the put direction
 instead. %
-Fischer \etal{} show in their work that the corresponding get function
-for a defined put function is unique if certain requirements apply
-to the put function. %
+Fischer \etal{} show that the corresponding get function for a defined
+put function is unique if certain requirements apply to the put
+function. %
 They prepare their theorem with some transformations on the
 \emph{PutGet} and \emph{GetPut} laws; instead of the classical
-representation, they express their requirements based on the put
-definition only. %
-As \cite{putback} state in their technical report, the \emph{PutGet}
-law can be reformulated as injectivity property of the put
-function. %
+representation, they express their requirements based on just the put
+definition. %
+\cite{putback} state that the \emph{PutGet} law can be reformulated as
+injectivity property of the put function. %
 For that purpose, let us recapitulate the \emph{PutGet} law. %
 \[
   |get (put s v) = v|
@@ -181,9 +184,8 @@ The identity function in the equation above is obviously of type |id
 thus, |V| must be the resulting type as well. %
 
 In the end, we can express the identity property of the first
-round-tripping rule \emph{PutGet} with the use of the put function
-only. %
-Thus, we postulate |put s| to be injective for all sources |s|. %
+round-tripping rule \emph{PutGet} using just the put function. %
+Thus, they demand |put s| to be injective for all sources |s|. %
 \[\tag{PutInj}
   |s'| \in |put s v| \wedge |s'| \in |put s v'| \Rightarrow |v = v'|
 \]
@@ -196,16 +198,16 @@ It is a bit more complicated to rewrite the equation
 \]
 because of the two usages of the variable |s|. %
 In order to simplify the equation, we need to use a pair as argument;
-then, we apply |put| to this argument. %
+then, we can apply |put| to this argument. %
 The resulting argument is a function depending on |s|. %
-The notion of using tuples instead of multiple arguments is called
-\emph{currying} and \emph{uncurrying}, respectively. %
+The notion of using tuples instead of multiple arguments and vice
+versa is called \emph{unccurrying} and \emph{currying}, respectively. %
 In this case, we need to apply the function |uncurry :: (a -> b -> c)
 -> (a, b) -> c| to the |put :: S -> V -> S| function in order to get a
 modified function |put' = uncurry put :: (S,V) -> S| that takes a pair
 of |S| and |V| as its argument. %
-With this auxiliary function at hand, we can express a point-free version
-of the \emph{GetPut} law.
+With this auxiliary function at hand, we can express a point-free
+version of the \emph{GetPut} law.
 \[ 
 |put' . (\s -> (s, get s)) = id|
 \]
@@ -246,10 +248,11 @@ determined with the following equation.
 
 As a next step, \cite{putCombinators} developed a put-based language
 in their subsequent work. %
-In this work, they present a general design of put-based languages as
-well as an implementation of an embedded DSL for Haskell. %
+They present a general design of put-based languages as well as an
+implementation of an embedded DSL for Haskell. %
 The main idea of the put-based language is to provide a handful of
-combinators, which allows to define the put function of a lens. %
+combinator. %
+The language allows to define the put function of a lens. %
 The put function of a lens defines the synchronisation strategy
 between a modified view and a given source. %
 In order to provide a wide scope of such strategies, the put-based
@@ -287,7 +290,7 @@ thus, the composition of predefined combinators form well-behaved
 lenses as well. %
 Additionally, the Haskell library provides functions to define custom
 lenses. %
-Due to the lack of statical checks concerning well-behavedness, the
+Due to the lack of static checks concerning well-behavedness, the
 user can use the function |checkGetPut| and |checkPutGet|\footnote{In
   the associated paper, Fischer \etal{} use the name |enforceGetPut|
   instead.} to check for the corresponding lens laws at runtime. %
