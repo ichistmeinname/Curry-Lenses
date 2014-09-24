@@ -10,6 +10,8 @@
 	10pt
 ]{scrbook}
 
+\usepackage[nottoc]{tocbibind}
+
 %
 % Paket für Übersetzungen ins Deutsche
 %

@@ -60,7 +60,7 @@ follows. %
 \[
 (\nearrow: S \Leftrightarrow V) \times S
 \rightarrow V\\
-\[\searrow:~ (S \Leftrightarrow V) \times (S,V)
+\searrow:~ (S \Leftrightarrow V) \times (S,V)
 \rightarrow S
 \]
 They define a tree combinator |filter p d| to keep particular children

@@ -206,7 +206,7 @@ only if the first one fails. %
                               False  -> pA1 str pair
 \end{spec}
 
-In this case, we use SetFunctions to reason about a possibly failing
+In this case, we use Set Functions to reason about a possibly failing
 replace-parser. %
 That is, if the first replace-parser does not yield any result when
 applied to the appropriate arguments, i.e., the list of all results is

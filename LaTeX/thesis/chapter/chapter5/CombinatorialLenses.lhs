@@ -148,9 +148,9 @@ of lenses wraps a |Maybe| data type around the view for the |get|
 function. %
 That is, we can actually observe if the expression |get s| succeeds or
 fails. %
-We could use \emph{SetFunctions}, introduced by~\cite{setFunctions}, to
+We could use \emph{Set Functions}, introduced by~\cite{setFunctions}, to
 identify defined and undefined values, but we adhere to the original
-implementation for simplicity reasons.\footnote{SetFunctions might
+implementation for simplicity reasons.\footnote{Set Functions might
   behave unexpectedly for partially applied functions.} %
 
 \subsubsection*{Composition}

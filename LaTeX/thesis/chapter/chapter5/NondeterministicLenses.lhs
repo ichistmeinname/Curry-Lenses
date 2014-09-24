@@ -204,7 +204,7 @@ i.e. for deterministic values. %
 %
 \begin{align*}
 |v| \subseteq~& |get (put s v)| \tag{PutGet-Nondet}\\
-|s| \subseteq~& |put s (get s)| \tag{GetPut-Nondet}\\
+|s| \subseteq~& |put s (get s)| \tag{GetPut-Nondet}
 \end{align*}
 %
 For the PutGet law, we demand the value that we put into the source to
