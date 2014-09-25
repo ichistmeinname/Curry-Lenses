@@ -8,8 +8,6 @@ Most common applications are synchronisation processes where two
 similar data structures maintain the same information and need to be
 kept in sync as well as serialisation processes where two structures
 are converted into each other. %
-The work of \cite{biTCombinators} set the trend for bidirectional
-transformations in the field of programming languages. %
 
 A more general concept in the context of bidirectional transformations
 are lenses. %
@@ -21,6 +19,8 @@ The query yields a so-called view -- or table, and we can make further
 modifications on that view. %
 These modifications lead to an out-dated set of data, which we want to
 update again with respect to the modifications of the view. %
+The work of \cite{biTCombinators} set the trend for lenses in the
+field of programming languages. %
 
 In general, a lens is a pair of functions that operate on two
 structures $S$ and $V$ that are defined as follows. %

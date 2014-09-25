@@ -19,7 +19,7 @@ For the Curry implementation, we adapt the underlying monadic approach
 by using Curry's built-in nondeterminism as the update strategy. %
 
 As the second implementation, we discuss a very simple library that
-does not uses the combinatorial approach, but builds lenses only with
+does not use the combinatorial approach, but builds lenses only with
 the help of a put definition. %
 In order to use lenses in the get direction, the library offers a
 general get function based on the given put definition and the lens

@@ -116,12 +116,12 @@ ppFactor str f@(e,str') = case e of
   _           -> "(" ++ ppExpr' str (e,")" ++ str')
      
 ppMultDiv :: PPrinter Op
-ppMultDiv _ (Mult,str') = "*" ++ str'
-ppMultdiv _ (Div,str')  = "/" ++ str'
+ppMultDiv _ (Mult,str')  = "*" ++ str'
+ppMultdiv _ (Div,str')   = "/" ++ str'
 
 ppPlusMinus :: PPrinter Op
-ppPlusMinus _ (Plus,str')  = "+" ++ str'
-ppPlusMinus _ (Minus,str') = "-" ++ str'
+ppPlusMinus _ (Plus,str')   = "+" ++ str'
+ppPlusMinus _ (Minus,str')  = "-" ++ str'
 \end{spec}
 
 In order to see the printer-parser in action, we give some exemplary

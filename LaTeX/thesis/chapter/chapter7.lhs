@@ -1,6 +1,6 @@
 %format "///" = "\vdots"
 \chapter{Conclusion}\label{ch:conclusion}
-Last but not least, we conclude this thesis with a summary of our work
+We want to conclude this thesis with a summary of our work
 and our accomplished results. %
 We also give an outlook on future work. %
 Upcoming challenges include further research on
@@ -38,7 +38,7 @@ and also existing libraries. %
 There also exists promising and well-studied work on
 bidirectionalisation techniques for get-based lenses that can be used
 in Haskell. %
-In this thesis, we decide not to follows this traditional approach and
+In this thesis, we decide not to follow this traditional approach and
 adopt the idea of put-based lenses. %
 Whereas the get-based approach lacks an unique bidirectionalisation of
 a suitable put function, we have the possibility to formulate a
@@ -61,7 +61,7 @@ setting. %
 In our opinion, nondeterministic lenses enhance the application of
 bidirectional programming to new areas that were not applicable
 before. %
-We implemented prototypal lenses to unify the specification of
+We implemented prototypical lenses to unify the specification of
 pretty-printers and parsers. %
 On top of these printer-parsers, we developed lenses to facilitate a
 layout-preserving replacement for a given pretty-printer
@@ -147,7 +147,7 @@ of |halve|. %
 
 \begin{code}
 halve :: [a] -> [a]
-halve xs = take (length xs `div` s) xs
+halve xs = take (length xs `div` 2) xs
 \end{code}
 
 With the help of our interface, we can derive a corresponding get
@@ -167,13 +167,14 @@ terminate. %
 The problem is the combination of the internal representation of lists
 and numbers; they do not harmonise well. %
 This effect is triggered by the usage of |length|. %
-The free variable |v| corresponds to |xs'| in the definition of
-|putHalve|, i.e., the system guesses values for |xs'|. %
+The free variable |v| in the definition of |get| corresponds to |xs'|
+in the definition of |putHalve|, i.e., the system guesses values for
+|xs'|. %
 In order to be more precise, the system needs to guess lists of type
 |()| for |xs'| and checks if their length is the same as |length
 [(),()] `div` 2|. %
 
-In order to focus on the cause of the problem., we can simplify our definition of
+In order to focus on the cause of the problem, we can simplify our definition of
 |putHalve|. %
 
 \begin{code}
@@ -200,8 +201,8 @@ putHalveSimple :: [a] -> [a]
 putHalveSimple xs' | length xs' == Pos IHi = xs' ++ drop 1 [(),()]
 
 length' :: [a] -> BinInt
-length' []     = Zero
-length' (x:xs) = inc (length' xs)
+length' []      = Zero
+length' (x:xs)  = inc (length' xs)
 \end{code}
 
 Additionally, we define an auxiliary function |length'| that computes
@@ -216,22 +217,22 @@ the length of a list?
 \numbersright
 \begin{code}
 inc :: BinInt -> BinInt
-inc Zero        = Pos IHi
-inc (Pos n)     = Pos (succ n)
-inc (Neg IHi)   = Zero
-inc (Neg (O n)) = Neg (pred (O n))
-inc (Neg (I n)) = Neg (O n)
+inc Zero         = Pos IHi
+inc (Pos n)      = Pos (succ n)
+inc (Neg IHi)    = Zero
+inc (Neg (O n))  = Neg (pred (O n))
+inc (Neg (I n))  = Neg (O n)
 \end{code}
 \numbersoff
 \numbersreset
 
 We can directly compute the result for an empty list, but
 for a non-empty list we build a sequence of |inc|-operations,
-e.g. |inc (inc Zero)| for a two-valued list, |inc (inc (inc Zero))|
+e.g., |inc (inc Zero)| for a two-valued list, |inc (inc (inc Zero))|
 for a three-valued list etc. %
 In order to take this investigation
 one step ahead, we need to look at the definition of |inc|, where only
-lines 5 and 6 are of further interest. %
+lines 2 and 3 are of further interest. %
 We give the evaluation of zero to two consecutive |inc| function calls
 in Figure~\ref{fig:incEval}. %
 \numberson
@@ -242,7 +243,7 @@ in Figure~\ref{fig:incEval}. %
 \def\commentend{\}}
 
 The attentive reader may have already noticed that the definition of
-|inc| is strict in its first argument and does not propagate its
+|inc| is strict and does not propagate its
 constructor. %
 The successor function on binary numbers, |succ|, is also strict. %
 Unfortunately, the |length| function cannot be implemented in a way
@@ -494,8 +495,8 @@ putHalvePeano :: [a] -> [a]
 putHalvePeano xs' | lengthPeano xs' == S Z = xs' ++ [()]
 \end{code}
 
-We present the evaluation steps of the the expression |lengthPeano v == S
-Z where v free | in Figure~\ref{fig:lengthPEval}. %
+We evaluate the the expression |lengthPeano v == S Z where v free | in
+Figure~\ref{fig:lengthPEval}. %
 
 \phantomsection
 \numberson
@@ -537,7 +538,7 @@ False ? lengthPeano [] == Z ? lengthPeano (_x4:_x5) == Z
 
 ==
 
-False ? Z == Z ? S (lengthPeano _x5) == S where _x5 free
+False ? Z == Z ? S (lengthPeano _x5) == Z where _x5 free
 
 ==
 
@@ -566,7 +567,7 @@ The main difference to the first implementation is that |lengthPeano| can
 propagate the constructor at the front of the remaining evaluation. %
 With that, the nested |?|-operators only occur as the argument of a
 sequence of |S|-constructors, which leads to a terminating search. %
-Line 25-28 of the example in Figure~\ref{fig:lengthPEval} show that no
+Lines 25-28 of the example in Figure~\ref{fig:lengthPEval} show that no
 further guesses for free variables are necessary, because the partial
 evaluation of |S n| can never be evaluated to |Z|. %
 Hence, the expression fails and the evaluation terminates. %

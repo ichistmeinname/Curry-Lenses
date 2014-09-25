@@ -31,8 +31,7 @@ example. %
   type Contact = { person :: Person, street ::  String }
 \end{code}
 
-At first, the compiler desugars record declarations to data type definitions
-first. %
+At first, the compiler desugars record declarations to data type definitions. %
 The value constructor's name is identical to the name of the record
 type and this constructor takes as many arguments as fields exist in
 the record declarations. %
@@ -61,15 +60,14 @@ aPerson = { first := "Bob", last := "Dylan" }
 \end{spec}
 
 Record updates are also possible; in order to update a given record
-type |Person| with fields |first| and |last|, we use another
-special syntax operator, |{ _ := _ || _ }|, to annotate which record
-value and which record fields of that record we
-want to change. %
+type |Person| with fields |first| and |last|, we use another special
+syntax operator, |{ _ := _ || _ }|, to annotate which record value and
+which record fields of a record we want to change. %
 
 \begin{code}
 appendToFirst :: Person -> Person
-appendToFirst person = { first := val ++ "1" | person }
-  where val = person :> first
+appendToFirst person = { first := value ++ "1" | person }
+  where value = person :> first
 \end{code}
 
 The construction without the pipe operator looks like a normal record
@@ -110,7 +108,7 @@ type |Person|, which, again, is a record type itself with fields
 
 \subsubsection*{Getting there is half the fun}
 
-We can define a function |getFirstForAddress| that takes a value of
+We can define a function |getFirstForContact| that takes a value of
 type |Contact| as argument and yields a |String| as result. %
 The result |String| is the first name of the person of the given
 contact, i.e., we first access the field |person| and use the
@@ -123,8 +121,8 @@ getFirstForContact contact = contact :> person :> first
 
 The definition of this function looks straightforward and quite
 compositional, but since |person| and |first| are not real functions
-but labels, i.e. special syntactical constructs, we cannot compose
-these accessors like in Haskell\footnote{}. %
+but labels, i.e., special syntactical constructs, we cannot compose
+these accessors like in Haskell. %
 In order to make this point more clear, we define a second version
 |getFirstForContact'|, which is defined with the help of the functions
 |first| and |person| that we defined earlier. %
@@ -180,7 +178,7 @@ respectively, we can redefine the setter function above.  %
 
 \begin{code}
 setFirstForContact' :: Contact -> String -> Contact
-setFirstForContact' c new = person' (person c) (first' (first person) new)
+setFirstForContact' c new = person' (person c) (first' (first (person c)) new)
 \end{code}
 
 The new version of the nested setter functions looks a little bit less
@@ -197,14 +195,14 @@ a record type and |recField| is the type of a field of that record. %
 type Get a b = a -> b
 
 get :: Get a b -> a -> b
-get getF val = getF val
+get getF value = getF value
 \end{code}
 
 As we have seen above, it is easy to compose getters for nested record
 values; with the new defined |get| function, we can access a field of
 a record value as follows\footnote{As we stated before, KiCS2
   translates a record type into a data type declaration, that is, the
-  REPL uses this translated data type when printing a record value}. %
+  REPL uses this translated data type when printing a record value.}. %
 
 \begin{spec}
 personGet :: Get Contact Person
@@ -228,7 +226,7 @@ For a generalised setter function, we define |set :: (rec -> recField -> rec) ->
 type Set a b = a -> b -> a
 
 set :: Set a b -> a -> b -> a
-set setF val new = setF val new
+set setF value new = setF value new
 \end{code}
 
 When revising the setter function for the nested record value, we come
@@ -287,7 +285,7 @@ In the last step, we change the second argument to match the type of
 the first, i.e., we take two pairs, where the first component is a getter
 and the second component is a setter function. %
 This change leads to pair as resulting type as well, that is, we can
-define both, compositions of getter and setter functions, in one
+define both compositions of getter and setter functions, in one
 combinator. %
 In the end, we get the following definition of |(<.>)|. %
 
@@ -311,9 +309,8 @@ lenses as a general mechanism. %
 As a bonus, nested records updates gain a general combinator to change
 a deep nested record field more easily. %
 
-In order to give a better insight about this idea, we first give the generated
-counterpart for the record definition of the beginning of the
-section as Curry code.  %
+In order to give a better insight about this idea, we first give the
+Curry code we want to generate. %
 
 \begin{code}
 type Contact = { person :: Person, street :: String }
@@ -327,13 +324,13 @@ person :: (Contact -> Person, Contact -> Person -> Contact)
 person = (personGet,personSet)
   where
    personGet (Contact p _)      = p
-   personSet (Contact p s) newP = Address newP s
+   personSet (Contact _ s) newP = Contact newP s
 
 first :: (Person -> String, Person -> String -> Person)
 first = (firstGet,firstSet)
   where
    firstGet (Person f _)      = f
-   firstSet (Person f l) newF = Person newF l 
+   firstSet (Person _ l) newF = Person newF l 
 \end{code}
 
 As a first observation, we can rewrite the type signature of |person|
@@ -352,8 +349,8 @@ type Lens a b = (Get a b, Set a b)
 Next, we examine the generated code a bit more. %
 As in the current transformation of record types, we generate a data
 type declaration corresponding to the record type: one value
-constructor with the same name as the record type and each field is of
-the record type is an argument of the value constructor. %
+constructor with the same name as the record type and each field of
+the record type as an argument of the value constructor. %
 The arrangement of arguments is adopted from the record
 declaration; in the process, we desugar grouped fields and write every
 pair of fields and type declaration consecutively. %
@@ -366,7 +363,7 @@ type Complicated =  { first, second        :: Int
                     , onOff                :: Bool
                     , text1, text2, text3  :: String }
 \end{code}
-can be easily flatten to
+can be easily flattened to
 \begin{code}
 type Person =  { first   :: Int
                , second  :: Int
@@ -376,28 +373,30 @@ type Person =  { first   :: Int
                , text3   :: String }
 \end{code}
 and we resign to give a general approach to flatten a record type,
-because it is rather technical to write down than is of any more
-help. %
+because it is rather technical to write down and of little help. %
 Hence, in the following we use flattened record types to simplify the
 transformation without losing expressiveness. % 
-That is, for a given record type declaration |type Rec = { label1 1 ::
+That is, for a given record type declaration |type Rec (sub alpha 1)...(sub alpha n)= { label1 1 ::
   tau 1, ..., label1 k :: tau k }|, we get the following
 transformation rule. %
 
 \begin{tf}
 \leavevmode
 \begin{center}
-\AXC{|tau 1 ... tau k| $\in \Theta$}
+\AXC{|tau 1 ... tau k|, |(sub alpha 1) ... (sub alpha n)| $\in \Theta$}
 \AXC{|Rec| $\not \in \Theta$}
 \AXC{|Rec| $\not \in \Psi$}
-\TIC{$(\Theta,\Psi): 
-|type Rec =| \left\{
+\TIC{($\Theta,\Psi): 
+|type Rec (sub alpha 1)...(sub alpha n) =| \left\{
    \begin{array}{l l}
      ~~|label1 1 :: tau 1|\\
      ,~ \dots \\
     , ~|label1 k :: tau m|
 \end{array}\right\}$
-$\rightsquigarrow$ |data Rec = Rec (tau 1)| $\cdots$ |(tau k)|
+$\rightsquigarrow \begin{array}{l l}
+|data Rec (sub alpha 1)...(sub alpha n) =|\\
+\quad|Rec (tau 1)| \cdots |(tau k)|
+\end{array}$
 }
 \DP
 \end{center}
@@ -420,9 +419,9 @@ every field of a given record. %
 \leavevmode
 \begin{center}
 \AXC{|label1 1, ... , label1 k| $\not \in \Phi$}
-\AXC{|type LensType a b = (a -> b, a -> b -> a)|}
+\AXC{|type Lens a b = (a -> b, a -> b -> a)|}
 \BIC{$\Phi:
-|type Rec =| \left\{
+|type Rec (sub alpha 1) ... (sub alpha n)=| \left\{
    \begin{array}{l l}
      ~~|label1 1 :: tau 1|\\
      , ~\dots\\
@@ -430,11 +429,11 @@ every field of a given record. %
 \end{array}\right\}$
 $\rightsquigarrow$
 $\begin{array}{l}
-|label1 1 :: LensType Rec (tau 1)|\\
+|label1 1 :: Lens (Rec (sub alpha 1) ... (sub alpha n)) (tau 1)|\\
 |label1 1 = (label1 (get__ 1),label1 (set__ 1))|\\
 \quad|where (*)|\\
 \hfill{\vdots} \hfill{}\\
-|label1 k :: LensType Rec (tau k)|\\
+|label1 k :: Lens (Rec (sub alpha 1) ... (sub alpha n)) (tau k)|\\
 |(label1 k) = (label1 (get__ k),label1 (set__ k))|\\
 \quad|where (*)|
 \end{array}
@@ -453,18 +452,15 @@ $
 
 We demand all record field names to be unique in the given
 environment, that is, functions with the same name are not
-allowed.\footnote{This requirement is also mentioned in the KICS2
-  Manual \citeyearpar[p. 22]{kics2Manual}, but a missing feature in
-  the current implementation.} %
+allowed. %
 Therefor, we introduce $\Phi$ as the set of all function names and if
 any record field is an element of that set, the precondition is not
 fulfilled, thus, the transformation cannot be pursued and fails. %
 In order to make the derivation rule more readable, we introduce a
-type synonym for lenses |type LensType a b = (a -> b, a -> b -> a)|
-for further usage, but we do not generate the lens type synonym in our
-record transformation without any loss of functionality but for
-simplicity reasons only. %
-For every record field |label1 i|, we generate a lens function |label1
+type synonym for lenses |type Lens a b = (a -> b, a -> b -> a)| for
+further usage, but we do not generate the lens type synonym in our
+record transformation for simplicity reasons. %
+For every record field |label1 i|, we generate a lens |label1
 i| in two steps: first, we define two local functions |label1 (get__
-u)| and |label1 (set__ i)| and combine them to a pair of getter and
+i)| and |label1 (set__ i)| and combine them to a pair of getter and
 setter function, i.e. a lens, in a second step. %

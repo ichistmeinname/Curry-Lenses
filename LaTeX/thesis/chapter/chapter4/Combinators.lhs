@@ -132,13 +132,13 @@ The appropriate put function is then propagated through the definition
 of the used get combinators. %
 For example, \cite{pointfree} designed a point-free DSL in Haskell, in
 which the programmer defines only the get transformations. %
-\cite{putback} are the first to propose to use the put definition
+\cite{putback} are the first to push the usage of the put definition
 instead. %
 It seems quite obvious that both -- the forward and the backward --
-function of a bidirectional transformation, can be used for
+function of a bidirectional transformation can be used for
 bidirectionalisation. %
-Nevertheless, so far, the current techniques mostly pursue the idea of Foster
-et al. %
+Nevertheless, so far, the current techniques mostly pursue the idea of
+Foster et al. %
 
 In the work of Fischer \etal{}, it becomes apparent that typical
 problems of get definitions are the ambiguity of the derived put
