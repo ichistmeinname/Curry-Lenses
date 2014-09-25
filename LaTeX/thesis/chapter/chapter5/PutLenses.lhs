@@ -7,7 +7,8 @@ are not suited for the get direction because of the ambiguity of their
 corresponding put function. %
 The remainder of this section deals with a very simple implementation
 of a lens library in Curry that sets its focus on the put functions as
-well, and gives some examples for better comprehension. %
+well. %
+We also give some examples for better comprehension. %
 In order to motivate our approach, we start with a discussion about
 the current state of the art and why we decided to focus on the put
 function anyway. %
@@ -19,7 +20,7 @@ the get direction. %
 This view on bidirectional programming arises from the way programmers
 are used to define functions. %
 Programmers are more familiar with defining a get function -- a
-function that selects information of a structure -- rather than
+function that selects information from a structure -- rather than
 thinking about an appropriate update strategy. %
 Therefore, let us take a look at a very simple implementation of a
 get-based approach. %
@@ -35,17 +36,19 @@ We define a type synonym for lenses that is equivalent to the
 signature of a get function, i.e., we represent lenses as their get
 function. %
 This definition leads to a straightforward implementation of a get
-function for lenses: we merely apply the given lens to a given source. %
+function for lenses: we merely apply the given lens to a given
+source. %
 However, this implementation of lenses lacks information for the put
 direction. %
 As a quick reminder: we want to define a function |(sub put get)| that
 updates a given source with a modified view with respect to the given
 lens. %
 The given lens is a function that projects some view from a given
-source, thus, in contradiction to our previous approach of a
-combinatorial language, here, the given lens has no further
-information about the update strategy. %
-All we know about the given lens is that it needs to obey to certain
+source. %
+Thus, in contradiction to our previous approach of a combinatorial
+language, here, the given lens has no further information about the
+update strategy. %
+All we know about the given lens is that it needs to obey certain
 round-tripping laws to be well-behaved: GetPut and PutGet. %
 That is, we can define the put definition by means of the get
 definition with respect to the PutGet law. %
@@ -67,8 +70,9 @@ means of get-based lenses. %
 
 This lens definition is very simple and constitutes a very familiar
 setting for the programmer: we want to project the first component of
-a given pair, thus, we ignore the second component and simply yield
-the first component. %
+a given pair. %
+Thus, we ignore the second component and simply yield the first
+component. %
 If we run exemplary function calls of |sub get get| and |sub put get|,
 we get more or less satisfactory results. %
 
@@ -80,9 +84,9 @@ we get more or less satisfactory results. %
 (3,_x1)
 \end{spec}
 
-In the get direction, everything works as expected, but,
-unfortunately, the put function yields a free variable as its second
-component as result. %
+In the get direction, everything works as expected. %
+Unfortunately, the put function yields a free variable as its second
+component. %
 This result leads to the realisation that the get-based implementation
 is rather simple, not to say, too simple. %
 If we use |sub fst get| in the put direction, we loose the additional
@@ -115,8 +119,8 @@ same first component yields the same view. %
 1
 \end{spec}
 
-The fact that |sub fst get| is not injective leads to an ambiguity
-issue and, hence, to a non-constructive put function. %
+The function |sub fst get| is not injective, which leads to an
+ambiguity issue and, hence, to a non-constructive put function. %
 
 % In order to make the point more clear, we discuss a second lens
 % definition that is not injective. %
@@ -158,7 +162,7 @@ The first observation, which we made in the context of the previous
 two lens definitions, is that we cannot ignore any part of the given
 source without losing information of the corresponding put function. %
 Let us take a look at an injective get function that is defined on
-pairs, with |Int|s as its first component and an arbitrary type as its
+pairs, with |Int|s as its first component, and an arbitrary type as its
 second component. %
 
 \begin{spec}
@@ -167,9 +171,9 @@ second component. %
 \end{spec}
 
 In the definition of the lens |sub incFst get|, we increment the first
-component and do not touch the second one, but, in contrast to the
-previous lens definition, we do not ignore the second component, it is
-still a part of the resulting view. %
+component and do not touch the second one. %
+In contrast to the previous lens definition, we do not ignore the
+second component; it is still a part of the resulting view. %
 That is, we have a lens that maps pairs to pairs. %
 
 \begin{spec}
@@ -184,9 +188,9 @@ The behaviour of the lens is rather simple, but in this case it is
 injective. %
 The aim of this definition is to show that most get functions are not
 of real use for defining a lens library for two reasons. %
-On one hand, they may be non-injective and, thus, do not have a
+First, they may be non-injective and, thus, do not have a
 uniquely defined corresponding put function. %
-On the other hand, if the definition is injective, its behaviour is
+Second, if the definition is injective, its behaviour is
 rather simple and not very useful. %
 We presented typical lenses like |sub head get| and |sub head fst|,
 which are still very simple, but already do not comply with the
@@ -198,8 +202,9 @@ lens implementation and how they approach the problem of ambiguity. %
 
 \subsection*{Excursion: Related Work on Get-Based Lenses}
 Most approaches try to build their bidirectional language with respect
-to a specific application area, e.g., XML data, strings or databases,
-however, in the following, we discuss some approximations for a more
+to a specific application area, e.g., XML data, strings, or
+databases. %
+However, in the following, we discuss some approximations for a more
 general approach. %
 
 There are several existing ideas to overcome these limitations
@@ -211,10 +216,9 @@ The initial concept was proposed by~\cite{constraintMaintainers},
 whose framework of constraint maintainers for user interaction is
 sometimes called a pioneer work in the topic of bidirectional
 transformations and lenses. %
-In his work, he states that the transformations, that for example take
-place in UIs, are supposed to be as minimal as possible in respect to
-the given constraint. %
-This approach aims to be user-friendly, thus, the results of the
+In his work, he states that UI-transformations are supposed to be as
+minimal as possible in respect to the given constraint. %
+This approach aims to be user-friendly: the results of the
 transformations are more comprehensible the more they are related to
 the initial situation. %
 
@@ -229,10 +233,11 @@ The computed delta helps to choose the best update strategy. %
 Therefore, delta lenses consist of a get and put function with a
 computed delta between original and updated source as an additional
 argument. %
-Diskin \etal{}\ develop a framework on the grounds of algebraic
-theory, and this idea of delta lenses is a conservative extension to
-the original lens framework, that is, the framework can reproduce the
-behaviour of ordinary lenses. %
+Diskin \etal{} develop a framework on the grounds of algebraic
+theory. %
+This idea of delta lenses is a conservative extension to the original
+lens framework; that is, the framework can reproduce the behaviour of
+ordinary lenses. %
 
 Additionally,~\cite{matchingLenses} put the theory into practice:
 their development of a new core language of matching lenses for
@@ -255,7 +260,7 @@ The former approach develops a theory of \emph{edit lenses}; the main
 difference to basic lenses is their focus on changes of structures
 similar to the idea behind delta lenses. %
 Edit lenses establish the connection between original and updated
-source, an approach that does not allow any guessing, but has a strict
+source; an approach that does not allow any guessing, but has a strict
 rule to apply the resulting alignment.  Hofmann \etal{}\ describe these
 lenses with a standard mathematical notion of monoids and monoid
 actions, where the former corresponds to the description of edits and
@@ -277,9 +282,9 @@ introduces an explicit separation of shape and data. %
 In their paper, they describe a point-free delta lens language in a
 dependent type setting, which is based on their early work of
 point-free lenses~\citeyearpar{pointfree}. %
-They distinguish between horizontal and vertical deltas; the former
+They distinguish between horizontal and vertical deltas: the former
 describes an update, where source and view values are of different
-types, and the latter is a special case, which describes updates for
+types; the latter is a special case that describes updates for
 values of the same type. %
 Pacheco \etal{} criticise the lack of shape alignments in related work
 on lenses. %
@@ -300,17 +305,17 @@ Instead, we focus on the put direction of lens definitions and search
 for an applicable get direction. %
 
 \subsection{Putting it Straight}
-\cite{putback} are the first to realise that the ambiguity of a get
-function is unavoidable and propose to define lenses
-by means of the put function instead. %
+\cite{putback} are the first to push lens definitions by means of the
+put function instead in order to eschew the unavoidable ambiguity of
+the get function. %
 Curry's built-in search capabilities form a fruitful ground for a
 bidirectional library that focuses on one direction and calculates the
 corresponding function for the other direction. %
 
 The pivot of the library is a very simple definition to represent
-lenses by means of the put direction, and its selectors |sub put put|
-and |sub get put| to use a given lens in the put and get direction,
-respectively. %
+lenses by means of the put direction as well as its selectors |sub put
+put| and |sub get put| to use a given lens in the put and get
+direction, respectively. %
 
 %format PutLens = "Lens_{put}"
 \begin{spec}
@@ -373,7 +378,10 @@ put) (13,2)|. %
 == {- (3) evaluate |(sub fst put) (13,2) v'| to |(v',2)|; |v'| is still not bound yet-}
   if (v',2) == (13,2) then v' else failed
     where v' free
-== {- (4) in order to evaluate |(==)|, the free variable is bound to |13| -}
+== {- (4) in order to evaluate |(==)|, the free variable is bound to
+  |13| -}
+\end{spec}
+\begin{spec}
    {- replace each occurrence of |v'| with |13| -}
   if (13,2) == (13,2) then 13 else failed
 == {- (5) evaluate the if-condition to |True| -}
@@ -388,25 +396,25 @@ as a result. %
 The most important evaluation takes place at step 4, where the
 operator |(==)| forces its left argument to be evaluated to reduce the
 whole conditional expression to a boolean value. %
-The left argument consists of the free variable, which is then bounded
+The left argument consists of the free variable, which is then bound
 to the appropriate value that evaluates the condition to |True|. %
 In this case, the expression |(v',2) == (13,2)| evaluates to |True| if
-both expressions can be reduced to the same value; the second
-components of the two pairs are already equivalent, thus, the free
-variable |v'| needs to be bound to the first component of the right
-pair, i.e., |13|. %
+both expressions can be reduced to the same value. %
+The second components of the two pairs are already equivalent, thus,
+the free variable |v'| needs to be bound to the first component of the
+right pair, i.e., |13|. %
 More precisely, Curry generates a series of numbers that fail the
-condition before the variable is finally bound to |13| -- we will
+condition before the variable is finally bound to |13| -- we
 discuss Curry's built-in search capabilities in further detail in
 Section~\ref{subsec:strict}. %
 
-The most important function the library contains in order to define
-useful lenses is the composition operator for lenses. %
+The most important function the library contains is the composition
+operator for lenses. %
 As before, we define |(sub ((<.>)) put)| as composition of two lenses
 |l1 :: PutLens a b| and |l2 :: PutLens b c| to gain a resulting lens
 of type |PutLens a c|. %
 
-\begin{spec}s
+\begin{spec}
 (sub ((<.>)) put) :: PutLens a b -> PutLens b c -> PutLens a c
 (sub ((<.>)) put) lAB lBC sA vC = (sub put put) lAB sA sB
   where sB = (sub put put) lBC ((sub get put) lAB sA) vC
@@ -414,27 +422,28 @@ of type |PutLens a c|. %
 
 In order to see the composition operator in action, we need a second
 lens to connect two lenses in series. %
-As a more useful example, we first define an algebraic
-data type for a contact, like in an address book. %
-The context consists of an address and information about the contact's
+We first define an algebraic data type for a contact, like in an
+address book. %
+The contact consists of an address and information about the contact's
 name, i.e., its first and last name. %
 
 \begin{spec}
 type Name     = (String,String)
 type Address  = String
 data Contact  = Contact Name Address
+\end{spec}
+\begin{spec}
+name :: PutLens Contact Name
+name (Contact _ address) newName = Contact newName address
 
 address :: PutLens Contact Address
 address (Contact name _) newAddress = Contact name newAddress
-
-name :: PutLens Contact Name
-name (Contact _ address) newName = Contact newName address
 \end{spec}
 
 Additionally, we have two lenses to operate on the algebraic type
 |Contact|: one selector to change and project the name, the other one
 for the address. %
-The second lens, |name|, yields the name of a contact, which is
+The first lens, |name|, yields the name of a contact, which is
 represented as a pair. %
 We define a lens that operates directly on the first name of
 a contact by composing |name| with |(sub fst put)|. %
@@ -494,13 +503,14 @@ In the case of put-based lenses, we can express the requirements for
 well-behavedness with the put function only. %
 We have already discussed this modification in Section \ref{bi:fisher}
 and introduced the laws \emph{PutInj} and \emph{PutTwice}. %
+
 The implementation of our testing library is built on an old version
 of
 EasyCheck\footnote{\url{http://www-ps.informatik.uni-kiel.de/currywiki/tools/easycheck}}. %
 EasyCheck is a lightweight library for specification-based testing in
-Curry, which is implemented by \cite{easyCheck}.\footnote{The
-  implementation of EasyCheck is highly motivated by the work of
-  \cite{quickCheck}, who introduced QuickCheck. %
+Curry implemented by \cite{easyCheck}.\footnote{The implementation of
+  EasyCheck is highly motivated by the work of \cite{quickCheck}, who
+  introduced QuickCheck. %
   QuickCheck is a testing library for Haskell, which has achieved a
   very good reputation in the Haskell community and is still
   excessively used.} %
@@ -510,29 +520,30 @@ obey the given type dependencies. %
 In case of an error, the library provides the tested value that
 contravenes the given specification as well as the false result. %
 
-We had to make some adjustments to the implementation because the
-latest version of the EasyCheck was written for KiCS, a
+We had to make some adjustments to the implementation, because the
+latest version of the EasyCheck was written for KiCS -- a
 predecessor of the currently used and maintained KiCS2 compiler. %
 These adjustments cover mostly the renaming of used libraries and
 reimplementing modules that are not part of the KiCS2 contribution
 anymore. %
 
-In the end, the library \texttt{LensCheck} provides a set of testing
-functions to check several properties of user-defined
+We provide a library \texttt{LensCheck} with a set of
+testing functions to check several properties of user-defined
 lenses. %
 First of all, the library consists of functions |checkGetPut| and
 |checkPutGet| to test the traditional two round-tripping rules and an
 additional testing function |checkPutPut| for the PutPut law. %
-For the purpose of put-based properties, as proposed by Fischer \etal{},
-the library provides testing functions |checkPutDet| and
+For the purpose of put-based properties -- as proposed by Fischer
+\etal{} -- the library provides testing functions |checkPutDet| and
 |checkPutStab|. %
-In addition, all five properties can be tested in the context of list
+In addition, all five properties can be tested in the context of lists
 with a specifically defined version, e.g., |checkListGetPut| and
 |checkListPutDet|.\footnote{We include a function for this special
-  case, because it is explicitly recommended in the paper of Fischer et
-  al. to use an additional function to exclude the empty list as value.} %
+  case, because it is explicitly recommended in the paper of Fischer
+  et al. to use an additional function to exclude the empty list as
+  value.} %
 
-Unfortunately, the library does not prevent the user to define
+Unfortunately, our lens library does not prevent the user to define
 inaccurate lenses. %
 The only guarantee the library gives is in the context of PutGet. %
 Additional properties have to be checked manually by the user in order

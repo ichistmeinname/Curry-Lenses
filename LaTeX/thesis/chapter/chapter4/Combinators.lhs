@@ -36,7 +36,7 @@ with the original concrete structure back to a modified concrete
 structure. %
 
 In the DSL, the user defines the forward transformation in a
-straight-forward fashion, whereas the backward transformation is the
+straightforward fashion, whereas the backward transformation is the
 result of reading the definition backwards. %
 
 The following expression shows a tree with two labels, |fst| and

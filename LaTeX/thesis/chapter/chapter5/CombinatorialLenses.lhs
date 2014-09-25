@@ -55,7 +55,7 @@ The update does not effect the second component. %
     put' (_,y) z = (z,y)
 \end{spec}
 
-The definition of this lens is straight-forward, however, while we
+The definition of this lens is straightforward, however, while we
 gain from simplicity, we lose in accuracy and maintainability. %
 First of all, the given definition does not automatically form a
 well-behaved lens, because we did not consider the lens laws
@@ -122,8 +122,8 @@ In the following, we present a reimplementation of the Haskell library
 \texttt{putlenses} in Curry. %
 The original implementation provides a monadic interface to
 instantiate different update strategies. %
-Due to the lack of type classes in Curry, we can not use this
-approach, and instead use the build-in nondeterminism. %
+Due to the lack of type classes in Curry, we cannot use this
+approach, and instead use the built-in nondeterminism. %
 However, we can approximate the desired behaviour by instantiating the
 monad with a list when using the Haskell library. %
 
@@ -185,19 +185,21 @@ For the put direction we have to play a bit more with the available
 functions and take a closer look at their type signatures. %
 In addition to the get functions we discussed before, we have two put
 functions, |(sub put l1) :: Maybe s -> v -> s| and |(sub put l2) ::
-Maybe v -> w -> v|, a source of type |s|, an updated view of type |w|,
-and the resulting put function is supposed to be of type |sub put
-(l1+l2) :: Maybe s -> w -> s|. %
+Maybe v -> w -> v|, a source of type |s|, and an updated view of type
+|w|. %
+The resulting put function is supposed to be of type |sub put (l1+l2)
+:: Maybe s -> w -> s|. %
 If there is no source available, i.e., the value of the source is
-|Nothing|, we can apply the two put functions consecutively, in which
+|Nothing|, we can apply the two put functions consecutively. %
 |sub put l2| is applied to the source and the given view, and |sub put
 l1| is applied to the resulting value as second argument. %
 In case of an available source, we have to set the inner structure
-first with the given updated view, that is, we apply |sub put l2| to
-the view of the given source and the updated view. %
+first with the given updated view. %
+That is, we apply |sub put l2| to the view of the given source and the
+updated view. %
 Here, the usage of |Maybe| to wrap the result of a put function comes
-in handy. %
-We can easily make the distinction if a put function failed or not. %
+in handy: we can easily make the distinction if a put function failed
+or not. %
 As a last step, the source is updated with the resulting inner
 structure from the previous step using |sub put l1|. %
 
@@ -229,48 +231,50 @@ phi p  = Lens get' put'
 \end{spec}
 
 In particular, the put direction declines any updated view that does
-not fulfil the given predicate, that is, we demand the update on the
-view to be valid. %
+not fulfil the given predicate. %
+That is, we demand the update on the view to be valid. %
 The get function checks if the given source fulfils the predicate and
 yields that source for a positive outcome; otherwise a valid view for
 the given source does not exist and the function yields |Nothing|. %
 
 \subsubsection*{Products: Pairing and Unpairing}
 The second category of combinators covers products to build pairs and
-projects components of pairs. %
+project components of pairs. %
 The first lens builds a pair in the put direction by injecting a value to the left of the
 view, and projects the second component of the source in the get direction. %
 
 \begin{spec}
 addFst :: (Maybe (s1,v) -> v -> s1) -> Lens (s1,v) v
 addFst f = Lens put' (Just . snd)
- where
-  put' s v' = (f s v',v')
+  where
+   put' s v' = (f s v',v')
 \end{spec}
 
 The user constructs the injected value with a specified function,
 which takes a possible source and the updated view to yield a new
 first component. %
-Recall the~\hyperref[ex:fstInc]{example of the previous section}: the
-lens |fstInc| resets the first component of the source pair with an
+However, this specified function is not restricted to a specific range
+in order to fulfil the lens laws.
+For instance, 
+the following lens definition |fstAndInc| resets the first component of the source pair with an
 updated view and, simultaneous, increments the second component. %
 We can define this lens by means of |addSnd|, the dual lens of
-|addFst| that behaves the same but injects a second component and
-projects the first component, respectively. %
+|addFst| that behaves like |addFst|, but injects a second component
+and projects the first component, respectively. %
 
+\phantomsection
+\label{ex:fstAndInc}
 \begin{spec}
-fstInc :: Lens (Int,Int) Int
-fstInc = addSnd inc
+fstAndInc :: Lens (Int,Int) Int
+fstAndInc = addSnd inc
   where
-   inc Nothing _    = error "fstInc: undefined source"
-   inc Just (_,sub s 2)  = (sub s 2) + 1
+   inc Nothing _    = error "fstAndInc: undefined source"
+   inc (Just (_,v)) _  = v+1
 \end{spec}
 
-Wait a minute! %
-We criticised the use of |fstInc| as a lens, because it does not obey
-the lens laws, in particular, the GetPut law. %
-This observation implies that the given implementation of |addFst|
-does not take any validation checks into account either. %
+Unfortunately, this lens does not fulfil the GetPut law. %
+We observe that the given implementation of |addFst|
+does not take any validation checks into account. %
 In the original implementation, Fischer \etal{} ensure well-behavedness
 by using an auxiliary function |enforceGetPut| to resolve the
 irregularity. %
@@ -301,6 +305,14 @@ further changes and yield the source; otherwise we apply the put
 function as usual. %
 That is, |enforeGetPut| yields the given source for an unchanged view according to the
 GetPut law, hence, forces the lens to be well-behaved. %
+We rewrite the definition of |addFst| as follows. %
+
+\begin{spec}
+addFst :: (Maybe (s1,v) -> v -> s1) -> Lens (s1,v) v
+addFst f = enforceGetPut (Lens put' (Just . snd))
+  where
+   put' s v' = (f s v',v')
+\end{spec}
 
 As counterpart to |addFst| and |addSnd|, we define |remFst| and
 |remSnd| to destruct the view pair by discarding the first and second
@@ -327,7 +339,7 @@ the PutGet law. %
 \subsubsection*{Sums: Either Left or Right}
 In order to handle sum types like |Either|, we provide a lens that
 distinguishes between a |Left| and a |Right| value. %
-The lens |injL| injects the given update view as a left value and
+The lens |injL| injects the given updated view as a left value and
 ignores the source; its counterpart |injR| injects a right value. %
 In the get direction, the function ignores a given left and right
 value, respectively. %
@@ -357,6 +369,8 @@ Although we gave the fundamental combinators of the library, we did not
 dive into programming our own lenses so far. %
 When defining lenses, the user has to build his lens by composing the
 combinators of the library. %
+
+\subsubsection*{Example I: Starting with |fst|}
 As a first simple example, we define our running example, |fst|, by
 the means of |addSnd|. %
 
@@ -397,10 +411,12 @@ account when we define a new lens. %
 The library encourages the user to define his lenses by means of the
 put direction only. %
 As we discussed in Section~\ref{bi:fisher}, it may be more
-conventional and intuitive, but the put functions that we defined for
+conventional and intuitive. %
+Nevertheless, the put functions that we defined for
 the library have a unique corresponding get function, because all put
-functions comply with the requirements stated by Fischer \etal{}. \\
+functions comply with the requirements stated by Fischer \etal{}. %
 
+\subsubsection*{Example II: Lenses for Built-in Data Types}
 The library consists of several combinators that work on sums and
 products; but what about built-in data types or user-defined
 structures? %
@@ -423,14 +439,15 @@ type Maybe a = Either () a
 
 nothing :: Maybe a
 nothing = Left ()
-
+\end{spec}
+\begin{spec}
 just :: a -> Maybe a
 just = Right
 \end{spec}
 
 A failure value like |Nothing| can be represented with |Left ()|,
-because |()| is the only value of the Unit type; and any other value
-can be represented with |Right| instead of |Just|. %
+because |()| is the only value of the Unit type; any other value can
+be represented with |Right| instead of |Just|. %
 
 As a second example, we discuss how to use the available combinators
 to build lenses for lists. %
@@ -479,9 +496,10 @@ The |isoLens| forms an isomorphism between two types |a| and |b|,
 where |b| is the starting value, and |a| takes the role of the
 internal structure. %
 The functions takes two functions for transformations: from |a| to |b|
-and vice versa; in the get direction, we transform the source into an
-internal structure, and convert the updated structure back again in
-the put direction. %
+and vice versa. %
+In the get direction, we transform the source into an internal
+structure, and convert the updated structure back again in the put
+direction. %
 In order to provide selectors for lists, we have to define such an
 isomorphism between the list data type and the rewritten structure
 based on sums and products. %
@@ -524,9 +542,9 @@ list, and to replace the given list by a new one. %
 
 Unfortunately, we cannot transform the empty list into a
 representation that consists only of products for two reasons. %
-Firstly, the used combinator |injR| only selects |Right| values and
+First, the used combinator |injR| only selects |Right| values and
 the empty list is represented as |Left ()|. %
-Secondly, product types are not suitable to model failure values like
+Second, product types are not suitable to model failure values like
 the empty list. %
 The usage of |injL| instead of |injR| is not feasible either: |injL|
 can only select |Left| values and fails otherwise. %
@@ -538,8 +556,8 @@ consideration to define our lenses. %
 
 The actual definition of |changeHead| and |changeTail|\footnote{The
   names conform to the functionality of their put function.} is rather
-simple: the |cons| combinators split the list into head and tail,
-thus, we only need to choose between the first and second component as
+simple: the |cons| combinator splits the list into head and tail. %
+Thus, we only need to choose between the first and second component as
 a last step. %
 
 \begin{spec}
@@ -578,6 +596,7 @@ analogue to the definition of |sub fst comb| given above. %
 [1,13,14,15]
 \end{spec}
 
+\subsubsection*{Example III: User-defined Data Types}
 Users can follow the same approach to define lenses for self-defined
 data types. %
 As an example, we transform a data type with one constructor and
@@ -603,7 +622,7 @@ date = isoLens inn out
    out (Date m d) = (m,d)
 \end{spec}
 
-and provide selectors, |day| and |month|, to access the values in the
+and provide selectors -- |day| and |month| -- to access the values in the
 get direction and replace them with new values in the put direction. %
 
 \begin{spec}
@@ -634,7 +653,7 @@ the range of valid dates. %
   where
    in (m,d) | check m d = Date m d
    out (Date m d) | check m d = (m,d)
-   check m d  = m > 0 && m < 13 && d > 0 && d < 32
+   check m d  = 0 < m && m < 13 && 0 < d && d < 32
 \end{spec}
 
 Our modification still tolerates some invalide dates, e.g. |Date 2
