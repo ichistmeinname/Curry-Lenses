@@ -1,9 +1,11 @@
 \chapter{Case Studies}\label{ch:studies}
 
 In this chapter, we discuss two case studies for the application of
-lenses: (1) an implementation of a library for pretty-printing and
-parsing; (2) a theoretical concept to generate lenses from record data
-types in order to manipulate a particular record field. %
+lenses. %
+First, an implementation of a library for pretty-printing and
+parsing. %
+Second, a theoretical concept to generate lenses from record data
+types to manipulate a particular record field. %
 
 The first case study uses our put-based lens library to unify the
 definition of a pretty-printer and parser: a printer-parser. %
@@ -29,13 +31,12 @@ Secondly, we propose to generate lenses for record data types. %
 A similar idea is already integrated in Haskell with the extension
 |OverloadedRecordFields|\footnote{\url{https://ghc.haskell.org/trac/ghc/wiki/Records/OverloadedRecordFields}}. %
 First, we take a look at the current usage of record syntax in Curry
-in order to motivate our proposal. %
+to motivate our proposal. %
 Record syntax in Curry is similar to the concept in Haskell, but uses
 a special record selector in combination with labels instead of a
 function to project a particular field. %
-We define an exemplary module and give its generated
-counterpart. %
-At last, we conclude with the definition of the underlying transformations to
+% We define an exemplary module and give its generated counterpart. %
+Second, we give the definition of the underlying transformations to
 generate the appropriate lenses for a record data type. %
 
 
