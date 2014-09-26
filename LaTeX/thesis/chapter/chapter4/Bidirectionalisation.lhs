@@ -19,52 +19,51 @@
 % \end{itemize}
 
 Bidirectionalisation is the process of automatically transforming
-uni-directional into bidirectional functions. %
+uni-directional functions into bidirectional functions. %
 In the following, we present two techniques to bidirectionalise a
-uni-directional get function: the first technique by \cite{viewComp}
-syntactically derives a put function for a given get function, whereas
-the second approach takes a more semantic approach to generate an
-appropriate put function at runtime. %
+uni-directional get function: the first technique syntactically
+derives a put function for a given get function, whereas the second
+approach takes a more semantic approach to generate an appropriate put
+function at runtime. %
 Both techniques have their advantages and disadvantages, so the
 authors also worked out a combined approach, which yields results at
 least as good as either one of the two techniques. %
+We also give a short introduction for the combined approach. %
 
 \subsection{Syntactic Bidirectionalisation}\label{subsec:biSyn}
-Matsuda \etal{} introduce a general first-order functional language
+\cite{viewComp} introduce a general first-order functional language
 called \emph{VDL}. %
 Their language has two syntactical restrictions, which we have to keep
-in mind when talking about derivable functions: defined functions have
-to be \emph{affine} and \emph{treeless}. %
+in mind when talking about derivable functions: the defined functions
+have to be \emph{affine} and \emph{treeless}. %
 A function definition is affine if every variable on the left hand
 side is used at most once on the right hand side of the definition;
 treeless characterises function definitions without intermediate data
 structures. %
 Nevertheless, VDL allows function definitions using arbitrary
 algebraic data structures, e.g., lists and trees. %
-The user defines uni-directional get functions, and VDL automatically
+The user defines uni-directional get functions and VDL automatically
 derives appropriate put functions. %
-The presented derivation algorithm is based on a similar approach in
-the field of databases, but follows a syntactical approach. %
+The underlying derivation algorithm is based on a similar idea in the
+field of databases, but follows a syntactical approach. %
 As a first step, VDL derives a \emph{view complement function} $f^c: S
 \rightarrow (S \setminus V)$ for a get\footnote{Matsuda \etal{} call
   |get| functions view functions instead.} function $f: S \rightarrow
 V$. %
 The main idea of the view complement function $f^c$ is to preserve any
-information disregarded by the original function $f$, such that $f x$
-and $f^c x$ are sufficient to reconstruct the argument $x$. %
-For instance, if we consider $f : (A,B) -> A, f = fst$, $f^c : (A,B)
--> B, f^c = snd$ serves as a valid view complement function. %
+information disregarded by the original function $f$, such that $f~x$
+and $f^c~x$ are sufficient to reconstruct the argument $x$. %
+For instance, if we consider the function $f : (A,B) \rightarrow A, f = |fst|$,
+then $f^c : (A,B) \rightarrow B, f^c = |snd|$ serves as a valid view complement
+function. %
 
 Matsuda \etal{} require the view complement function $f^c$ to be
-injective when paired with the view function $f$, where a pair $X$ and
-$Y$is denoted with $X \triangle Y$. %
+injective when paired with the view function $f$; a pair of $X$ and
+$Y$ is denoted with $X \triangle Y$. %
 That is, $(f \triangle f^c)$ is injective for a get function $f$ and
 its complement $f^c$. %
 As the last step, an inverse transformation is performed on the pair
 to obtain the put function. %
-All in all, the put function can be derived if the paired function and
-its inverse can be derived effectively. %
-
 The following equations illustrate the definitions given above. %
 \begin{align*}
   f:&~ S \rightarrow V \tag{get function}\\
@@ -73,10 +72,13 @@ The following equations illustrate the definitions given above. %
   (f ~\triangle~ f^c)&~ |valS| = |(f valS,f^c valS)|
 \end{align*}
 
+All in all, the put function can be derived if the paired function and
+its inverse can be derived effectively. %
+%
 \[\tag{derived put function}
   put_{<f,f^c>} (s,v) =  (f ~\triangle~ f^c)^{-1} (v,f^c s)
 \]
-
+%
 In their paper, the authors give an algorithm to automatically derive a view
 complement function for a given get function. %
 % The algorithm uses so-called \emph{context notation}. %
@@ -211,14 +213,14 @@ complement function for a given get function. %
 % \end{align*}
 
 There are two details that we did not examine so far: a determinism
-property for the inverse transformation and further requirements for
+property for the inverse transformation, and further requirements for
 the complement function. %
-The inverse transformation is not guaranteed to be deterministic: it
+The inverse transformation is not guaranteed to be deterministic; it
 is possible to generate equations with overlapping left-hand sides. %
 In the case of nondeterministic programs, a backtracking search
 becomes necessary. %
-However, \cite{synSemComb} state that it would be preferable to only
-obtain deterministic programs. %
+However, \cite{synSemComb} state that it would be preferable to obtain
+only deterministic programs. %
 Furthermore, the complement, which we derive in the first step, must
 be injective and minimal with respect to a collapsing order, which
 needs to be defined. %
@@ -237,7 +239,7 @@ The acronym |bff| stands for |bidirectionalisation for free|, which is
 the title of the underlying paper. %
 
 In contrast to the syntactic approach we studied before, the resulting
-put is a functional value which is semantically equivalent to a
+put is a functional value, which is semantically equivalent to a
 syntactically derived put function. %
 The advantage is that we have fewer language restrictions, because we
 can use Haskell as our language of choice instead of a sublanguage. %
@@ -245,13 +247,13 @@ The |bff| function takes any Haskell function of appropriate type as
 its argument. %
 The |bff| function is defined on lists, but the approach is
 also applicable for all data structures, which have shape and content,
-i.e. which apply to the category of containers as defined by
+i.e., which apply to the category of containers as defined by
 \cite{containers}. %
 
 The approach exploits the fact that the get function is polymorphic
-over its first arguments, i.e. the container's element. %
+over its first arguments, i.e., the container's element. %
 We can assume that it does not depend on any concrete
-element of its container, but only on positional information, which
+element of its container, but only on positional information that
 are independent of the element's values. %
 The use of free theorems allows us to inspect the effect of the |get|
 transformation without knowing about the explicit implementation. %
@@ -271,9 +273,10 @@ the head element as a singleton list. %
 \end{spec}%
 %
 
-In the following, we want to update the source
-> eitherValues = [Left 10, Left 12, Right True, Left 13]
-with the view |upd = [Right False]|. %
+In the following, we want to update a given source with a new view. %
+We have a source |eitherValues = [Left 10, Left 12, Right True, Left
+13]|, a list of ascending order as template, and an updated view |upd
+= [Right False]|. %
 
 % \begin{spec}
 % bff (sub get fst) [Left 10, Left 12, Right True, Left 13] [Right False]
@@ -290,9 +293,9 @@ with the view |upd = [Right False]|. %
 % Every value in the simulated container has a corresponding value in
 % the given container. %
 
-The idea is to first construct a mapping for every element of the
-given list: each element of |eitherValues| is mapped with the
-corresponding element of the template. %
+The idea is to first construct a mapping between each element of the
+given list and the template: each element of |eitherValues| is mapped
+with the corresponding element of the template. %
 
 \begin{spec}
 mapping :: [a] -> [(Int,a)]
@@ -304,7 +307,7 @@ mapping = zip [0..]
 
 %
 As a second step, we simulate the behaviour of the get function on the
-template list: we apply get to template. %
+template list: we apply the get function to template. %
 Then, each element of the resulting list is mapped with the
 corresponding elements of the updated view |upd|. %
 
@@ -313,7 +316,7 @@ mapping2 :: ([a] -> [a]) -> [Int] -> [a] -> [(Int,a)]
 mapping2 getF is = zip (getF is) 
 
 > mapping2 ((sub get fst) [0,1,2,3]) [Right False]
--- zip' [0] [Right False]
+-- zip [0] [Right False]
 [(0,Right False)]
 
 \end{spec}
@@ -356,10 +359,10 @@ elements, the defined mapping fails because of its simple
 definition. %
 In a more practical mapping, equivalent elements in the original list
 need to map to the same element in the template. %
-Thus, we need to compare the elements within the list, this is where
+Thus, we need to compare the elements within the list:
 the |Eq| type class comes into play. %
 For the function |sub bff Ord|, the mapping needs a similar, but
-rather complicated and more technical, adjustment in order to allow
+rather complicated and more technical adjustment in order to allow
 the use of free theorems again. %
 
 As the major disadvantage, any get function that changes the shape of
@@ -381,7 +384,7 @@ equivalence properties of the elements, and an
 observer function for the template. %
 The approach uses these observer functions to
 build the mappings as in the original approach. %
-These mappings are called observation tables here, and generalise the
+These mappings are called observation tables and generalise the
 explicit usage of different functions for different type class
 dependencies. %
 
@@ -555,13 +558,13 @@ class Pack delta alpha | alpha -> delta where
 The type variable |delta| represents the type of the concrete data
 structure, whereas |alpha| is the type of the abstracted value. %
 The last type variable |mu| is the used monad, which tracks the
-transformation on values of the concrete structure called; these
-tracking data are called observation histories. %
+transformation on values of the concrete structure; these tracking
+data are called observation histories. %
 The additional type class |Pack delta alpha| constructs labels to
 track information regarding the location of values within the concrete
 structure. %
 In short, the approach replaces monomorphic values in the definition
-of the |get| function, which are, for example, used for comparisons,
+of the |get| function, which are, for example, used for comparisons
 with polymorphic values. %
 % The following function is quite similar to Example
 % \ref{filter:fstGet}, but it is defined on lists instead of trees; it
@@ -819,11 +822,11 @@ with polymorphic values. %
 It becomes apparent that both approaches have their pros and cons. %
 Naturally, \cite{synSemComb} proposed a combination of the semantic as
 well as the syntactic bidirectionalisation. %
-The combined approach uses each technique for their area of expertise:
-the semantic derivation for content updates and the syntactic
+The combined approach uses each technique for its area of expertise:
+the semantic derivation for content updates, and the syntactic
 derivation for shape-changing transformations. %
-The authors categorise the two techniques as follows: syntactic
-bidirectionalisation is used as black box whereas semantic
+The authors categorise the two techniques; whereas the syntactic
+bidirectionalisation is used as black box, the semantic
 bidirectionalisation is similar to a glass box. %
 That is, the semantic bidirectionalisation approach can be more
 powerful if we refactor the transformation in order to plug-in a
@@ -918,25 +921,26 @@ functions are allowed because of the usage of the syntactic
 bidirectionalisation, and we can only use polymorphic functions in
 order to use the semantic bidirectionalisation technique. %
 Fortunately, the presented enhancements and extensions to semantic
-bidirectionalisation does consort well with the combined approach. %
+bidirectionalisation do consort well with the combined approach. %
 That is, we can use the more general function |bffBy| in combination
 with specified observer functions for semantic bidirectionalisation,
 or turn monomorphic functions into polymorphic ones with the monadic
 extension to gain a wider range of possible |get| functions. %
 In the end, the combined approach performs never worse than one of the
 two approaches by themselves. %
-\todo{rephrase - covered}
 The semantic bidirectionalisation on its own has difficulties in
-shape-changing update, but are covered with the combined approach,
-whereas the syntactic approach operates on specialised programs now,
+shape-changing update, but such updates are covered with the combined
+approach. %
+The syntactic approach operates on specialised programs now,
 which can lead to better results. %
 
 In addition, the semantic bidirectionalisation uses free theorems also
 to prove consistency conditions. %
 We discussed the syntactical bidirectionalisation, which formulates
 its derivation on the ground of the \emph{GetPut} and \emph{PutGet}
-law, in contrast, Voigtl\"ander proves, with the help of free
-theorems, for each of his function definitions, |bff|, |sub bff EQ|
-and |sub bff ORD|, that they obey the lens laws. %
+law. %
+In contrast, Voigtl\"ander proves, with the help of free theorems, for
+each of his function definitions, |bff|, |sub bff EQ| and |sub bff
+ORD|, that they obey the lens laws. %
 That is, instead of a correctness-by-construction approach, the laws
 are verified by hand.

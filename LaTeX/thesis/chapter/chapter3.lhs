@@ -3,6 +3,7 @@
 looks and behaves like something they know, the more likely they are 
 to use it.''}}{\textsc{Simon Peyton Jones}}
 %
+\noindent
 The main implementations we present in this thesis are programmed
 with Curry. %
 All programs are compiled with KiCS2\footnote{In particular, we use

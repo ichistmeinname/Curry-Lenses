@@ -2,6 +2,7 @@
 \epigraph{\itshape{``He who moves not forward goes backward.''}}
 {\textsc{Johann Wolfgang von Goethe},\\\textit{Herman and Dorothea}}
 %
+\noindent
 Many approaches in the context of data synchronisation and data
 transformation are error-prone and cumbersome to maintain. %
 Typical examples for such approaches are widespread and can be found
