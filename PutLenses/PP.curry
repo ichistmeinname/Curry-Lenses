@@ -1,6 +1,8 @@
+{-# OPTIONS_CYMAKE -X TypeClassExtensions #-}
+
 module PP where
 
-import Lens
+import LensT
 import Char (isAlpha, isAlphaNum, isSpace, isDigit, intToDigit)
 import List (isSuffixOf,intercalate,find)
 import Maybe
@@ -14,7 +16,7 @@ type PPrinter a = Lens String (a,String)
 pParse :: PPrinter a -> String -> a
 pParse pp str = maybe err fst $ find ((== "") . snd) values
  where
-  values = getND pp str
+  values = sortValuesBy (\_ _ -> True) $ set2 get pp str
   err    = error "no complete parse"
 
 pPrint :: PPrinter a -> a -> String
@@ -25,6 +27,7 @@ pPrint pp val = pp "" (val,"")
 data Expr     = BinOp Op Expr Expr
               | Num Int
 data Op       = Plus | Mult | Div | Minus
+  deriving Eq
 
 -- (BinOp Plus (BinOp Plus (Num 2) (Num 3)) (Num 4))
 
@@ -158,7 +161,7 @@ ppPlusMinus _ (Minus,str') = "-" ++ str'
 ----- Lenses with canonizers (Quotient Lenses)
 type CC s v = (s -> v,v -> s)
 
-ccGet :: CC t s -> Lens s v -> t -> v
+ccGet :: (Eq v, Eq s) => CC t s -> Lens s v -> t -> v
 ccGet (canon,_) lens t | put lens (canon t) v == (canon t) = v
  where v free
 
